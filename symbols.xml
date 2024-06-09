@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='utf-8'?>
+<data>
+  <equation>
+    <model_equations>Y=C*D</model_equations>
+    <integrated_equation>Eq(Y, C*D)</integrated_equation>
+  </equation>
+  <symbols>
+    <symbol name="Y">
+      <unit />
+      <definition />
+      <derivative />
+      <type>Calibration Value</type>
+      <degrees_of_freedom>inf</degrees_of_freedom>
+      <distribution>Normal</distribution>
+      <coverage_factor>sqrt(3)</coverage_factor>
+    </symbol>
+    <symbol name="C">
+      <unit />
+      <definition />
+      <derivative />
+      <type>Type A</type>
+      <distribution>Normal</distribution>
+      <number_of_observations />
+    </symbol>
+    <symbol name="D">
+      <unit />
+      <definition />
+      <derivative />
+      <number_of_observations />
+      <type>Type B</type>
+      <distribution>Normal</distribution>
+      <degrees_of_freedom>inf</degrees_of_freedom>
+    </symbol>
+  </symbols>
+  <procedure>
+    <title>AAA</title>
+    <reference>VVVV</reference>
+    <author />
+    <revision>AAAAA</revision>
+    <checker />
+  </procedure>
+</data>

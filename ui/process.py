@@ -1,0 +1,17 @@
+import xml.etree.ElementTree as ET
+import math
+from tkinter import ttk, scrolledtext
+import tkinter as tk
+from method_by_sympy import extract_symbols, calculate_and_update_derivatives, integrate_equations
+from replace_tree import on_cell_double_click, update_xml_entry
+
+xml_file_path = "symbols.xml"
+
+def on_tab_selected(event):
+    selected_tab = event.widget.tab('current')['text']
+    if selected_tab == 'Quantity Data':
+        tab = event.widget.nametowidget(event.widget.select())
+        for child in tab.winfo_children():
+            child.destroy()
+        from .tab2_setup import setup_tab2
+        setup_tab2(tab)
