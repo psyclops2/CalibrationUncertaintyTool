@@ -1,7 +1,7 @@
 import tkinter as tk
 import xml.etree.ElementTree as ET
 from tkinter import ttk, scrolledtext
-from ui.process import on_cell_double_click
+from ui.replace_tree import on_cell_double_click
 from ui.extract_symbols import save_text_box_to_xml,update_xml
 from ui.method_by_sympy import integrate_equations, extract_symbols, calculate_and_update_derivatives
 

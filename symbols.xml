@@ -6,20 +6,20 @@
   </equation>
   <symbols>
     <symbol name="Y">
-      <unit />
+      <unit>aaa</unit>
       <definition />
       <derivative />
       <type>Calibration Value</type>
       <degrees_of_freedom>inf</degrees_of_freedom>
-      <distribution>Normal</distribution>
+      <distribution />
       <coverage_factor>sqrt(3)</coverage_factor>
     </symbol>
     <symbol name="C">
-      <unit />
+      <unit>aaaa</unit>
       <definition />
       <derivative />
-      <type>Type A</type>
-      <distribution>Normal</distribution>
+      <type />
+      <distribution />
       <number_of_observations />
     </symbol>
     <symbol name="D">

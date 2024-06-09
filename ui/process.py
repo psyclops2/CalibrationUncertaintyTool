@@ -2,8 +2,6 @@ import xml.etree.ElementTree as ET
 import math
 from tkinter import ttk, scrolledtext
 import tkinter as tk
-from method_by_sympy import extract_symbols, calculate_and_update_derivatives, integrate_equations
-from replace_tree import on_cell_double_click, update_xml_entry
 
 xml_file_path = "symbols.xml"
 
