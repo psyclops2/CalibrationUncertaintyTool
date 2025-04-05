@@ -1,0 +1,152 @@
+{
+    "variables": [
+        "A",
+        "CAL",
+        "MEA",
+        "CONST"
+    ],
+    "result_variables": [
+        "A"
+    ],
+    "variable_values": {
+        "CONST": {
+            "value": "",
+            "type": "fixed",
+            "unit": "",
+            "definition": "",
+            "mode": "input",
+            "values": [
+                {
+                    "value": "",
+                    "type": "A",
+                    "unit": "",
+                    "definition": "",
+                    "stddev": "",
+                    "sample_count": "",
+                    "nominal_value": "",
+                    "error_range": "",
+                    "fixed_value": "10",
+                    "central_value": "10"
+                },
+                {
+                    "value": "",
+                    "type": "A",
+                    "unit": "",
+                    "definition": "",
+                    "stddev": "",
+                    "sample_count": "",
+                    "nominal_value": "",
+                    "error_range": "",
+                    "fixed_value": "20",
+                    "central_value": "20"
+                }
+            ]
+        },
+        "MEA": {
+            "value": "",
+            "type": "A",
+            "unit": "",
+            "definition": "",
+            "mode": "input",
+            "values": [
+                {
+                    "value": "",
+                    "type": "A",
+                    "unit": "",
+                    "definition": "",
+                    "stddev": "",
+                    "sample_count": "",
+                    "nominal_value": "",
+                    "error_range": "",
+                    "measurements": "10.001,10.002,10.003",
+                    "degrees_of_freedom": 2,
+                    "central_value": 10.002,
+                    "standard_uncertainty": 0.0005773502691898186
+                },
+                {
+                    "value": "",
+                    "type": "A",
+                    "unit": "",
+                    "definition": "",
+                    "stddev": "",
+                    "sample_count": "",
+                    "nominal_value": "",
+                    "error_range": "",
+                    "measurements": "20.01,20.02,20.03,20.04",
+                    "degrees_of_freedom": 3,
+                    "central_value": 20.025,
+                    "standard_uncertainty": 0.006454972243678661
+                }
+            ]
+        },
+        "CAL": {
+            "value": "",
+            "type": "B",
+            "unit": "C",
+            "definition": "CALCAL",
+            "mode": "input",
+            "values": [
+                {
+                    "value": "",
+                    "type": "A",
+                    "unit": "",
+                    "definition": "",
+                    "stddev": "",
+                    "sample_count": "",
+                    "nominal_value": "",
+                    "error_range": "",
+                    "central_value": "10",
+                    "half_width": 0.1,
+                    "standard_uncertainty": 0.05773502690459182
+                },
+                {
+                    "value": "",
+                    "type": "A",
+                    "unit": "",
+                    "definition": "",
+                    "stddev": "",
+                    "sample_count": "",
+                    "nominal_value": "",
+                    "error_range": "",
+                    "central_value": "20",
+                    "half_width": 0.2,
+                    "standard_uncertainty": 0.11547005380918364
+                }
+            ],
+            "divisor": "1.732050808",
+            "distribution": "矩形分布"
+        },
+        "A": {
+            "value": "計算結果",
+            "type": "fixed",
+            "unit": "A",
+            "definition": "AAAAA",
+            "mode": "result",
+            "values": [
+                {
+                    "value": "",
+                    "type": "A",
+                    "unit": "",
+                    "definition": "",
+                    "stddev": "",
+                    "sample_count": "",
+                    "nominal_value": "",
+                    "error_range": ""
+                },
+                {
+                    "value": "",
+                    "type": "A",
+                    "unit": "",
+                    "definition": "",
+                    "stddev": "",
+                    "sample_count": "",
+                    "nominal_value": "",
+                    "error_range": ""
+                }
+            ]
+        }
+    },
+    "last_equation": "A=CAL+MEA^2+CONST",
+    "value_count": 2,
+    "current_value_index": 0
+}
