@@ -7,6 +7,13 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, Signal, Slot
 import traceback
+from ..utils.variable_utils import (
+    calculate_type_a_uncertainty,
+    calculate_type_b_uncertainty,
+    get_distribution_divisor,
+    create_empty_value_dict,
+    find_variable_item
+)
 
 class VariablesTab(QWidget):
     """量管理/量の値管理タブ"""
@@ -96,6 +103,14 @@ class VariablesTab(QWidget):
         uncertainty_type_layout.addWidget(self.type_fixed_radio)
         settings_layout.addRow("不確かさ種類:", uncertainty_type_layout)
         
+        # 区切り線を追加
+        separator = QFrame()
+        separator.setFrameShape(QFrame.HLine)
+        separator.setFrameShadow(QFrame.Sunken)
+        separator.setLineWidth(2)
+        separator.setStyleSheet("QFrame { background-color: red; }") 
+        settings_layout.addRow("", separator)
+        
         # TypeA用のウィジェット
         self.type_a_widgets = {}
         
@@ -115,6 +130,12 @@ class VariablesTab(QWidget):
         self.type_a_widgets['standard_uncertainty'] = QLineEdit()
         self.type_a_widgets['standard_uncertainty'].setReadOnly(True)
         settings_layout.addRow("標準不確かさ:", self.type_a_widgets['standard_uncertainty'])
+        
+        # 詳細説明フィールドを追加
+        self.type_a_widgets['description'] = QTextEdit()
+        self.type_a_widgets['description'].setMaximumHeight(100)
+        self.type_a_widgets['description'].textChanged.connect(self.on_description_changed)
+        settings_layout.addRow("詳細説明:", self.type_a_widgets['description'])
         
         # TypeB用のウィジェット
         self.type_b_widgets = {}
@@ -144,6 +165,12 @@ class VariablesTab(QWidget):
         self.type_b_widgets['standard_uncertainty'].setReadOnly(True)
         settings_layout.addRow("標準不確かさ:", self.type_b_widgets['standard_uncertainty'])
         
+        # 詳細説明フィールドを追加
+        self.type_b_widgets['description'] = QTextEdit()
+        self.type_b_widgets['description'].setMaximumHeight(100)
+        self.type_b_widgets['description'].textChanged.connect(self.on_description_changed)
+        settings_layout.addRow("詳細説明:", self.type_b_widgets['description'])
+        
         # 固定値用のウィジェット
         self.fixed_value_widgets = {}
         
@@ -151,9 +178,18 @@ class VariablesTab(QWidget):
         self.fixed_value_widgets['central_value'].textChanged.connect(self.on_fixed_value_changed)
         settings_layout.addRow("中央値:", self.fixed_value_widgets['central_value'])
         
+        # 詳細説明フィールドを追加
+        self.fixed_value_widgets['description'] = QTextEdit()
+        self.fixed_value_widgets['description'].setMaximumHeight(100)
+        self.fixed_value_widgets['description'].textChanged.connect(self.on_description_changed)
+        settings_layout.addRow("詳細説明:", self.fixed_value_widgets['description'])
+        
         self.settings_group.setLayout(settings_layout)
         self.settings_group.setEnabled(False)
         right_layout.addWidget(self.settings_group)
+        
+        # 右側のレイアウトを上詰めにする
+        right_layout.addStretch()
         
         # メインレイアウトに左右のレイアウトを追加
         main_layout.addLayout(left_layout, 1)  # 左側のレイアウト（幅の比率1）
@@ -279,12 +315,7 @@ class VariablesTab(QWidget):
                 self.type_b_widgets['distribution'].setCurrentText(distribution)
                 
                 # 分布に応じた除数を設定
-                divisor = {
-                    '正規分布': '',  # ユーザー入力
-                    '矩形分布': '1.732050808',  # √3
-                    '三角分布': '2.449489743',  # √6
-                    'U分布': '1.414213562'   # √2
-                }.get(distribution, '')
+                divisor = get_distribution_divisor(distribution)
                 
                 self.type_b_widgets['divisor'].setText(divisor)
                 self.type_b_widgets['divisor'].setReadOnly(distribution != '正規分布')
@@ -314,7 +345,8 @@ class VariablesTab(QWidget):
                     'central_value': '',
                     'standard_uncertainty': '',
                     'half_width': '',
-                    'fixed_value': ''
+                    'fixed_value': '',
+                    'description': ''  # 詳細説明フィールドを追加
                 })
 
             value_info = values[index]
@@ -327,15 +359,18 @@ class VariablesTab(QWidget):
                 self.type_a_widgets['degrees_of_freedom'].setText(str(value_info.get('degrees_of_freedom', 0)))
                 self.type_a_widgets['central_value'].setText(str(value_info.get('central_value', '')))
                 self.type_a_widgets['standard_uncertainty'].setText(str(value_info.get('standard_uncertainty', '')))
+                self.type_a_widgets['description'].setText(value_info.get('description', ''))  # 詳細説明を設定
                 
             elif uncertainty_type == 'B':
                 self.type_b_widgets['central_value'].setText(str(value_info.get('central_value', '')))
                 self.type_b_widgets['half_width'].setText(str(value_info.get('half_width', '')))
                 self.type_b_widgets['standard_uncertainty'].setText(str(value_info.get('standard_uncertainty', '')))
                 self.type_b_widgets['degrees_of_freedom'].setText(str(value_info.get('degrees_of_freedom', '')))
+                self.type_b_widgets['description'].setText(value_info.get('description', ''))  # 詳細説明を設定
                 
             else:  # fixed
                 self.fixed_value_widgets['central_value'].setText(str(value_info.get('fixed_value', '')))
+                self.fixed_value_widgets['description'].setText(value_info.get('description', ''))  # 詳細説明を設定
             
             # フィールドの表示を更新
             is_result = self.current_variable in self.parent.result_variables
@@ -680,39 +715,24 @@ class VariablesTab(QWidget):
             if not measurements_str:
                 return
                 
-            # カンマ区切りの測定値を数値のリストに変換
-            measurements = [float(x.strip()) for x in measurements_str.split(',')]
+            # TypeA不確かさの計算
+            degrees_of_freedom, central_value, standard_uncertainty, measurements_str = calculate_type_a_uncertainty(measurements_str)
             
-            if not measurements:
-                return
+            if degrees_of_freedom is not None:
+                # 結果を表示
+                self.type_a_widgets['degrees_of_freedom'].setText(str(degrees_of_freedom))
+                self.type_a_widgets['central_value'].setText(f"{central_value:.6g}")
+                self.type_a_widgets['standard_uncertainty'].setText(f"{standard_uncertainty:.6g}")
                 
-            # 自由度（データ数 - 1）
-            degrees_of_freedom = len(measurements) - 1
-            
-            # 平均値（中央値）
-            central_value = sum(measurements) / len(measurements)
-            
-            # 標準不確かさ（標準偏差 / √n）
-            if len(measurements) > 1:
-                variance = sum((x - central_value) ** 2 for x in measurements) / (len(measurements) - 1)
-                standard_uncertainty = (variance ** 0.5) / (len(measurements) ** 0.5)
-            else:
-                standard_uncertainty = 0
-                
-            # 結果を表示
-            self.type_a_widgets['degrees_of_freedom'].setText(str(degrees_of_freedom))
-            self.type_a_widgets['central_value'].setText(f"{central_value:.6g}")
-            self.type_a_widgets['standard_uncertainty'].setText(f"{standard_uncertainty:.6g}")
-            
-            # データを保存
-            index = self.value_combo.currentIndex()
-            if 'values' in self.parent.variable_values[self.current_variable]:
-                self.parent.variable_values[self.current_variable]['values'][index].update({
-                    'measurements': measurements_str,
-                    'degrees_of_freedom': degrees_of_freedom,
-                    'central_value': central_value,
-                    'standard_uncertainty': standard_uncertainty
-                })
+                # データを保存
+                index = self.value_combo.currentIndex()
+                if 'values' in self.parent.variable_values[self.current_variable]:
+                    self.parent.variable_values[self.current_variable]['values'][index].update({
+                        'measurements': measurements_str,
+                        'degrees_of_freedom': degrees_of_freedom,
+                        'central_value': central_value,
+                        'standard_uncertainty': standard_uncertainty
+                    })
             
         except Exception as e:
             print(f"【エラー】測定値計算エラー: {str(e)}")
@@ -727,12 +747,7 @@ class VariablesTab(QWidget):
             distribution = self.type_b_widgets['distribution'].currentText()
             
             # 分布の種類に応じて除数を設定
-            divisor = {
-                '正規分布': '',  # ユーザー入力
-                '矩形分布': '1.732050808',  # √3
-                '三角分布': '2.449489743',  # √6
-                'U分布': '1.414213562'   # √2
-            }.get(distribution, '')
+            divisor = get_distribution_divisor(distribution)
             
             self.type_b_widgets['divisor'].setText(divisor)
             self.type_b_widgets['divisor'].setReadOnly(distribution != '正規分布')
@@ -744,17 +759,13 @@ class VariablesTab(QWidget):
             # 半値幅が設定されている場合は標準不確かさを再計算
             half_width = self.type_b_widgets['half_width'].text().strip()
             if half_width and divisor:
-                try:
-                    half_width = float(half_width)
-                    divisor = float(divisor)
-                    standard_uncertainty = half_width / divisor
+                half_width, standard_uncertainty = calculate_type_b_uncertainty(half_width, divisor)
+                if standard_uncertainty is not None:
                     self.type_b_widgets['standard_uncertainty'].setText(f"{standard_uncertainty:.6g}")
                     
                     # すべての値の標準不確かさを更新
                     for value_info in self.parent.variable_values[self.current_variable]['values']:
                         value_info['standard_uncertainty'] = standard_uncertainty
-                except ValueError:
-                    pass
             
         except Exception as e:
             print(f"【エラー】分布変更エラー: {str(e)}")
@@ -772,13 +783,8 @@ class VariablesTab(QWidget):
             if not half_width_str or not divisor:
                 return
                 
-            try:
-                half_width = float(half_width_str)
-                divisor = float(divisor)
-                
-                # 標準不確かさを計算（半値幅/除数）
-                standard_uncertainty = half_width / divisor
-                
+            half_width, standard_uncertainty = calculate_type_b_uncertainty(half_width_str, divisor)
+            if standard_uncertainty is not None:
                 self.type_b_widgets['standard_uncertainty'].setText(f"{standard_uncertainty:.6g}")
                 
                 # 現在の値の半値幅と標準不確かさを更新
@@ -788,10 +794,7 @@ class VariablesTab(QWidget):
                         'half_width': half_width,
                         'standard_uncertainty': standard_uncertainty
                     })
-                
-            except ValueError:
-                print("【エラー】数値変換エラー")
-                
+            
         except Exception as e:
             print(f"【エラー】半値幅計算エラー: {str(e)}")
             print(traceback.format_exc())
@@ -883,6 +886,53 @@ class VariablesTab(QWidget):
             print(f"【エラー】自由度変更エラー: {str(e)}")
             print(traceback.format_exc())
 
+    def on_description_changed(self):
+        """詳細説明が変更されたときの処理"""
+        try:
+            if not self.current_variable or self.value_combo.currentIndex() < 0:
+                return
+                
+            # 現在選択されている値のインデックスを取得
+            index = self.value_combo.currentIndex()
+            
+            # 現在の不確かさ種類を取得
+            uncertainty_type = 'A'
+            if self.type_b_radio.isChecked():
+                uncertainty_type = 'B'
+            elif self.type_fixed_radio.isChecked():
+                uncertainty_type = 'fixed'
+                
+            # 不確かさ種類に応じた詳細説明を取得
+            if uncertainty_type == 'A':
+                description = self.type_a_widgets['description'].toPlainText()
+            elif uncertainty_type == 'B':
+                description = self.type_b_widgets['description'].toPlainText()
+            else:  # fixed
+                description = self.fixed_value_widgets['description'].toPlainText()
+                
+            # 値の辞書を取得
+            var_info = self.parent.variable_values[self.current_variable]
+            values = var_info.get('values', [])
+            
+            # インデックスが範囲外の場合、新しい値を追加
+            while len(values) <= index:
+                values.append({
+                    'measurements': '',
+                    'degrees_of_freedom': 0,
+                    'central_value': '',
+                    'standard_uncertainty': '',
+                    'half_width': '',
+                    'fixed_value': '',
+                    'description': ''
+                })
+                
+            # 詳細説明を保存
+            values[index]['description'] = description
+            
+        except Exception as e:
+            print(f"【エラー】詳細説明変更エラー: {str(e)}")
+            print(traceback.format_exc())
+
     def showEvent(self, event):
         """タブが表示されたときのイベントハンドラ"""
         super().showEvent(event)
@@ -897,19 +947,17 @@ class VariablesTab(QWidget):
             # 最後に選択された量がある場合、それを選択
             if self.last_selected_variable:
                 # 量リストから該当する量を探す
-                for i in range(self.variable_list.count()):
-                    item = self.variable_list.item(i)
-                    if item.data(Qt.UserRole) == self.last_selected_variable:
-                        self.variable_list.setCurrentItem(item)
-                        break
+                item = find_variable_item(self.variable_list, self.last_selected_variable)
+                if item:
+                    self.variable_list.setCurrentItem(item)
+            
+            # 値の選択コンボボックスを更新
+            self.update_value_combo()
+            
+            # 最後に選択された値のインデックスを設定
+            if self.last_selected_value_index < self.value_combo.count():
+                self.value_combo.setCurrentIndex(self.last_selected_value_index)
                 
-                # 値の選択コンボボックスを更新
-                self.update_value_combo()
-                
-                # 最後に選択された値のインデックスを設定
-                if self.last_selected_value_index < self.value_combo.count():
-                    self.value_combo.setCurrentIndex(self.last_selected_value_index)
-                    
         except Exception as e:
             print(f"【エラー】選択状態の復元エラー: {str(e)}")
             print(traceback.format_exc())

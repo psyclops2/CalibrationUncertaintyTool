@@ -176,10 +176,10 @@ class MainWindow(QMainWindow):
         if index == 2:  # 不確かさ計算タブ
             self.uncertainty_calculation_tab.update_result_combo()
             self.uncertainty_calculation_tab.update_value_combo()
-        elif index == 3:  # 偏微分タブ
-            self.partial_derivative_tab.update_equation_display()
-        elif index == 4:  # レポートタブ
+        elif index == 3:  # レポートタブ
             self.report_tab.update_variable_list(self.variables, self.result_variables)
+        elif index == 4:  # 偏微分タブ
+            self.partial_derivative_tab.update_equation_display()
             
     def add_variable(self, var_name):
         """変数を追加"""

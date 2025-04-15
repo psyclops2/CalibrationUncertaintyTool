@@ -128,18 +128,25 @@ class ReportTab(QWidget):
         try:
             print(f"【デバッグ】HTML生成開始: {equation}")
             
+            # 選択された計算結果変数を取得
+            result_var = self.result_combo.currentText()
+            
             # HTMLのヘッダー部分
             html = f"""
             <!DOCTYPE html>
             <html>
             <head>
                 <style>
-                    body {{ font-family: Arial, sans-serif; margin: 20px; }}
+                    body {{ font-family: Arial, sans-serif; margin: 20px;font-size: 12px; }}
                     table {{ border-collapse: collapse; width: 100%; margin: 10px 0; }}
                     th, td {{ border: 1px solid black; padding: 8px; text-align: left; }}
                     th {{ background-color: #f2f2f2; }}
                     .section {{ margin: 20px 0; }}
-                    .title {{ font-size: 1.2em; font-weight: bold; margin: 10px 0; }}
+                    .title {{ font-size: 17px; font-weight: bold; margin: 10px 0; }}
+                    .variable-details {{ margin: 10px 0; padding: 10px; border: 1px solid #ddd; }}
+                    .variable-name {{ font-weight: bold; }}
+                    .separator {{ border-top: 1px dashed #ccc; margin: 10px 0; }}
+                    .variable-details div {{ white-space: pre-wrap; }}
                 </style>
             </head>
             <body>
@@ -148,10 +155,26 @@ class ReportTab(QWidget):
             # 値の数を取得
             value_count = self.parent.value_count if hasattr(self.parent, 'value_count') else 1
             
+            # モデル式を表示
+            html += """
+            <div class="section">
+                <div class="title">モデル式</div>
+                <div>
+            """
+            
+            # 選択された計算結果変数の式を表示
+            if result_var and equation:
+                html += f"[{equation}]"
+            
+            html += """
+                </div>
+            </div>
+            """
+            
             # 変数リストテーブルを追加（値1の計算結果の前）
             html += """
             <div class="section">
-                <div class="title">量リスト</div>
+                <div class="title">量のリスト</div>
                 <table class="data-table">
                     <tr>
                         <th>量</th>
@@ -285,11 +308,113 @@ class ReportTab(QWidget):
                 
                 # 値ごとのセクションを追加
                 html += f"""
+                <hr style="border: 1px solid black;"/>
                 <div class="section">
-                    <div class="title">値{value_index + 1}の計算結果</div>
+                    <div class="title">校正点{value_index + 1}の計算結果</div>
                     
                     <div class="section">
-                        <div class="title">不確かさ予算表</div>
+                        <div class="title">各量の値の詳細説明</div>
+                """
+                
+                # 入力変数の詳細説明を追加
+                input_vars = sorted([var for var in self.parent.variables if var not in self.parent.result_variables])
+                for var in input_vars:
+                    var_info = self.parent.variable_values.get(var, {})
+                    values = var_info.get('values', [])
+                    description = values[value_index].get('description', '') if values and len(values) > value_index else ''
+                    html += f"""
+                    <div class="variable-details">
+                        <div class="variable-name">[{var}]：</div>
+                        <div>{description}</div>
+                    </div>
+                    """
+                    
+                    # Type Aの量の場合、測定値のテーブルを表示
+                    if var_info.get('type') == 'A' and values and len(values) > value_index:
+                        measurements = values[value_index].get('measurements', '')
+                        if measurements:
+                            # カンマで区切られた測定値をリストに変換
+                            measurement_list = [m.strip() for m in measurements.split(',') if m.strip()]
+                            
+                            html += f"""
+                            <div class="section">
+                                <div>[{var}]の測定値</div>
+                                <table>
+                                    <tr>
+                                        <th>n回目</th>
+                                        <th>測定値</th>
+                                    </tr>
+                            """
+                            
+                            for i, measurement in enumerate(measurement_list, 1):
+                                html += f"""
+                                    <tr>
+                                        <td>{i}</td>
+                                        <td>{measurement}</td>
+                                    </tr>
+                                """
+                                
+                            html += """
+                                </table>
+                            </div>
+                            """
+                    
+                    html += """
+                    <div class="separator"></div>
+                    """
+                
+                # 計算結果変数の詳細説明を追加
+                result_vars = sorted(self.parent.result_variables)
+                for var in result_vars:
+                    var_info = self.parent.variable_values.get(var, {})
+                    values = var_info.get('values', [])
+                    description = values[value_index].get('description', '') if values and len(values) > value_index else ''
+                    html += f"""
+                    <div class="variable-details">
+                        <div class="variable-name">[{var}]：</div>
+                        <div>{description}</div>
+                    </div>
+                    """
+                    
+                    # Type Aの量の場合、測定値のテーブルを表示
+                    if var_info.get('type') == 'A' and values and len(values) > value_index:
+                        measurements = values[value_index].get('measurements', '')
+                        if measurements:
+                            # カンマで区切られた測定値をリストに変換
+                            measurement_list = [m.strip() for m in measurements.split(',') if m.strip()]
+                            
+                            html += f"""
+                            <div class="section">
+                                <div class="title">[{var}]の測定値</div>
+                                <table>
+                                    <tr>
+                                        <th>n回目</th>
+                                        <th>測定値</th>
+                                    </tr>
+                            """
+                            
+                            for i, measurement in enumerate(measurement_list, 1):
+                                html += f"""
+                                    <tr>
+                                        <td>{i}</td>
+                                        <td>{measurement}</td>
+                                    </tr>
+                                """
+                                
+                            html += """
+                                </table>
+                            </div>
+                            """
+                    
+                    html += """
+                    <div class="separator"></div>
+                    """
+                
+                html += """
+                    </div>
+                    
+                    <div class="section">
+                        <div class="title">不確かさバジェット</div>
                         <table>
                             <tr>
                                 <th>変数</th>

@@ -26,7 +26,8 @@
                     "nominal_value": "",
                     "error_range": "",
                     "fixed_value": "10",
-                    "central_value": "10"
+                    "central_value": "10",
+                    "description": ""
                 },
                 {
                     "value": "",
@@ -61,7 +62,8 @@
                     "measurements": "10.001,10.002,10.003",
                     "degrees_of_freedom": 2,
                     "central_value": 10.002,
-                    "standard_uncertainty": 0.0005773502691898186
+                    "standard_uncertainty": 0.0005773502691898186,
+                    "description": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nuuuuuuuuuuuuuuuuuuuuuuuuuuu"
                 },
                 {
                     "value": "",
@@ -97,7 +99,8 @@
                     "error_range": "",
                     "central_value": "10",
                     "half_width": 0.1,
-                    "standard_uncertainty": 0.05773502690459182
+                    "standard_uncertainty": 0.05773502690459182,
+                    "description": "詳細情報\nここで計算方法を示す？"
                 },
                 {
                     "value": "",
@@ -133,7 +136,8 @@
                     "nominal_value": "",
                     "error_range": "",
                     "fixed_value": "",
-                    "central_value": ""
+                    "central_value": "",
+                    "description": ""
                 },
                 {
                     "value": "",
