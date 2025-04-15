@@ -131,7 +131,9 @@
                     "stddev": "",
                     "sample_count": "",
                     "nominal_value": "",
-                    "error_range": ""
+                    "error_range": "",
+                    "fixed_value": "",
+                    "central_value": ""
                 },
                 {
                     "value": "",

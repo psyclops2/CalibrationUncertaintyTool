@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QTextBrowser, QDialogButtonBox
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QTextBrowser, QDialogButtonBox
+from PySide6.QtCore import Qt, Signal, Slot
 import pkg_resources
 
 class AboutDialog(QDialog):
@@ -54,7 +55,7 @@ class AboutDialog(QDialog):
     def get_libraries_info(self):
         """使用しているライブラリの情報を取得"""
         used_libraries = {
-            'pyqt5': 'GUIフレームワーク',
+            'pyside6': 'GUIフレームワーク',
             'sympy': '数式処理',
             'numpy': '数値計算'
         }

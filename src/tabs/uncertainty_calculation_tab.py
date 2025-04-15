@@ -1,7 +1,7 @@
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                           QComboBox, QTableWidget, QTableWidgetItem, QGroupBox,
-                           QHeaderView, QMessageBox)
-from PyQt5.QtCore import Qt
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+                             QComboBox, QTableWidget, QTableWidgetItem, QHeaderView,
+                             QGroupBox, QFormLayout, QDoubleSpinBox, QMessageBox)
+from PySide6.QtCore import Qt, Signal, Slot
 import traceback
 
 from src.utils.equation_handler import EquationHandler

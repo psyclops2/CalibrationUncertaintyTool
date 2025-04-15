@@ -1,7 +1,7 @@
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                            QTextEdit, QGroupBox, QMessageBox, QLineEdit,
                            QListWidget, QListWidgetItem)
-from PyQt5.QtCore import Qt
+from PySide6.QtCore import Qt, Signal, Slot
 import sympy as sp
 import re
 import traceback
@@ -10,13 +10,30 @@ import os
 
 from src.utils.equation_formatter import EquationFormatter
 
+class DraggableListWidget(QListWidget):
+    order_changed = Signal(list)  # 並び順が変更されたときに発火するシグナル
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setDragDropMode(QListWidget.InternalMove)
+        self.setSelectionMode(QListWidget.ExtendedSelection)
+        self.setDragEnabled(True)
+        self.setAcceptDrops(True)
+        self.setDropIndicatorShown(True)
+        self.setDefaultDropAction(Qt.MoveAction)
+        
+    def dropEvent(self, event):
+        super().dropEvent(event)
+        # 新しい並び順を取得してシグナルを発火
+        new_order = [self.item(i).text() for i in range(self.count())]
+        self.order_changed.emit(new_order)
+
 class ModelEquationTab(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent
-        self.variable_order_file = "variable_order.json"  # 変数の並び順を保存するファイル
+        self.variable_order_file = os.path.join("data", "variable_order.json")
         self.setup_ui()
-        self.load_variable_order()  # 変数の並び順を読み込む
         
     def setup_ui(self):
         """UIの設定"""
@@ -29,7 +46,7 @@ class ModelEquationTab(QWidget):
         self.equation_input = QTextEdit()
         self.equation_input.setPlaceholderText("例: y = a * x + b, z = x^2 + y")
         self.equation_input.setMaximumHeight(300)
-        self.equation_input.focusOutEvent = self.on_equation_focus_lost
+        self.equation_input.focusOutEvent = self._on_equation_focus_lost
         equation_layout.addWidget(self.equation_input)
         
         self.equation_status = QLabel("")
@@ -39,17 +56,11 @@ class ModelEquationTab(QWidget):
         layout.addWidget(equation_group)
         
         # 変数リスト表示エリア
-        variable_group = QGroupBox("変数リスト")
+        variable_group = QGroupBox("変数リスト（ドラッグ＆ドロップで並び順を変更できます）")
         variable_layout = QVBoxLayout()
         
-        self.variable_list = QListWidget()
-        self.variable_list.setDragDropMode(QListWidget.InternalMove)
-        self.variable_list.setSelectionMode(QListWidget.ExtendedSelection)
-        self.variable_list.setDragEnabled(True)
-        self.variable_list.setAcceptDrops(True)
-        self.variable_list.setDropIndicatorShown(True)
-        self.variable_list.setDefaultDropAction(Qt.MoveAction)
-        self.variable_list.dropEvent = self.on_variable_drop
+        self.variable_list = DraggableListWidget(self)
+        self.variable_list.order_changed.connect(self.on_variable_order_changed)
         variable_layout.addWidget(self.variable_list)
         
         variable_group.setLayout(variable_layout)
@@ -68,97 +79,97 @@ class ModelEquationTab(QWidget):
         layout.addWidget(display_group)
         
         self.setLayout(layout)
-        
-    def on_variable_drop(self, event):
-        """変数リストのドラッグドロップイベントを処理"""
-        # 標準のドロップイベントを実行
-        QListWidget.dropEvent(self.variable_list, event)
-        
-        # 変数の並び順を更新
-        self.update_variable_order()
-        
-    def update_variable_order(self):
-        """変数リストの並び順を更新"""
+
+    def on_variable_order_changed(self, new_order):
+        """変数の並び順が変更されたときの処理"""
         try:
-            # 現在の変数リストの並び順を取得
-            new_order = []
-            for i in range(self.variable_list.count()):
-                item = self.variable_list.item(i)
-                new_order.append(item.text())
+            if not hasattr(self.parent, 'variables'):
+                return
+                
+            # 入力変数と計算結果変数を区別
+            input_vars = []
+            result_vars = []
+            
+            for var in new_order:
+                if var in self.parent.result_variables:
+                    result_vars.append(var)
+                else:
+                    input_vars.append(var)
             
             # 親ウィンドウの変数リストを更新
-            if hasattr(self.parent, 'variables'):
-                # 入力変数と計算結果変数を区別して並び順を更新
-                input_vars = []
-                result_vars = []
-                
-                for var in new_order:
-                    if var in self.parent.result_variables:
-                        result_vars.append(var)
-                    else:
-                        input_vars.append(var)
-                
-                # 親ウィンドウの変数リストを更新（計算結果変数を先に、入力変数を後に）
-                self.parent.variables = result_vars + input_vars
-                
-                # 変数タブの強制更新
-                if hasattr(self.parent, 'variables_tab'):
-                    self.parent.variables_tab.update_variable_list(
-                        self.parent.variables, 
-                        self.parent.result_variables
-                    )
-                
-                print(f"【デバッグ】変数の並び順を更新: {self.parent.variables}")
-                
+            self.parent.variables = result_vars + input_vars
+            
+            # 変数タブの更新
+            if hasattr(self.parent, 'variables_tab'):
+                self.parent.variables_tab.update_variable_list(
+                    self.parent.variables,
+                    self.parent.result_variables
+                )
+            
+            # 並び順を保存
+            self.save_variable_order()
+            
+            print(f"【デバッグ】変数の並び順を更新: {self.parent.variables}")
+            
         except Exception as e:
             print(f"【エラー】変数の並び順更新エラー: {str(e)}")
             print(traceback.format_exc())
+            QMessageBox.warning(self, "エラー", "変数の並び順の更新に失敗しました。")
             
     def save_variable_order(self):
         """変数の並び順をJSONファイルに保存"""
         try:
-            if hasattr(self.parent, 'variables'):
-                with open(self.variable_order_file, 'w', encoding='utf-8') as f:
-                    json.dump(self.parent.variables, f, ensure_ascii=False, indent=2)
-                print(f"【デバッグ】変数の並び順を保存: {self.variable_order_file}")
+            if not hasattr(self.parent, 'variables'):
+                return
+                
+            # dataディレクトリが存在しない場合は作成
+            os.makedirs(os.path.dirname(self.variable_order_file), exist_ok=True)
+            
+            with open(self.variable_order_file, 'w', encoding='utf-8') as f:
+                json.dump({
+                    'variables': self.parent.variables,
+                    'result_variables': self.parent.result_variables
+                }, f, ensure_ascii=False, indent=2)
+                
+            print(f"【デバッグ】変数の並び順を保存: {self.variable_order_file}")
+            
         except Exception as e:
             print(f"【エラー】変数の並び順保存エラー: {str(e)}")
             print(traceback.format_exc())
+            QMessageBox.warning(self, "エラー", "変数の並び順の保存に失敗しました。")
             
     def load_variable_order(self):
         """変数の並び順をJSONファイルから読み込む"""
         try:
-            if os.path.exists(self.variable_order_file):
-                with open(self.variable_order_file, 'r', encoding='utf-8') as f:
-                    saved_order = json.load(f)
-                print(f"【デバッグ】変数の並び順を読み込み: {saved_order}")
+            if not os.path.exists(self.variable_order_file):
+                return
                 
-                # 親ウィンドウの変数リストを更新
-                if hasattr(self.parent, 'variables'):
-                    # 入力変数と計算結果変数を区別して並び順を更新
-                    input_vars = []
-                    result_vars = []
-                    
-                    for var in saved_order:
-                        if var in self.parent.result_variables:
-                            result_vars.append(var)
-                        else:
-                            input_vars.append(var)
-                    
-                    # 親ウィンドウの変数リストを更新
-                    self.parent.variables = result_vars + input_vars
-                    
-                    # 変数タブの強制更新
-                    if hasattr(self.parent, 'variables_tab'):
-                        self.parent.variables_tab.update_variable_list(
-                            self.parent.variables, 
-                            self.parent.result_variables
-                        )
-                    
-                    print(f"【デバッグ】変数の並び順を更新: {self.parent.variables}")
+            with open(self.variable_order_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                
+            if not hasattr(self.parent, 'variables'):
+                return
+                
+            # 保存された並び順を適用
+            self.parent.variables = data.get('variables', self.parent.variables)
+            self.parent.result_variables = data.get('result_variables', self.parent.result_variables)
+            
+            # 変数タブの更新
+            if hasattr(self.parent, 'variables_tab'):
+                self.parent.variables_tab.update_variable_list(
+                    self.parent.variables,
+                    self.parent.result_variables
+                )
+            
+            # 変数リストの更新
+            self.update_variable_list()
+            
+            print(f"【デバッグ】変数の並び順を読み込み: {self.parent.variables}")
+            
         except Exception as e:
             print(f"【エラー】変数の並び順読み込みエラー: {str(e)}")
             print(traceback.format_exc())
+            QMessageBox.warning(self, "エラー", "変数の並び順の読み込みに失敗しました。")
             
     def update_variable_list(self):
         """変数リストを更新"""
@@ -175,43 +186,54 @@ class ModelEquationTab(QWidget):
             print(f"【エラー】変数リスト更新エラー: {str(e)}")
             print(traceback.format_exc())
             
-    def on_equation_focus_lost(self, event):
-        """方程式入力エリアからフォーカスが外れたときの処理"""
+    def _on_equation_focus_lost(self, event):
+        """方程式入力エリアからフォーカスが外れたときの処理（内部メソッド）"""
+        # 親クラスのfocusOutEventを呼び出す
+        QTextEdit.focusOutEvent(self.equation_input, event)
+        
         # 現在の方程式を取得
         current_equation = self.equation_input.toPlainText().strip() 
         
         # 前回の方程式と同じ場合は何もしない
         if current_equation == self.parent.last_equation:
-            QTextEdit.focusOutEvent(self.equation_input, event)
             return
             
+        # 方程式を解析して変数を抽出
         try:
-            # 方程式の構文チェック
-            equations = [eq.strip() for eq in current_equation.split(',')]
-            for eq in equations:
-                if '=' not in eq:
-                    raise ValueError(f"方程式 '{eq}' に等号がありません。")
-                
-                left_side, right_side = eq.split('=', 1)
-                left_side = left_side.strip()
-                right_side = right_side.strip()
-                
-                # 数式の構文チェック
-                left_expr = sp.sympify(left_side)
-                right_expr = sp.sympify(right_side)
+            # 方程式を解析
+            variables = self.parse_equation(current_equation)
             
-            # 構文チェックOKの場合、変数の変更確認
-            self.check_equation_changes(current_equation)
-            self.update_html_display(current_equation)
-            
+            # 変数リストを更新
+            if hasattr(self.parent, 'variables'):
+                self.parent.variables = variables
+                
+                # 変数タブの強制更新
+                if hasattr(self.parent, 'variables_tab'):
+                    self.parent.variables_tab.update_variable_list(
+                        self.parent.variables, 
+                        self.parent.result_variables
+                    )
+                    
+                # 変数リストを更新
+                self.update_variable_list()
+                
+                # 前回の方程式を更新
+                self.parent.last_equation = current_equation
+                
+                # 変数の並び順を保存
+                self.save_variable_order()
+                
+                print(f"【デバッグ】方程式を解析: {variables}")
+                
         except Exception as e:
-            self.equation_status.setText(f"数式の構文チェック: エラー - {str(e)}")
-            self.equation_status.setStyleSheet("color: red;")
-            self.parent.log_error(f"数式の構文エラー: {str(e)}", "構文エラー")
-            # エラー時は前回の方程式に戻す
-            self.equation_input.setText(self.parent.last_equation)
+            print(f"【エラー】方程式解析エラー: {str(e)}")
+            print(traceback.format_exc())
+            self.equation_status.setText(f"エラー: {str(e)}")
             
-        QTextEdit.focusOutEvent(self.equation_input, event)
+    def on_equation_focus_lost(self, event):
+        """方程式入力エリアからフォーカスが外れたときの処理（公開メソッド）"""
+        # 内部メソッドを呼び出す
+        self._on_equation_focus_lost(event)
         
     def check_equation_changes(self, equation):
         """方程式の変更を監視し、変数の追加・削除を検出"""

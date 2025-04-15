@@ -2,9 +2,9 @@ import os
 import traceback
 import sympy as sp
 import numpy as np
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QComboBox, 
-                            QPushButton, QFileDialog, QTextEdit, QLabel, QMessageBox)
-from PyQt5.QtCore import Qt
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QComboBox, 
+                             QPushButton, QFileDialog, QTextEdit, QLabel, QMessageBox)
+from PySide6.QtCore import Qt, Signal, Slot
 from src.utils.equation_handler import EquationHandler
 from src.utils.value_handler import ValueHandler
 from src.utils.uncertainty_calculator import UncertaintyCalculator

@@ -1,6 +1,7 @@
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QGroupBox, 
-                            QTextEdit, QLabel, QHBoxLayout)
-from PyQt5.QtCore import Qt
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QGroupBox,
+                             QTableWidget, QTableWidgetItem, QHeaderView,
+                             QTextEdit)
+from PySide6.QtCore import Qt, Signal, Slot
 import sympy as sp
 import traceback
 import re

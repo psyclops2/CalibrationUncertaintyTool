@@ -1,0 +1,11 @@
+{
+  "variables": [
+    "A",
+    "CONST",
+    "CAL",
+    "MEA"
+  ],
+  "result_variables": [
+    "A"
+  ]
+}

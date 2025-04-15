@@ -1,9 +1,11 @@
-from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                           QLineEdit, QTextEdit, QListWidget, QListWidgetItem,
-    QGroupBox, QRadioButton, QFormLayout, QSpinBox, QComboBox
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
+    QComboBox, QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox,
+    QGroupBox, QFormLayout, QSpinBox, QDoubleSpinBox, QCheckBox, QRadioButton,
+    QButtonGroup, QSplitter, QFrame, QScrollArea, QGridLayout, QSizePolicy,
+    QListWidget, QListWidgetItem, QTextEdit
 )
-from PyQt5.QtCore import Qt
+from PySide6.QtCore import Qt, Signal, Slot
 import traceback
 
 class VariablesTab(QWidget):
@@ -164,6 +166,7 @@ class VariablesTab(QWidget):
         self.on_type_changed(True)  # 初期表示を設定
         
     def update_variable_list(self, variables, result_variables):
+        """変数リストを更新"""
         try:
             self.variable_list.clear()
             
@@ -182,8 +185,20 @@ class VariablesTab(QWidget):
                 item.setData(Qt.UserRole, var)
                 self.variable_list.addItem(item)
             
+            # 前回選択していた変数が存在する場合は、それを選択状態に戻す
+            if self.last_selected_variable:
+                for i in range(self.variable_list.count()):
+                    item = self.variable_list.item(i)
+                    if item.data(Qt.UserRole) == self.last_selected_variable:
+                        self.variable_list.setCurrentItem(item)
+                        break
+            
+            print(f"【デバッグ】変数リストを更新: 計算結果量={result_vars}, 入力量={input_vars}")
+            
         except Exception as e:
+            print(f"【エラー】変数リスト更新エラー: {str(e)}")
             print(traceback.format_exc())
+            QMessageBox.warning(self, "エラー", "変数リストの更新に失敗しました。")
             
     def on_variable_selected(self, current, previous):
         """量が選択された時の処理"""
@@ -252,9 +267,9 @@ class VariablesTab(QWidget):
             # 不確かさ種類の設定
             uncertainty_type = var_info.get('type', 'A')
             if uncertainty_type == 'A':
-                self.type_a_radio.setChecked(True)
+                        self.type_a_radio.setChecked(True)
             elif uncertainty_type == 'B':
-                self.type_b_radio.setChecked(True)
+                        self.type_b_radio.setChecked(True)
             else:  # fixed
                 self.type_fixed_radio.setChecked(True)
             
@@ -449,7 +464,7 @@ class VariablesTab(QWidget):
                 
             # フォームレイアウトの更新
             self.update_form_layout()
-
+            
         except Exception as e:
             print(f"【エラー】不確かさ種類変更エラー: {str(e)}")
             print(traceback.format_exc())
@@ -894,10 +909,7 @@ class VariablesTab(QWidget):
                 # 最後に選択された値のインデックスを設定
                 if self.last_selected_value_index < self.value_combo.count():
                     self.value_combo.setCurrentIndex(self.last_selected_value_index)
-                
-                # 共通の設定と現在の値を表示
-                self.display_common_settings()
-                self.display_current_value()
+                    
         except Exception as e:
-            print(f"【エラー】選択状態復元エラー: {str(e)}")
+            print(f"【エラー】選択状態の復元エラー: {str(e)}")
             print(traceback.format_exc())
