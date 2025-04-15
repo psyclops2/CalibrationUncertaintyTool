@@ -77,7 +77,8 @@
                     "measurements": "20.01,20.02,20.03,20.04",
                     "degrees_of_freedom": 3,
                     "central_value": 20.025,
-                    "standard_uncertainty": 0.006454972243678661
+                    "standard_uncertainty": 0.006454972243678661,
+                    "description": ""
                 }
             ]
         },
@@ -100,7 +101,8 @@
                     "central_value": "10",
                     "half_width": 0.1,
                     "standard_uncertainty": 0.05773502690459182,
-                    "description": "詳細情報\nここで計算方法を示す？"
+                    "description": "詳細情報\nここで計算方法を示す？",
+                    "calculation_formula": "0.2-0.1"
                 },
                 {
                     "value": "",
@@ -112,8 +114,10 @@
                     "nominal_value": "",
                     "error_range": "",
                     "central_value": "20",
-                    "half_width": 0.2,
-                    "standard_uncertainty": 0.11547005380918364
+                    "half_width": 0.3,
+                    "standard_uncertainty": 0.17320508071377547,
+                    "description": "0.173205080713775",
+                    "calculation_formula": "1-0.7"
                 }
             ],
             "divisor": "1.732050808",
@@ -154,5 +158,5 @@
     },
     "last_equation": "A=CAL+MEA^2+CONST",
     "value_count": 2,
-    "current_value_index": 0
+    "current_value_index": 1
 }

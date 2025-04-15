@@ -1,0 +1,53 @@
+import re
+import math
+import traceback
+import decimal
+from decimal import Decimal, getcontext
+
+def evaluate_formula(formula, variables=None):
+    """
+    計算式を評価して結果を返す
+    
+    Args:
+        formula (str): 評価する計算式
+        variables (dict): 変数名と値の辞書
+        
+    Returns:
+        float: 計算結果
+    """
+    try:
+        if not formula:
+            return None
+            
+        # 変数が指定されていない場合は空の辞書を使用
+        if variables is None:
+            variables = {}
+            
+        # 精度を設定
+        getcontext().prec = 28
+        
+        # 変数を式に代入
+        for var_name, var_value in variables.items():
+            # 変数名を値に置換
+            formula = formula.replace(var_name, str(var_value))
+            
+        # ^演算子を**演算子に置き換え
+        formula = formula.replace('^', '**')
+            
+        # 式を評価（Decimalを使用）
+        # 数値をDecimalに変換
+        formula = re.sub(r'(\d+\.?\d*)', r'Decimal("\1")', formula)
+        
+        # 式を評価
+        result = eval(formula)
+        
+        # Decimalからfloatに変換
+        if isinstance(result, Decimal):
+            result = float(result)
+            
+        return result
+        
+    except Exception as e:
+        print(f"【エラー】計算式の評価エラー: {str(e)}")
+        print(traceback.format_exc())
+        return None 

@@ -1,5 +1,6 @@
 from PySide6.QtCore import Qt
 import traceback
+from decimal import Decimal, getcontext
 
 def calculate_type_a_uncertainty(measurements_str):
     """TypeA不確かさの計算を行う"""
@@ -39,13 +40,17 @@ def calculate_type_b_uncertainty(half_width_str, divisor_str):
         if not half_width_str or not divisor_str:
             return None, None
             
-        half_width = float(half_width_str)
-        divisor = float(divisor_str)
+        # 精度を設定
+        getcontext().prec = 28
+            
+        # 文字列をDecimalに変換
+        half_width = Decimal(half_width_str)
+        divisor = Decimal(divisor_str)
         
         # 標準不確かさを計算（半値幅/除数）
         standard_uncertainty = half_width / divisor
         
-        return half_width, standard_uncertainty
+        return float(half_width), float(standard_uncertainty)
         
     except ValueError:
         print("【エラー】数値変換エラー")
