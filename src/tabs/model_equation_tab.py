@@ -106,9 +106,6 @@ class ModelEquationTab(QWidget):
                     self.parent.result_variables
                 )
             
-            # 並び順を保存
-            self.save_variable_order()
-            
             print(f"【デバッグ】変数の並び順を更新: {self.parent.variables}")
             
         except Exception as e:
@@ -219,9 +216,6 @@ class ModelEquationTab(QWidget):
                 
                 # 前回の方程式を更新
                 self.parent.last_equation = current_equation
-                
-                # 変数の並び順を保存
-                self.save_variable_order()
                 
                 print(f"【デバッグ】方程式を解析: {variables}")
                 

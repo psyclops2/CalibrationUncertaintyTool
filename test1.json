@@ -1,9 +1,9 @@
 {
     "variables": [
         "A",
+        "CONST",
         "CAL",
-        "MEA",
-        "CONST"
+        "MEA"
     ],
     "result_variables": [
         "A"
