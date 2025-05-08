@@ -1,240 +1,211 @@
-# 不確かさ計算支援ソフト
+# Uncertainty Calculation Support Software
 
-## 概要
-このソフトは、測定値の不確かさを計算するためのGUIアプリケーションです。
+## Overview
 
-JCGM 100（Guide to the Expression of Uncertainty in Measurement）GUMの方法に基づいて不確かさを計算します。
+This software is a GUI application for calculating the uncertainty of measurement results.
 
-モンテカルロ法による分布の伝播の計算は未実装です。
+It is based on JCGM 100 (Guide to the Expression of Uncertainty in Measurement, GUM).
 
-測定の数学的モデル式から不確かさの伝播則の式を導き、各量に対しその量の値を与え不確かさを計算、バジェットシートを出力します。
+Monte Carlo propagation of distributions is **not yet implemented**.
 
-同一モデル式に従う複数の校正点についての校正の不確かさの計算を一括で行えるようにしています。
+From the mathematical model equation of the measurement, the program derives the propagation equation of uncertainty, allows the user to input the value for each quantity, calculates the combined standard uncertainty, and outputs a budget sheet.
 
-## 主な機能
-1. モデル方程式の入力と量の管理
-2. 測定値と不確かさの入力
-3. 感度係数の自動計算
-4. 不確かさの伝播則の式の自動計算
-5. バジェットシートの表示とエクスポート
+The software also supports batch calculations of calibration uncertainty across multiple calibration points following the same model equation.
 
-## システム要件
-- Python 3.8以上
-- PySide6 (LGPLv3ライセンス)
-- NumPy (BSDライセンス)
-- SymPy (BSDライセンス)
+## Main Features
 
-## インストール方法
-1. リポジトリをクローン
+1. Input and management of model equations and quantities
+2. Input of measured values and their uncertainties
+3. Automatic calculation of sensitivity coefficients
+4. Automatic calculation of uncertainty propagation equations
+5. Display and export of budget sheets
+
+## System Requirements
+
+* Python 3.8 or higher
+* PySide6 (LGPLv3 license)
+* NumPy (BSD license)
+* SymPy (BSD license)
+
+## Installation
+
+1. Clone the repository:
+
 ```bash
 git clone [repository-url]
 ```
 
-2. 依存パッケージのインストール
+2. Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
 
-3. アプリケーションの起動
+3. Launch the application:
+
 ```bash
 python src/main.py
 ```
 
-## プロジェクト構造
+## Project Structure
+
 ```
 src/
-├── __main__.py         # メインエントリーポイント
-├── main.py             # メインアプリケーション
-├── main_window.py      # メインウィンドウの実装
-├── dialogs/           # ダイアログウィンドウの実装
-├── models/            # データモデルの実装
-├── tabs/              # タブ関連のモジュール
-├── utils/             # ユーティリティモジュール
-└── widgets/           # カスタムウィジェットの実装
+├── __main__.py         # Main entry point
+├── main.py             # Main application
+├── main_window.py      # Main window implementation
+├── dialogs/            # Dialog window implementations
+├── models/             # Data models
+├── tabs/               # Tab-related modules
+├── utils/              # Utility modules
+└── widgets/            # Custom widgets
 ```
 
-詳細なファイル構成については、各ディレクトリ内のファイルを参照してください。
+See the files within each directory for details.
 
-## 計算の背景と根拠
+## Calculation Background and Basis
 
-### 1. 不確かさの伝播則
-GUMに基づき、以下の不確かさの伝播則の式を使用して計算を行います：
+### 1. Law of Propagation of Uncertainty
 
-ただし現時点では2項目の相関不確かさについての計算は実装していません。
+Based on the GUM, the following propagation equation is used:
 
-モデル式の時点で相関がないよう考慮してください。
+**Note:** Currently, the calculation of correlated uncertainties between two quantities is not implemented.
+Please prepare model equations where correlations can be ignored.
 
 ```
 u²(y) = Σ(∂f/∂xᵢ)²u²(xᵢ) + 2ΣΣ(∂f/∂xᵢ)(∂f/∂xⱼ)u(xᵢ,xⱼ)
 ```
 
-ここで：
-- u(y): 計算結果の不確かさ
-- ∂f/∂xᵢ: 感度係数
-- u(xᵢ): 入力変数の不確かさ
-- u(xᵢ,xⱼ): 相関不確かさ
+Where:
 
-### 2. 感度係数の計算
-感度係数は、モデル方程式の各入力変数に関する偏微分として計算されます：
+* u(y): uncertainty of the result
+* ∂f/∂xᵢ: sensitivity coefficient
+* u(xᵢ): uncertainty of input quantity
+* u(xᵢ,xⱼ): correlated uncertainty
+
+### 2. Sensitivity Coefficients
+
+Sensitivity coefficients are calculated as the partial derivative of the model equation with respect to each input quantity:
 
 ```
 ∂f/∂xᵢ = lim(Δxᵢ→0) [f(x₁,...,xᵢ+Δxᵢ,...,xₙ) - f(x₁,...,xᵢ,...,xₙ)] / Δxᵢ
 ```
 
-#### 連立方程式の場合
-連立方程式の場合は、連鎖律（chain rule）を使用して感度係数を計算します：
+For coupled equations, the chain rule is used.
 
-次の例を考えてみます。
-```
-W = V × I
-V = V_MEAS + V_CAL
-I = I_MEAS + I_CAL
-```
-ここで、I_CAL に対する W の感度係数（偏微分）を求めたい場合、チェーンルールを使うと次のように書けます。
-```
-∂W/∂I_CAL = (∂W/∂V)(∂V/∂I_CAL) + (∂W/∂I)(∂I/∂I_CAL)
-```
-```
-W = V × I より
-∂W/∂V = I
-∂W/∂I = V
-```
-V は I_CAL に依存しない（V = V_MEAS + V_CAL に I_CAL が入っていない）ので、
-```
-∂V/∂I_CAL = 0
-```
-```
-I = I_MEAS + I_CAL なので、
-∂I/∂I_CAL = 1
-```
-上記を代入すると、
-```
-∂W/∂I_CAL = I × 0 + V × 1 = V
-```
-### 3. 不確かさの種類
-#### A Type不確かさ（統計的手法による評価）
+### 3. Types of Uncertainty
 
-繰り返し測定に基づいて統計的に評価される不確かさです。
+#### A-Type (Evaluated by Statistical Methods)
 
-現在は最も基本的な方法（単一系列の測定値に基づく評価）のみに対応しています。
+Based on repeated measurements:
 
-1. 標準不確かさ（平均値の実験標準偏差）
-繰り返し測定値が x1, x2, ..., xn のとき、平均値 x̄ に対する標準不確かさ u は以下の式で求めます。
+1. Standard uncertainty (experimental standard deviation of the mean):
 
-繰り返し測定の結果はカンマ(,)で区切り入力します。
 ```
-u = sqrt( (1 / (n * (n - 1))) * Σ(xi - x̄)^2 )
+u = sqrt( (1 / (n * (n - 1))) * Σ(xᵢ - x̄)² )
 ```
-2. 自由度
-自由度 ν は以下の式で求めます。
+
+2. Degrees of freedom:
+
 ```
 ν = n - 1
 ```
-#### B Type不確かさ（統計的手法以外による評価）
 
-試験成績書、仕様書、技術文書、過去の経験など、統計的データに依らない情報から評価される不確かさです。
+#### B-Type (Evaluated by Other Means)
 
-以下の分布に基づく評価方法に対応しています。
+Based on non-statistical information (certificates, specs, literature, prior experience):
 
-1. 矩形分布（均等分布）
+1. Rectangular distribution:
+
 ```
 u = a / sqrt(3)
 ```
-2. 三角分布
+
+2. Triangular distribution:
+
 ```
 u = a / sqrt(6)
 ```
 
-3. 正規分布
+3. Normal distribution:
+
 ```
 u = a / k
 ```
-a は信頼限界、k は信頼係数。例：95%信頼水準なら k ≒ 2
 
-証明書の値を利用する場合、a は拡張不確かさ、k は包含係数
+where `a` is the confidence limit and `k` is the coverage factor (e.g., for 95% confidence, k ≈ 2).
 
-それぞれの有効自由度は任意の値を設定できますが、NITEの指針ではType Bは ∞ を当てるのが一般的です。
+### 4. Effective Degrees of Freedom
 
-数値を入力しなければ ∞ して扱われます。
+Welch-Satterthwaite formula:
 
-### 4. 自由度の計算
-Welch-Satterthwaiteの式を使用して有効自由度を計算：
-
-Type Bの不確かさで自由度が入力されていない場合、自由度は∞として扱われます。
 ```
-νeff = u⁴(y) / Σ[u⁴(xᵢ) / νᵢ]
+ν_eff = u⁴(y) / Σ[u⁴(xᵢ) / νᵢ]
 ```
 
-### 5. 拡張不確かさの計算
-包含係数k（通常k=2）を使用して拡張不確かさを計算します。
+### 5. Expanded Uncertainty
+
+Expanded using the coverage factor `k` (typically k = 2):
 
 ```
 U = k * u(y)
 ```
-包含係数 k は、t 分布表の 95 t (νeff)の値として計算しますが、
 
-単純のため下記の表を参照し割り当てます。
-| νeff | 1    | 2    | 3    | 4    | 5    | 6    | 7    | 8    | 9    | 10   | 20   | 50   | ∽   |
-|------|------|------|------|------|------|------|------|------|------|------|------|------|------|
-| k    | 12.71| 4.30 | 3.18 | 2.78 | 2.57 | 2.45 | 2.36 | 2.31 | 2.26 | 2.23 | 2.09 | 2.01 | 1.96 |
+Reference k values (approximate, from t-distribution):
 
+| ν\_eff | 1     | 2    | 3    | 4    | 5    | 6    | 7    | 8    | 9    | 10   | 20   | 50   | ∞    |
+| ------ | ----- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+| k      | 12.71 | 4.30 | 3.18 | 2.78 | 2.57 | 2.45 | 2.36 | 2.31 | 2.26 | 2.23 | 2.09 | 2.01 | 1.96 |
 
-## 使用方法
-1. モデル式の入力タブ
-   - モデル式を入力（例：W = V * I / R）
+## Usage
 
-   ^で乗数、_で添字を表すことが出来ます。
+1. **Model Equation Input Tab**
 
-   式の左辺は計算結果の量として扱われます。
+   * Input the model equation (e.g., `W = V * I / R`).
+   * Use `^` for exponentiation and `_` for subscripts.
+   * Left-hand side is treated as the calculated result and is excluded from direct input.
+   * Quantities are automatically parsed from the equation.
+   * Multiple equations can be input, separated by commas (`,`). Newlines after commas are acceptable.
+   * You can drag-and-drop quantities in the list to reorder the budget sheet display.
 
-   これは他に登録された量の値から計算により求まる量の値で、直接値を入力しません。
+2. **Quantity Settings**
 
-   このため2.で示す量の値や不確かさタイプの指定等は行えません。
-   - モデル式から式に含まれる量の値が自動で切り出されます。
-   - 複数の方程式はカンマで区切って入力可能です。カンマのあとに改行を入れてもOKです。
-   - 量のリストで表示されている量をドラッグドロップすることでバジェットシートに表示する順番を指定できます。
+   * Input values for each quantity.
+   * Adjust the number of calibration points; each quantity can have multiple values.
+   * Specify the uncertainty type, unit, and description for each quantity.
 
-2. 量の設定
-   - 各量の値を入力
-   - 校正点の数を変更することで各量に校正点の数だけ値をもたせることが出来ます。
-   - 各量に不確かさの種類や単位、定義の説明をもたせられます。
+3. **Calculation Execution**
 
-3. 計算の実行
-   - 不確かさ計算タブでは任意の校正値、１つの校正点における不確かさバジェットを作成します。
+   * The "Uncertainty Calculation" tab creates a budget sheet for a selected calibration point.
 
-4. レポート
-   - 不確かさ計算タブでは任意の1点についてバジェットを作成しましたが、
+4. **Report**
 
-   このレポート機能では任意の計算量のすべての校正点のバジェットを一括で表示します。
-   -この結果はHTMLファイルとして出力保存ができます。
+   * The "Report" function generates a batch budget for all calibration points of a selected result quantity.
+   * Export results as HTML files.
 
-## 注意事項
-- 数値の表示にあたっては内部で有効数字9桁と3の倍数の指数で丸めが行われています。
-- 内部計算では丸めは使用しておらずfloatで値を持っています。
-- モデル式は、各量の不確かさが独立（相関がない）とみなせるように構成してください。
+## Notes
 
-例えば、電圧Vと電流Iを測定して抵抗Rを求めるモデル式（R = V/I）では、数式上 V と I は互いに依存しており、繰り返し測定においても V が変動すれば I も変動します。
+* Numerical display uses internal rounding to 9 significant digits and exponent multiples of 3.
+* Internal calculations use full `float` precision without rounding.
+* Ensure model equations are structured to avoid correlations between quantities, as correlated uncertainty (covariance terms) is not yet supported.
 
-このため、V と I の測定結果には統計的な相関が生じることになります。
+## License
 
-本ソフトでは、現時点では相関不確かさ（共分散項）の計算に対応していないため、入力するモデル式は、相関が無視できるよう配慮されたものを推奨します。
+This software is released under the **MIT License**.
+You are free to use, copy, modify, and redistribute it, provided the original copyright notice and license text are included.
 
-## ライセンス / License
+For details, see the included [`LICENSE`](./LICENSE) file.
 
-このソフトウェアは **MIT License** の下で公開されています。
-自由に使用、複製、変更、再配布することができますが、必ず元の著作権表示およびライセンス文を含めてください。
-詳細な条件については同梱の [`LICENSE`](./LICENSE) ファイルをご覧ください。
+### Third-Party Libraries and Licenses
 
-### 使用している外部ライブラリとライセンス / Third-Party Libraries and Licenses
+This software depends on the following external libraries (not included in the distribution; users must install via `pip` or similar):
 
-本ソフトウェアは以下の外部ライブラリに依存しています（いずれも配布物には含まれません。利用者側で `pip` などによりインストールが必要です）：
+| Library | License                   | URL                                                                                                     |
+| ------- | ------------------------- | ------------------------------------------------------------------------------------------------------- |
+| PySide6 | LGPLv3 (© The Qt Company) | [Qt for Python](https://www.qt.io/qt-for-python) / [LGPLv3](https://www.gnu.org/licenses/lgpl-3.0.html) |
+| NumPy   | BSD 3-Clause              | [NumPy](https://numpy.org/) / [BSD License](https://opensource.org/licenses/BSD-3-Clause)               |
+| SymPy   | BSD 3-Clause              | [SymPy](https://www.sympy.org/) / [BSD License](https://opensource.org/licenses/BSD-3-Clause)           |
 
-| ライブラリ / Library | ライセンス / License          | URL                                                                                                     |
-| --------------- | ------------------------ | ------------------------------------------------------------------------------------------------------- |
-| PySide6         | LGPLv3（© The Qt Company） | [Qt for Python](https://www.qt.io/qt-for-python) / [LGPLv3](https://www.gnu.org/licenses/lgpl-3.0.html) |
-| NumPy           | BSD 3-Clause             | [NumPy](https://numpy.org/) / [BSD License](https://opensource.org/licenses/BSD-3-Clause)               |
-| SymPy           | BSD 3-Clause             | [SymPy](https://www.sympy.org/) / [BSD License](https://opensource.org/licenses/BSD-3-Clause)           |
+The Python standard library (e.g., json, decimal, re, math, traceback) is used under the [Python Software Foundation License](https://docs.python.org/3/license.html).
 
-Python 標準ライブラリ（json, decimal, re, math, traceback）は [Python Software Foundation License](https://docs.python.org/3/license.html) に従います。
-
-各ライブラリの詳細なライセンス内容については、公式サイトや PyPI ページをご確認ください。
+For detailed license terms, refer to the official sites or PyPI pages of each library.
