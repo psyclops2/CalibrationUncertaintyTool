@@ -43,14 +43,17 @@ python src/main.py
 ## プロジェクト構造
 ```
 src/
-├── main.py              # メインアプリケーション
-├── tabs/               # タブ関連のモジュール
-│   ├── model_equation_tab.py    # モデル方程式入力タブ
-│   ├── uncertainty_calculation_tab.py  # 不確かさ計算タブ
-│   └── variables_tab.py        # 変数管理タブ
-└── utils/              # ユーティリティモジュール
-    └── equation_formatter.py   # 数式フォーマッター
+├── __main__.py         # メインエントリーポイント
+├── main.py             # メインアプリケーション
+├── main_window.py      # メインウィンドウの実装
+├── dialogs/           # ダイアログウィンドウの実装
+├── models/            # データモデルの実装
+├── tabs/              # タブ関連のモジュール
+├── utils/             # ユーティリティモジュール
+└── widgets/           # カスタムウィジェットの実装
 ```
+
+詳細なファイル構成については、各ディレクトリ内のファイルを参照してください。
 
 ## 計算の背景と根拠
 
