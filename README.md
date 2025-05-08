@@ -20,7 +20,7 @@ JCGM 100（Guide to the Expression of Uncertainty in Measurement）GUMの方法�
 
 ## システム要件
 - Python 3.8以上
-- PyQt5 (GPLv3ライセンス)
+- PySide6 (LGPLv3ライセンス)
 - NumPy (BSDライセンス)
 - SymPy (BSDライセンス)
 
@@ -216,24 +216,22 @@ U = k * u(y)
 
 本ソフトでは、現時点では相関不確かさ（共分散項）の計算に対応していないため、入力するモデル式は、相関が無視できるよう配慮されたものを推奨します。
 
-## ライセンス
+## ライセンス / License
 
-このソフトウェアは GNU General Public License version 3（GPLv3）の下で公開されています。
+このソフトウェアは **MIT License** の下で公開されています。
+自由に使用、複製、変更、再配布することができますが、必ず元の著作権表示およびライセンス文を含めてください。
+詳細な条件については同梱の [`LICENSE`](./LICENSE) ファイルをご覧ください。
 
-自由に使用、複製、変更、再配布することができますが、再配布する際は **同じGPLv3ライセンス**で行う必要があります。  
+### 使用している外部ライブラリとライセンス / Third-Party Libraries and Licenses
 
-詳細なライセンス条件については、同梱の `LICENSE` ファイルをご覧ください。
+本ソフトウェアは以下の外部ライブラリに依存しています（いずれも配布物には含まれません。利用者側で `pip` などによりインストールが必要です）：
 
-### 使用している外部ライブラリとライセンス
+| ライブラリ / Library | ライセンス / License          | URL                                                                                                     |
+| --------------- | ------------------------ | ------------------------------------------------------------------------------------------------------- |
+| PySide6         | LGPLv3（© The Qt Company） | [Qt for Python](https://www.qt.io/qt-for-python) / [LGPLv3](https://www.gnu.org/licenses/lgpl-3.0.html) |
+| NumPy           | BSD 3-Clause             | [NumPy](https://numpy.org/) / [BSD License](https://opensource.org/licenses/BSD-3-Clause)               |
+| SymPy           | BSD 3-Clause             | [SymPy](https://www.sympy.org/) / [BSD License](https://opensource.org/licenses/BSD-3-Clause)           |
 
-本ソフトウェアは以下の外部ライブラリに依存しています（いずれも再配布は行っていません）：
+Python 標準ライブラリ（json, decimal, re, math, traceback）は [Python Software Foundation License](https://docs.python.org/3/license.html) に従います。
 
-| ライブラリ | ライセンス | 備考 |
-|------------|------------|------|
-| PyQt5      | GPLv3(© Riverbank Computing)       | 利用者にて別途インストールが必要です |
-| NumPy      | BSD（3条項）| pip により自動インストールされます |
-| SymPy      | BSD（3条項）| 同上 |
-
-各ライブラリのライセンスについては、各プロジェクトの公式サイトまたは PyPI ページをご参照ください。
-
-各ライブラリのライセンス条文および著作権表示は `third_party_licenses/` ディレクトリにあります。
+各ライブラリの詳細なライセンス内容については、公式サイトや PyPI ページをご確認ください。
