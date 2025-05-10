@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
     QListWidget, QListWidgetItem, QTextEdit
 )
 from PySide6.QtCore import Qt, Signal, Slot
+from ..utils.config_loader import ConfigLoader
 import traceback
 from ..utils.variable_utils import (
     calculate_type_a_uncertainty,
@@ -36,8 +37,10 @@ class VariablesTab(QWidget):
         value_count_layout = QHBoxLayout()
         value_count_label = QLabel("校正点の数:")
         self.value_count_spin = QSpinBox()
-        self.value_count_spin.setMinimum(1)
-        self.value_count_spin.setMaximum(10)
+        config = ConfigLoader()
+        limits = config.get_calibration_point_limits()
+        self.value_count_spin.setMinimum(limits['min_count'])
+        self.value_count_spin.setMaximum(limits['max_count'])
         self.value_count_spin.setValue(self.parent.value_count)
         self.value_count_spin.valueChanged.connect(self.handlers.on_value_count_changed)
         value_count_layout.addWidget(value_count_label)

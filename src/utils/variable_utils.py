@@ -1,6 +1,7 @@
 from PySide6.QtCore import Qt
 import traceback
 from decimal import Decimal, getcontext
+from .config_loader import ConfigLoader
 
 def calculate_type_a_uncertainty(measurements_str):
     """TypeA不確かさの計算を行う"""
@@ -9,7 +10,7 @@ def calculate_type_a_uncertainty(measurements_str):
             return None, None, None, None
             
         # カンマ区切りの測定値を数値のリストに変換
-        measurements = [float(x.strip()) for x in measurements_str.split(',')]
+        measurements = [Decimal(x.strip()) for x in measurements_str.split(',')]
         
         if not measurements:
             return None, None, None, None
@@ -18,12 +19,12 @@ def calculate_type_a_uncertainty(measurements_str):
         degrees_of_freedom = len(measurements) - 1
         
         # 平均値（中央値）
-        central_value = sum(measurements) / len(measurements)
+        central_value = sum(measurements) / Decimal(len(measurements))
         
         # 標準不確かさ（標準偏差 / √n）
         if len(measurements) > 1:
-            variance = sum((x - central_value) ** 2 for x in measurements) / (len(measurements) - 1)
-            standard_uncertainty = (variance ** 0.5) / (len(measurements) ** 0.5)
+            variance = sum((x - central_value) ** 2 for x in measurements) / Decimal(len(measurements) - 1)
+            standard_uncertainty = variance.sqrt() / Decimal(len(measurements)).sqrt()
         else:
             standard_uncertainty = 0
             
@@ -41,7 +42,8 @@ def calculate_type_b_uncertainty(half_width_str, divisor_str):
             return None, None
             
         # 精度を設定
-        getcontext().prec = 28
+        config = ConfigLoader()
+        getcontext().prec = config.get_precision()
             
         # 文字列をDecimalに変換
         half_width = Decimal(half_width_str)
@@ -50,7 +52,7 @@ def calculate_type_b_uncertainty(half_width_str, divisor_str):
         # 標準不確かさを計算（半値幅/除数）
         standard_uncertainty = half_width / divisor
         
-        return float(half_width), float(standard_uncertainty)
+        return half_width, standard_uncertainty
         
     except ValueError:
         print("【エラー】数値変換エラー")
@@ -62,11 +64,13 @@ def calculate_type_b_uncertainty(half_width_str, divisor_str):
 
 def get_distribution_divisor(distribution):
     """分布の種類に応じた除数を取得"""
+    config = ConfigLoader()
+    divisors = config.get_distribution_divisors()
     return {
         '正規分布': '',  # ユーザー入力
-        '矩形分布': '1.732050808',  # √3
-        '三角分布': '2.449489743',  # √6
-        'U分布': '1.414213562'   # √2
+        '矩形分布': divisors['rectangular'],  # √3
+        '三角分布': divisors['triangular'],  # √6
+        'U分布': divisors['u']   # √2
     }.get(distribution, '')
 
 def create_empty_value_dict():

@@ -255,7 +255,7 @@ class UncertaintyCalculationTab(QWidget):
                 # 中央値
                 central_value = self.value_handler.get_central_value(var)
                 print(f"【デバッグ】中央値: {central_value}")
-                self.calibration_table.setItem(i, 1, QTableWidgetItem(str(central_value)))
+                self.calibration_table.setItem(i, 1, QTableWidgetItem(format_number_str(float(central_value))))
                 
                 # 標準不確かさ
                 standard_uncertainty = self.value_handler.get_standard_uncertainty(var)
@@ -276,7 +276,7 @@ class UncertaintyCalculationTab(QWidget):
                 # 感度係数
                 sensitivity = self.equation_handler.calculate_sensitivity(right_side, var, variables, self.value_handler)
                 print(f"【デバッグ】感度係数: {sensitivity}")
-                self.calibration_table.setItem(i, 5, QTableWidgetItem(format_number_str(sensitivity)))
+                self.calibration_table.setItem(i, 5, QTableWidgetItem(format_number_str(float(sensitivity))))
                 
                 # 寄与不確かさ
                 try:
@@ -306,7 +306,7 @@ class UncertaintyCalculationTab(QWidget):
             try:
                 # 中央値の計算
                 result_central_value = self.equation_handler.calculate_result_central_value(right_side, variables, self.value_handler)
-                self.central_value_label.setText(str(result_central_value))
+                self.central_value_label.setText(format_number_str(float(result_central_value)))
                 
                 # 合成標準不確かさの表示
                 self.standard_uncertainty_label.setText(format_number_str(result_standard_uncertainty))
@@ -315,11 +315,11 @@ class UncertaintyCalculationTab(QWidget):
                 effective_df = self.uncertainty_calculator.calculate_effective_degrees_of_freedom(
                     result_standard_uncertainty, contributions, degrees_of_freedom_list
                 )
-                self.effective_degrees_of_freedom_label.setText(f"{effective_df:.2f}")
+                self.effective_degrees_of_freedom_label.setText(format_number_str(float(effective_df)))
                 
                 # 包含係数の計算
                 coverage_factor = self.uncertainty_calculator.get_coverage_factor(effective_df)
-                self.coverage_factor_label.setText(f"{coverage_factor:.3f}")
+                self.coverage_factor_label.setText(format_number_str(float(coverage_factor)))
                 
                 # 拡張不確かさの計算
                 expanded_uncertainty = coverage_factor * result_standard_uncertainty

@@ -460,7 +460,7 @@ class ReportTab(QWidget):
                             </tr>
                             <tr>
                                 <td>中央値</td>
-                                <td>{result_central_value}</td>
+                                <td>{format_number_str(result_central_value)}</td>
                             </tr>
                             <tr>
                                 <td>合成標準不確かさ</td>

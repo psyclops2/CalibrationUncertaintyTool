@@ -1,5 +1,6 @@
 import traceback
 import numpy as np
+from .config_loader import ConfigLoader
 
 class UncertaintyCalculator:
     def __init__(self, main_window):
@@ -53,26 +54,9 @@ class UncertaintyCalculator:
 
     def get_t_value(self, degrees_of_freedom):
         """t分布表から95%信頼区間のt値を取得"""
-        # t分布表（95%信頼区間）
-        t_table = {
-            1: 12.706,
-            2: 4.303,
-            3: 3.182,
-            4: 2.776,
-            5: 2.571,
-            6: 2.447,
-            7: 2.365,
-            8: 2.306,
-            9: 2.262,
-            10: 2.228,
-            15: 2.131,
-            20: 2.086,
-            30: 2.042,
-            40: 2.021,
-            60: 2.000,
-            120: 1.980,
-            float('inf'): 1.960
-        }
+        # t分布表を設定ファイルから取得
+        config = ConfigLoader()
+        t_table = config.get_t_values()
         
         try:
             df = float(degrees_of_freedom)
@@ -90,7 +74,7 @@ class UncertaintyCalculator:
                     return y1 + (y2 - y1) * (df - x1) / (x2 - x1)
             
             # 範囲外の場合は無限大の値を使用
-            return t_table[float('inf')]
+            return t_table.get(float('inf'), 1.960)
             
         except Exception as e:
             print(f"【エラー】t値取得エラー: {str(e)}")

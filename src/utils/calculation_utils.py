@@ -3,6 +3,7 @@ import math
 import traceback
 import decimal
 from decimal import Decimal, getcontext
+from .config_loader import ConfigLoader
 
 def evaluate_formula(formula, variables=None):
     """
@@ -24,12 +25,14 @@ def evaluate_formula(formula, variables=None):
             variables = {}
             
         # 精度を設定
-        getcontext().prec = 28
+        config = ConfigLoader()
+        precision = config.get_precision()
+        getcontext().prec = precision
         
-        # 変数を式に代入
+        # 変数を式に代入（Decimalに変換）
         for var_name, var_value in variables.items():
-            # 変数名を値に置換
-            formula = formula.replace(var_name, str(var_value))
+            # 変数名を値に置換（常にDecimal文字列で）
+            formula = formula.replace(var_name, f'Decimal("{var_value}")')
             
         # ^演算子を**演算子に置き換え
         formula = formula.replace('^', '**')
@@ -39,12 +42,9 @@ def evaluate_formula(formula, variables=None):
         formula = re.sub(r'(\d+\.?\d*)', r'Decimal("\1")', formula)
         
         # 式を評価
-        result = eval(formula)
+        result = eval(formula, {"Decimal": Decimal})
         
-        # Decimalからfloatに変換
-        if isinstance(result, Decimal):
-            result = float(result)
-            
+        # Decimalのまま返す
         return result
         
     except Exception as e:
