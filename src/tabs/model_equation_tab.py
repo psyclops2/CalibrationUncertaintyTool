@@ -9,6 +9,8 @@ import json
 import os
 
 from src.utils.equation_formatter import EquationFormatter
+from src.tabs.base_tab import BaseTab
+from src.utils.translation_keys import *
 
 class DraggableListWidget(QListWidget):
     order_changed = Signal(list)  # 並び順が変更されたときに発火するシグナル
@@ -28,23 +30,25 @@ class DraggableListWidget(QListWidget):
         new_order = [self.item(i).text() for i in range(self.count())]
         self.order_changed.emit(new_order)
 
-class ModelEquationTab(QWidget):
+class ModelEquationTab(BaseTab):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent
         self.variable_order_file = os.path.join("data", "variable_order.json")
+        print(f"【デバッグ】model_equation_tab: {hasattr(self, 'translator')}")
         self.setup_ui()
         
     def setup_ui(self):
-        """UIの設定"""
+        """メインウィンドウの作成と表示"""
+        print("【デバッグ】setup_ui開始")
         layout = QVBoxLayout()
         
         # モデル方程式入力エリア
-        equation_group = QGroupBox("モデル方程式の入力")
+        equation_group = QGroupBox(self.tr("MODEL_EQUATION_INPUT"))
         equation_layout = QVBoxLayout()
         
         self.equation_input = QTextEdit()
-        self.equation_input.setPlaceholderText("例: y = a * x + b, z = x^2 + y")
+        self.equation_input.setPlaceholderText(self.tr("EQUATION_PLACEHOLDER"))
         self.equation_input.setMaximumHeight(300)
         self.equation_input.focusOutEvent = self._on_equation_focus_lost
         equation_layout.addWidget(self.equation_input)
@@ -56,7 +60,7 @@ class ModelEquationTab(QWidget):
         layout.addWidget(equation_group)
         
         # 変数リスト表示エリア
-        variable_group = QGroupBox("変数リスト（ドラッグ＆ドロップで並び順を変更できます）")
+        variable_group = QGroupBox(self.tr("VARIABLE_LIST_DRAG_DROP"))
         variable_layout = QVBoxLayout()
         
         self.variable_list = DraggableListWidget(self)
@@ -67,7 +71,7 @@ class ModelEquationTab(QWidget):
         layout.addWidget(variable_group)
         
         # HTML表示エリア
-        display_group = QGroupBox("HTML表示")
+        display_group = QGroupBox(self.tr("HTML_DISPLAY"))
         display_layout = QVBoxLayout()
         
         self.html_display = QTextEdit()
@@ -79,6 +83,7 @@ class ModelEquationTab(QWidget):
         layout.addWidget(display_group)
         
         self.setLayout(layout)
+        print("【デバッグ】setup_ui完了")
 
     def on_variable_order_changed(self, new_order):
         """変数の並び順が変更されたときの処理"""
@@ -111,7 +116,7 @@ class ModelEquationTab(QWidget):
         except Exception as e:
             print(f"【エラー】変数の並び順更新エラー: {str(e)}")
             print(traceback.format_exc())
-            QMessageBox.warning(self, "エラー", "変数の並び順の更新に失敗しました。")
+            QMessageBox.warning(self, self.tr(MESSAGE_ERROR), f"{self.tr('VARIABLE_ORDER_UPDATE_FAILED')}: {str(e)}")
             
     def save_variable_order(self):
         """変数の並び順をJSONファイルに保存"""
@@ -133,7 +138,7 @@ class ModelEquationTab(QWidget):
         except Exception as e:
             print(f"【エラー】変数の並び順保存エラー: {str(e)}")
             print(traceback.format_exc())
-            QMessageBox.warning(self, "エラー", "変数の並び順の保存に失敗しました。")
+            QMessageBox.critical(self, self.tr(MESSAGE_ERROR), f"{self.tr('VARIABLE_ORDER_SAVE_FAILED')}: {str(e)}")
             
     def load_variable_order(self):
         """変数の並び順をJSONファイルから読み込む"""
@@ -166,7 +171,7 @@ class ModelEquationTab(QWidget):
         except Exception as e:
             print(f"【エラー】変数の並び順読み込みエラー: {str(e)}")
             print(traceback.format_exc())
-            QMessageBox.warning(self, "エラー", "変数の並び順の読み込みに失敗しました。")
+            QMessageBox.critical(self, self.tr(MESSAGE_ERROR), f"{self.tr('VARIABLE_ORDER_LOAD_FAILED')}: {str(e)}")
             
     def update_variable_list(self):
         """変数リストを更新"""

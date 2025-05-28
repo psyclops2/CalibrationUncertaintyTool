@@ -9,8 +9,10 @@ from src.utils.equation_handler import EquationHandler
 from src.utils.value_handler import ValueHandler
 from src.utils.uncertainty_calculator import UncertaintyCalculator
 from src.utils.number_formatter import format_number_str
+from src.tabs.base_tab import BaseTab
+from src.utils.translation_keys import *
 
-class ReportTab(QWidget):
+class ReportTab(BaseTab):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent
@@ -34,16 +36,16 @@ class ReportTab(QWidget):
         # 計算結果選択
         self.result_combo = QComboBox()
         self.result_combo.currentTextChanged.connect(self.on_result_changed)
-        selection_layout.addWidget(QLabel("計算結果:"))
+        selection_layout.addWidget(QLabel(self.tr(RESULT_VARIABLE) + ":"))
         selection_layout.addWidget(self.result_combo)
         
         # レポート生成ボタン
-        self.generate_button = QPushButton("レポート生成")
+        self.generate_button = QPushButton(self.tr(GENERATE_REPORT))
         self.generate_button.clicked.connect(self.generate_report)
         selection_layout.addWidget(self.generate_button)
         
         # レポート保存ボタン
-        self.save_button = QPushButton("レポート保存")
+        self.save_button = QPushButton(self.tr(SAVE_REPORT))
         self.save_button.clicked.connect(self.save_report)
         selection_layout.addWidget(self.save_button)
         
@@ -121,7 +123,7 @@ class ReportTab(QWidget):
         except Exception as e:
             print(f"【エラー】レポート生成エラー: {str(e)}")
             print(traceback.format_exc())
-            QMessageBox.warning(self, "エラー", "レポートの生成中にエラーが発生しました。")
+            QMessageBox.warning(self, self.tr(SAVE_ERROR), self.tr(REPORT_SAVE_ERROR))
             
     def generate_report_html(self, equation):
         """レポートのHTMLを生成"""
@@ -156,9 +158,9 @@ class ReportTab(QWidget):
             value_count = self.parent.value_count if hasattr(self.parent, 'value_count') else 1
             
             # モデル式を表示
-            html += """
+            html += f"""
             <div class="section">
-                <div class="title">モデル式</div>
+                <div class="title">{self.tr(MODEL_EQUATION_HTML)}</div>
                 <div>
             """
             
@@ -172,15 +174,15 @@ class ReportTab(QWidget):
             """
             
             # 変数リストテーブルを追加（値1の計算結果の前）
-            html += """
+            html += f"""
             <div class="section">
-                <div class="title">量のリスト</div>
+                <div class="title">{self.tr(VARIABLE_LIST_HTML)}</div>
                 <table class="data-table">
                     <tr>
-                        <th>量</th>
-                        <th>単位</th>
-                        <th>定義</th>
-                        <th>不確かさの種類</th>
+                        <th>{self.tr(QUANTITY_HTML)}</th>
+                        <th>{self.tr(UNIT_HTML)}</th>
+                        <th>{self.tr(DEFINITION_HTML)}</th>
+                        <th>{self.tr(UNCERTAINTY_TYPE_HTML)}</th>
                     </tr>
             """
             
@@ -504,13 +506,13 @@ class ReportTab(QWidget):
             # 保存先のファイル名を取得
             file_name, _ = QFileDialog.getSaveFileName(
                 self,
-                "レポートの保存",
+                self.tr(SAVE_REPORT_DIALOG_TITLE),
                 "",
-                "HTMLファイル (*.html)"
+                self.tr(HTML_FILE) + " (*.html)"
             )
             
             if not file_name:
-                print("【デバッグ】保存がキャンセルされました")
+                print("【デバッグ】" + self.tr(SAVE_CANCELLED))
                 return
                 
             # 現在表示中のHTMLを取得して保存
@@ -520,29 +522,29 @@ class ReportTab(QWidget):
         except Exception as e:
             print(f"【エラー】レポート保存エラー: {str(e)}")
             print(traceback.format_exc())
-            QMessageBox.warning(self, "エラー", "レポートの保存中にエラーが発生しました。")
+            QMessageBox.warning(self, self.tr(SAVE_ERROR), self.tr(REPORT_SAVE_ERROR))
             
     def save_html_to_file(self, html, file_name):
         """HTMLをファイルに保存"""
         try:
             with open(file_name, 'w', encoding='utf-8') as f:
                 f.write(html)
-            print(f"【デバッグ】レポートを保存しました: {file_name}")
-            QMessageBox.information(self, "成功", "レポートを保存しました。")
+            print(f"【デバッグ】{self.tr(REPORT_SAVED)}: {file_name}")
+            QMessageBox.information(self, self.tr(SAVE_SUCCESS), self.tr(REPORT_SAVED))
         except Exception as e:
             print(f"【エラー】ファイル保存エラー: {str(e)}")
             print(traceback.format_exc())
-            QMessageBox.warning(self, "エラー", "ファイルの保存中にエラーが発生しました。")
+            QMessageBox.warning(self, self.tr(SAVE_ERROR), self.tr(FILE_SAVE_ERROR))
 
     def get_uncertainty_type_display(self, type_code, var_name=None):
         """不確かさの種類のコードを表示用の文字列に変換"""
         # 計算結果変数の場合は「計算結果」と表示
         if var_name and var_name in self.parent.result_variables:
-            return '計算結果'
+            return self.tr(CALCULATION_RESULT_DISPLAY)
             
         type_map = {
-            'A': 'Type A',
-            'B': 'Type B',
-            'fixed': '固定値'
+            'A': self.tr(TYPE_A_DISPLAY),
+            'B': self.tr(TYPE_B_DISPLAY),
+            'fixed': self.tr(FIXED_VALUE_DISPLAY)
         }
-        return type_map.get(type_code, '未知') 
+        return type_map.get(type_code, self.tr(UNKNOWN_TYPE))

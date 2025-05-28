@@ -6,6 +6,7 @@ class ConfigLoader:
         self.config = configparser.ConfigParser()
         if config_path is None:
             config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'config.ini')
+        self.config_path = config_path  # 設定ファイルのパスを保存
         print(f"【デバッグ】設定ファイルのパス: {config_path}")
         print(f"【デバッグ】設定ファイルの存在確認: {os.path.exists(config_path)}")
         # UTF-8エンコーディングでファイルを読み込む
@@ -124,3 +125,14 @@ class ConfigLoader:
     def get_version(self) -> str:
         """バージョン情報を取得"""
         return self.config.get('Version', 'version')
+        
+    def save_config(self) -> bool:
+        """設定ファイルに変更を保存する"""
+        try:
+            with open(self.config_path, 'w', encoding='utf-8') as f:
+                self.config.write(f)
+            print(f"【デバッグ】設定ファイルを保存しました: {self.config_path}")
+            return True
+        except Exception as e:
+            print(f"【エラー】設定ファイルの保存に失敗しました: {str(e)}")
+            return False

@@ -5,8 +5,10 @@ from PySide6.QtCore import Qt, Signal, Slot
 import sympy as sp
 import traceback
 import re
+from src.tabs.base_tab import BaseTab
+from src.utils.translation_keys import *
 
-class PartialDerivativeTab(QWidget):
+class PartialDerivativeTab(BaseTab):
     """偏微分タブ"""
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -20,7 +22,7 @@ class PartialDerivativeTab(QWidget):
         layout = QVBoxLayout()
         
         # 現在のモデル式表示エリア
-        equation_group = QGroupBox("現在のモデル式")
+        equation_group = QGroupBox(self.tr(LABEL_EQUATION))
         equation_layout = QVBoxLayout()
         
         self.equation_display = QTextEdit()
@@ -31,7 +33,7 @@ class PartialDerivativeTab(QWidget):
         layout.addWidget(equation_group)
         
         # 偏微分表示エリア
-        derivative_group = QGroupBox("偏微分")
+        derivative_group = QGroupBox(self.tr(PARTIAL_DERIVATIVE_TITLE))
         derivative_layout = QVBoxLayout()
         
         self.partial_diff_area = QTextEdit()
@@ -142,8 +144,8 @@ class PartialDerivativeTab(QWidget):
                         derivative_parts.append(f"∂{formatted_left}/∂{var} = {derivative_str}")
                     except Exception as e:
                         print(f"【デバッグ】変数 {var} の偏微分計算エラー: {str(e)}")
-                        self.parent.log_error(f"変数 {var} の偏微分計算エラー: {str(e)}", "偏微分エラー")
-                        derivative_parts.append(f"∂{left_side}/∂{var} = エラー: {str(e)}")
+                        self.parent.log_error(f"変数 {var} の偏微分計算エラー: {str(e)}", self.tr(DERIVATIVE_CALCULATION_ERROR))
+                        derivative_parts.append(f"∂{left_side}/∂{var} = {self.tr(ERROR_OCCURRED)}: {str(e)}")
             
             # 結果を表示
             if derivative_parts:
@@ -158,5 +160,5 @@ class PartialDerivativeTab(QWidget):
                 
         except Exception as e:
             print(f"【デバッグ】偏微分の計算でエラー: {str(e)}")
-            self.parent.log_error(f"偏微分計算エラー: {str(e)}", "偏微分エラー")
-            self.partial_diff_area.setText(f"偏微分の計算中にエラーが発生しました：{str(e)}") 
+            self.parent.log_error(f"偏微分計算エラー: {str(e)}", self.tr(DERIVATIVE_CALCULATION_ERROR))
+            self.partial_diff_area.setText(f"{self.tr(DERIVATIVE_CALCULATION_ERROR)}: {str(e)}") 

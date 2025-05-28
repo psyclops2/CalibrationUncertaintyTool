@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
+    QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
     QComboBox, QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox,
     QGroupBox, QFormLayout, QSpinBox, QDoubleSpinBox, QCheckBox, QRadioButton,
     QButtonGroup, QSplitter, QFrame, QScrollArea, QGridLayout, QSizePolicy,
@@ -17,11 +17,13 @@ from ..utils.variable_utils import (
 )
 from ..utils.calculation_utils import evaluate_formula
 from .variables_tab_handlers import VariablesTabHandlers
+from .base_tab import BaseTab
+from ..utils.translation_keys import *
 
-class VariablesTab(QWidget):
+class VariablesTab(BaseTab):
     """量管理/量の値管理タブ"""
     def __init__(self, parent):
-        super().__init__()
+        super().__init__(parent)
         self.parent = parent
         self.handlers = VariablesTabHandlers(self)
         self.setup_ui()
@@ -33,9 +35,9 @@ class VariablesTab(QWidget):
         left_layout = QVBoxLayout()
         
         # 1. 値の数設定
-        value_count_group = QGroupBox("校正点の数設定")
+        self.value_count_group = QGroupBox(self.tr(CALIBRATION_POINT_SETTINGS))
         value_count_layout = QHBoxLayout()
-        value_count_label = QLabel("校正点の数:")
+        self.value_count_label = QLabel(self.tr(CALIBRATION_POINT_COUNT) + ":")
         self.value_count_spin = QSpinBox()
         config = ConfigLoader()
         limits = config.get_calibration_point_limits()
@@ -43,35 +45,35 @@ class VariablesTab(QWidget):
         self.value_count_spin.setMaximum(limits['max_count'])
         self.value_count_spin.setValue(self.parent.value_count)
         self.value_count_spin.valueChanged.connect(self.handlers.on_value_count_changed)
-        value_count_layout.addWidget(value_count_label)
+        value_count_layout.addWidget(self.value_count_label)
         value_count_layout.addWidget(self.value_count_spin)
         value_count_layout.addStretch()
-        value_count_group.setLayout(value_count_layout)
-        left_layout.addWidget(value_count_group)
+        self.value_count_group.setLayout(value_count_layout)
+        left_layout.addWidget(self.value_count_group)
         
         # 2. 値の選択
-        value_select_group = QGroupBox("校正点の選択")
+        self.value_select_group = QGroupBox(self.tr(CALIBRATION_POINT_SELECTION))
         value_select_layout = QVBoxLayout()
         self.value_combo = QComboBox()
         self.value_combo.currentIndexChanged.connect(self.handlers.on_value_selected)
         value_select_layout.addWidget(self.value_combo)
-        value_select_group.setLayout(value_select_layout)
-        left_layout.addWidget(value_select_group)
+        self.value_select_group.setLayout(value_select_layout)
+        left_layout.addWidget(self.value_select_group)
         
         # 3. 量一覧
-        variable_list_group = QGroupBox("量一覧/量の値の一覧")
+        self.variable_list_group = QGroupBox(self.tr(VARIABLE_LIST_AND_VALUES))
         var_list_layout = QVBoxLayout()
         variable_info_layout = QHBoxLayout()
-        var_label = QLabel("量モード:")
-        self.mode_display = QLabel("未選択")
-        variable_info_layout.addWidget(var_label)
+        self.var_label = QLabel(self.tr(VARIABLE_MODE) + ":")
+        self.mode_display = QLabel(self.tr(NOT_SELECTED))
+        variable_info_layout.addWidget(self.var_label)
         variable_info_layout.addWidget(self.mode_display)
         var_list_layout.addLayout(variable_info_layout)
         self.variable_list = QListWidget()
         self.variable_list.currentItemChanged.connect(self.handlers.on_variable_selected)
         var_list_layout.addWidget(self.variable_list)
-        variable_list_group.setLayout(var_list_layout)
-        left_layout.addWidget(variable_list_group)
+        self.variable_list_group.setLayout(var_list_layout)
+        left_layout.addWidget(self.variable_list_group)
         
         left_layout.addStretch()  # 下部に余白を追加
         
@@ -79,32 +81,35 @@ class VariablesTab(QWidget):
         right_layout = QVBoxLayout()
         
         # 4. 量詳細設定
-        self.settings_group = QGroupBox("量詳細設定/量の値詳細設定")
+        self.settings_group = QGroupBox(self.tr(VARIABLE_DETAIL_SETTINGS))
         settings_layout = QFormLayout()
         
         # 1段落目：単位
         self.unit_input = QLineEdit()
         self.unit_input.textChanged.connect(self.handlers.on_unit_changed)
-        settings_layout.addRow("単位:", self.unit_input)
+        self.unit_label = QLabel(self.tr(UNIT) + ":")
+        settings_layout.addRow(self.unit_label, self.unit_input)
         
         # 定義フィールドを追加
         self.definition_input = QTextEdit()
         self.definition_input.setMaximumHeight(100)
         self.definition_input.textChanged.connect(self.handlers.on_definition_changed)
-        settings_layout.addRow("定義:", self.definition_input)
+        self.definition_label = QLabel(self.tr(DEFINITION) + ":")
+        settings_layout.addRow(self.definition_label, self.definition_input)
         
         # 2段落目：不確かさ種類
         uncertainty_type_layout = QHBoxLayout()
-        self.type_a_radio = QRadioButton("TypeA")
-        self.type_b_radio = QRadioButton("TypeB")
-        self.type_fixed_radio = QRadioButton("固定値")
+        self.type_a_radio = QRadioButton(self.tr(TYPE_A))
+        self.type_b_radio = QRadioButton(self.tr(TYPE_B))
+        self.type_fixed_radio = QRadioButton(self.tr(FIXED_VALUE))
         self.type_a_radio.toggled.connect(self.handlers.on_type_changed)
         self.type_b_radio.toggled.connect(self.handlers.on_type_changed)
         self.type_fixed_radio.toggled.connect(self.handlers.on_type_changed)
         uncertainty_type_layout.addWidget(self.type_a_radio)
         uncertainty_type_layout.addWidget(self.type_b_radio)
         uncertainty_type_layout.addWidget(self.type_fixed_radio)
-        settings_layout.addRow("不確かさ種類:", uncertainty_type_layout)
+        self.uncertainty_type_label = QLabel(self.tr(UNCERTAINTY_TYPE) + ":")
+        settings_layout.addRow(self.uncertainty_type_label, uncertainty_type_layout)
         
         # 区切り線を追加
         separator = QFrame()
@@ -118,47 +123,61 @@ class VariablesTab(QWidget):
         self.type_a_widgets = {}
         
         self.type_a_widgets['measurements'] = QLineEdit()
-        self.type_a_widgets['measurements'].setPlaceholderText("カンマ区切りで入力（例：1.2, 1.3, 1.4）")
+        self.type_a_widgets['measurements'].setPlaceholderText(self.tr(MEASUREMENT_VALUES_PLACEHOLDER))
         self.type_a_widgets['measurements'].focusOutEvent = lambda e: self.handlers.on_measurements_focus_lost(e)
-        settings_layout.addRow("測定値:", self.type_a_widgets['measurements'])
+        self.measurement_values_label = QLabel(self.tr(MEASUREMENT_VALUES) + ":")
+        settings_layout.addRow(self.measurement_values_label, self.type_a_widgets['measurements'])
         
         self.type_a_widgets['degrees_of_freedom'] = QLineEdit()
         self.type_a_widgets['degrees_of_freedom'].setReadOnly(True)
-        settings_layout.addRow("自由度:", self.type_a_widgets['degrees_of_freedom'])
+        self.degrees_of_freedom_label_a = QLabel(self.tr(DEGREES_OF_FREEDOM) + ":")
+        settings_layout.addRow(self.degrees_of_freedom_label_a, self.type_a_widgets['degrees_of_freedom'])
         
         self.type_a_widgets['central_value'] = QLineEdit()
         self.type_a_widgets['central_value'].setReadOnly(True)
-        settings_layout.addRow("中央値:", self.type_a_widgets['central_value'])
+        self.central_value_label_a = QLabel(self.tr(CENTRAL_VALUE) + ":")
+        settings_layout.addRow(self.central_value_label_a, self.type_a_widgets['central_value'])
         
         self.type_a_widgets['standard_uncertainty'] = QLineEdit()
         self.type_a_widgets['standard_uncertainty'].setReadOnly(True)
-        settings_layout.addRow("標準不確かさ:", self.type_a_widgets['standard_uncertainty'])
+        self.standard_uncertainty_label_a = QLabel(self.tr(STANDARD_UNCERTAINTY) + ":")
+        settings_layout.addRow(self.standard_uncertainty_label_a, self.type_a_widgets['standard_uncertainty'])
         
         # 詳細説明フィールドを追加
         self.type_a_widgets['description'] = QTextEdit()
         self.type_a_widgets['description'].setMaximumHeight(100)
         self.type_a_widgets['description'].textChanged.connect(self.handlers.on_description_changed)
-        settings_layout.addRow("詳細説明:", self.type_a_widgets['description'])
+        self.detail_description_label_a = QLabel(self.tr(DETAIL_DESCRIPTION) + ":")
+        settings_layout.addRow(self.detail_description_label_a, self.type_a_widgets['description'])
         
         # TypeB用のウィジェット
         self.type_b_widgets = {}
         
         self.type_b_widgets['distribution'] = QComboBox()
-        self.type_b_widgets['distribution'].addItems(['正規分布', '矩形分布', '三角分布', 'U分布'])
+        self.type_b_widgets['distribution'].addItems([
+            self.tr(NORMAL_DISTRIBUTION),
+            self.tr(RECTANGULAR_DISTRIBUTION),
+            self.tr(TRIANGULAR_DISTRIBUTION),
+            self.tr(U_DISTRIBUTION)
+        ])
         self.type_b_widgets['distribution'].currentIndexChanged.connect(self.handlers.on_distribution_changed)
-        settings_layout.addRow("分布:", self.type_b_widgets['distribution'])
+        self.distribution_label = QLabel(self.tr(DISTRIBUTION) + ":")
+        settings_layout.addRow(self.distribution_label, self.type_b_widgets['distribution'])
         
         self.type_b_widgets['divisor'] = QLineEdit()
         self.type_b_widgets['divisor'].textChanged.connect(self.handlers.on_divisor_changed)
-        settings_layout.addRow("除数:", self.type_b_widgets['divisor'])
+        self.divisor_label = QLabel(self.tr(DIVISOR) + ":")
+        settings_layout.addRow(self.divisor_label, self.type_b_widgets['divisor'])
         
         self.type_b_widgets['degrees_of_freedom'] = QLineEdit()
         self.type_b_widgets['degrees_of_freedom'].textChanged.connect(self.handlers.on_degrees_of_freedom_changed)
-        settings_layout.addRow("自由度:", self.type_b_widgets['degrees_of_freedom'])
+        self.degrees_of_freedom_label_b = QLabel(self.tr(DEGREES_OF_FREEDOM) + ":")
+        settings_layout.addRow(self.degrees_of_freedom_label_b, self.type_b_widgets['degrees_of_freedom'])
         
         self.type_b_widgets['central_value'] = QLineEdit()
         self.type_b_widgets['central_value'].textChanged.connect(self.handlers.on_central_value_changed)
-        settings_layout.addRow("中央値:", self.type_b_widgets['central_value'])
+        self.central_value_label_b = QLabel(self.tr(CENTRAL_VALUE) + ":")
+        settings_layout.addRow(self.central_value_label_b, self.type_b_widgets['central_value'])
         
         # 半値幅の入力欄とその他のウィジェットを含むレイアウト
         half_width_layout = QHBoxLayout()
@@ -168,40 +187,45 @@ class VariablesTab(QWidget):
         
         # 計算式の入力欄
         self.type_b_widgets['calculation_formula'] = QLineEdit()
-        self.type_b_widgets['calculation_formula'].setPlaceholderText("計算式")
+        self.type_b_widgets['calculation_formula'].setPlaceholderText(self.tr(CALCULATION_FORMULA))
         self.type_b_widgets['calculation_formula'].textChanged.connect(self.handlers.on_calculation_formula_changed)
         half_width_layout.addWidget(self.type_b_widgets['calculation_formula'])
         
         # 計算ボタン
-        self.type_b_widgets['calculate_button'] = QPushButton("計算")
+        self.type_b_widgets['calculate_button'] = QPushButton(self.tr(CALCULATE))
         self.type_b_widgets['calculate_button'].clicked.connect(self.handlers.on_calculate_button_clicked)
         half_width_layout.addWidget(self.type_b_widgets['calculate_button'])
         
         half_width_layout.addStretch()
-        settings_layout.addRow("半値幅:", half_width_layout)
+        self.half_width_label = QLabel(self.tr(HALF_WIDTH) + ":")
+        settings_layout.addRow(self.half_width_label, half_width_layout)
         
         self.type_b_widgets['standard_uncertainty'] = QLineEdit()
         self.type_b_widgets['standard_uncertainty'].setReadOnly(True)
-        settings_layout.addRow("標準不確かさ:", self.type_b_widgets['standard_uncertainty'])
+        self.standard_uncertainty_label_b = QLabel(self.tr(STANDARD_UNCERTAINTY) + ":")
+        settings_layout.addRow(self.standard_uncertainty_label_b, self.type_b_widgets['standard_uncertainty'])
         
         # 詳細説明フィールドを追加
         self.type_b_widgets['description'] = QTextEdit()
         self.type_b_widgets['description'].setMaximumHeight(100)
         self.type_b_widgets['description'].textChanged.connect(self.handlers.on_description_changed)
-        settings_layout.addRow("詳細説明:", self.type_b_widgets['description'])
+        self.detail_description_label_b = QLabel(self.tr(DETAIL_DESCRIPTION) + ":")
+        settings_layout.addRow(self.detail_description_label_b, self.type_b_widgets['description'])
         
         # 固定値用のウィジェット
         self.fixed_value_widgets = {}
         
         self.fixed_value_widgets['central_value'] = QLineEdit()
         self.fixed_value_widgets['central_value'].textChanged.connect(self.handlers.on_fixed_value_changed)
-        settings_layout.addRow("中央値:", self.fixed_value_widgets['central_value'])
+        self.central_value_label_fixed = QLabel(self.tr(CENTRAL_VALUE) + ":")
+        settings_layout.addRow(self.central_value_label_fixed, self.fixed_value_widgets['central_value'])
         
         # 詳細説明フィールドを追加
         self.fixed_value_widgets['description'] = QTextEdit()
         self.fixed_value_widgets['description'].setMaximumHeight(100)
         self.fixed_value_widgets['description'].textChanged.connect(self.handlers.on_description_changed)
-        settings_layout.addRow("詳細説明:", self.fixed_value_widgets['description'])
+        self.detail_description_label_fixed = QLabel(self.tr(DETAIL_DESCRIPTION) + ":")
+        settings_layout.addRow(self.detail_description_label_fixed, self.fixed_value_widgets['description'])
         
         self.settings_group.setLayout(settings_layout)
         self.settings_group.setEnabled(False)
@@ -219,6 +243,63 @@ class VariablesTab(QWidget):
         # 初期状態ではTypeAを選択
         self.type_a_radio.setChecked(True)
         self.handlers.on_type_changed(True)  # 初期表示を設定
+        
+    def retranslate_ui(self):
+        """UIのテキストを現在の言語で更新"""
+        # グループボックスのタイトル
+        self.value_count_group.setTitle(self.tr(CALIBRATION_POINT_SETTINGS))
+        self.value_select_group.setTitle(self.tr(CALIBRATION_POINT_SELECTION))
+        self.variable_list_group.setTitle(self.tr(VARIABLE_LIST_AND_VALUES))
+        self.settings_group.setTitle(self.tr(VARIABLE_DETAIL_SETTINGS))
+        
+        # ラベル
+        self.value_count_label.setText(self.tr(CALIBRATION_POINT_COUNT) + ":")
+        self.var_label.setText(self.tr(VARIABLE_MODE) + ":")
+        if self.mode_display.text() == self.translator.translate(NOT_SELECTED, "未選択"):
+            self.mode_display.setText(self.tr(NOT_SELECTED))
+            
+        self.unit_label.setText(self.tr(UNIT) + ":")
+        self.definition_label.setText(self.tr(DEFINITION) + ":")
+        self.uncertainty_type_label.setText(self.tr(UNCERTAINTY_TYPE) + ":")
+        
+        # ラジオボタン
+        self.type_a_radio.setText(self.tr(TYPE_A))
+        self.type_b_radio.setText(self.tr(TYPE_B))
+        self.type_fixed_radio.setText(self.tr(FIXED_VALUE))
+        
+        # TypeA用ウィジェット
+        self.type_a_widgets['measurements'].setPlaceholderText(self.tr(MEASUREMENT_VALUES_PLACEHOLDER))
+        self.measurement_values_label.setText(self.tr(MEASUREMENT_VALUES) + ":")
+        self.degrees_of_freedom_label_a.setText(self.tr(DEGREES_OF_FREEDOM) + ":")
+        self.central_value_label_a.setText(self.tr(CENTRAL_VALUE) + ":")
+        self.standard_uncertainty_label_a.setText(self.tr(STANDARD_UNCERTAINTY) + ":")
+        self.detail_description_label_a.setText(self.tr(DETAIL_DESCRIPTION) + ":")
+        
+        # TypeB用ウィジェット
+        # 分布コンボボックスの項目を更新
+        current_index = self.type_b_widgets['distribution'].currentIndex()
+        self.type_b_widgets['distribution'].clear()
+        self.type_b_widgets['distribution'].addItems([
+            self.tr(NORMAL_DISTRIBUTION),
+            self.tr(RECTANGULAR_DISTRIBUTION),
+            self.tr(TRIANGULAR_DISTRIBUTION),
+            self.tr(U_DISTRIBUTION)
+        ])
+        self.type_b_widgets['distribution'].setCurrentIndex(current_index)
+        
+        self.distribution_label.setText(self.tr(DISTRIBUTION) + ":")
+        self.divisor_label.setText(self.tr(DIVISOR) + ":")
+        self.degrees_of_freedom_label_b.setText(self.tr(DEGREES_OF_FREEDOM) + ":")
+        self.central_value_label_b.setText(self.tr(CENTRAL_VALUE) + ":")
+        self.half_width_label.setText(self.tr(HALF_WIDTH) + ":")
+        self.type_b_widgets['calculation_formula'].setPlaceholderText(self.tr(CALCULATION_FORMULA))
+        self.type_b_widgets['calculate_button'].setText(self.tr(CALCULATE))
+        self.standard_uncertainty_label_b.setText(self.tr(STANDARD_UNCERTAINTY) + ":")
+        self.detail_description_label_b.setText(self.tr(DETAIL_DESCRIPTION) + ":")
+        
+        # 固定値用ウィジェット
+        self.central_value_label_fixed.setText(self.tr(CENTRAL_VALUE) + ":")
+        self.detail_description_label_fixed.setText(self.tr(DETAIL_DESCRIPTION) + ":")
         
     def update_variable_list(self, variables, result_variables):
         """変数リストを更新"""

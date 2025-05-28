@@ -8,8 +8,10 @@ from src.utils.equation_handler import EquationHandler
 from src.utils.value_handler import ValueHandler
 from src.utils.uncertainty_calculator import UncertaintyCalculator
 from src.utils.number_formatter import format_number_str
+from src.tabs.base_tab import BaseTab
+from src.utils.translation_keys import *
 
-class UncertaintyCalculationTab(QWidget):
+class UncertaintyCalculationTab(BaseTab):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent
@@ -38,23 +40,25 @@ class UncertaintyCalculationTab(QWidget):
         left_layout = QVBoxLayout()
         
         # 計算結果選択
-        result_group = QGroupBox("計算結果の選択")
-        result_group.setMaximumHeight(200)
+        self.result_group = QGroupBox(self.tr(RESULT_SELECTION))
+        self.result_group.setMaximumHeight(200)
         result_layout = QVBoxLayout()
                 
         self.result_combo = QComboBox()
         self.result_combo.currentTextChanged.connect(self.on_result_changed)
-        result_layout.addWidget(QLabel("計算結果:"))
+        self.result_variable_label = QLabel(self.tr(RESULT_VARIABLE) + ":")
+        result_layout.addWidget(self.result_variable_label)
         result_layout.addWidget(self.result_combo)
         
         # 値の選択
         self.value_combo = QComboBox()
         self.value_combo.currentIndexChanged.connect(self.on_value_changed)
-        result_layout.addWidget(QLabel("校正点:"))
+        self.calibration_point_label = QLabel(self.tr(CALIBRATION_POINT) + ":")
+        result_layout.addWidget(self.calibration_point_label)
         result_layout.addWidget(self.value_combo)
         
-        result_group.setLayout(result_layout)
-        left_layout.addWidget(result_group)
+        self.result_group.setLayout(result_layout)
+        left_layout.addWidget(self.result_group)
         
         left_layout.addStretch(1)
         
@@ -62,15 +66,22 @@ class UncertaintyCalculationTab(QWidget):
         right_layout = QVBoxLayout()
         
         # 校正値表示
-        calibration_group = QGroupBox("校正値")
+        self.calibration_group = QGroupBox(self.tr(CALIBRATION_VALUE))
         calibration_layout = QVBoxLayout()
         
         self.calibration_table = QTableWidget()
         self.calibration_table.setColumnCount(8)
-        headers = [
-            "量", "中央値", "標準不確かさ", "自由度", "分布", "感度係数", "寄与不確かさ", "寄与率"
+        self.headers = [
+            self.tr(VARIABLE),
+            self.tr(CENTRAL_VALUE),
+            self.tr(STANDARD_UNCERTAINTY),
+            self.tr(DEGREES_OF_FREEDOM),
+            self.tr(DISTRIBUTION),
+            self.tr(SENSITIVITY_COEFFICIENT),
+            self.tr(CONTRIBUTION_UNCERTAINTY),
+            self.tr(CONTRIBUTION_RATE)
         ]
-        self.calibration_table.setHorizontalHeaderLabels(headers)
+        self.calibration_table.setHorizontalHeaderLabels(self.headers)
         # ユーザーが手動で調整できるように変更
         self.calibration_table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
         # 初期のカラム幅を設定
@@ -84,50 +95,40 @@ class UncertaintyCalculationTab(QWidget):
         self.calibration_table.setColumnWidth(7, 80)   # 寄与率
         calibration_layout.addWidget(self.calibration_table)
         
-        calibration_group.setLayout(calibration_layout)
-        right_layout.addWidget(calibration_group)
+        self.calibration_group.setLayout(calibration_layout)
+        right_layout.addWidget(self.calibration_group)
         
         # 計算結果表示
-        result_display_group = QGroupBox("計算結果")
-        result_display_layout = QVBoxLayout()
+        self.result_display_group = QGroupBox(self.tr(CALCULATION_RESULT))
+        result_display_layout = QFormLayout()
         
-        # 中央値表示
-        central_value_layout = QHBoxLayout()
-        central_value_layout.addWidget(QLabel("中央値:"))
+        # 中央値
         self.central_value_label = QLabel("")
-        central_value_layout.addWidget(self.central_value_label)
-        result_display_layout.addLayout(central_value_layout)
+        self.central_value_text = QLabel(self.tr(CENTRAL_VALUE) + ":")
+        result_display_layout.addRow(self.central_value_text, self.central_value_label)
         
-        # 合成標準不確かさ表示
-        standard_uncertainty_layout = QHBoxLayout()
-        standard_uncertainty_layout.addWidget(QLabel("合成標準不確かさ:"))
+        # 合成標準不確かさ
         self.standard_uncertainty_label = QLabel("")
-        standard_uncertainty_layout.addWidget(self.standard_uncertainty_label)
-        result_display_layout.addLayout(standard_uncertainty_layout)
+        self.combined_uncertainty_text = QLabel(self.tr(COMBINED_STANDARD_UNCERTAINTY) + ":")
+        result_display_layout.addRow(self.combined_uncertainty_text, self.standard_uncertainty_label)
         
-        # 有効自由度表示
-        effective_degrees_of_freedom_layout = QHBoxLayout()
-        effective_degrees_of_freedom_layout.addWidget(QLabel("有効自由度:"))
+        # 有効自由度
         self.effective_degrees_of_freedom_label = QLabel("")
-        effective_degrees_of_freedom_layout.addWidget(self.effective_degrees_of_freedom_label)
-        result_display_layout.addLayout(effective_degrees_of_freedom_layout)
+        self.effective_dof_text = QLabel(self.tr(EFFECTIVE_DEGREES_OF_FREEDOM) + ":")
+        result_display_layout.addRow(self.effective_dof_text, self.effective_degrees_of_freedom_label)
         
-        # 包含係数表示
-        coverage_factor_layout = QHBoxLayout()
-        coverage_factor_layout.addWidget(QLabel("包含係数:"))
+        # 包含係数
         self.coverage_factor_label = QLabel("")
-        coverage_factor_layout.addWidget(self.coverage_factor_label)
-        result_display_layout.addLayout(coverage_factor_layout)
+        self.coverage_factor_text = QLabel(self.tr(COVERAGE_FACTOR) + ":")
+        result_display_layout.addRow(self.coverage_factor_text, self.coverage_factor_label)
         
-        # 拡張不確かさ表示
-        expanded_uncertainty_layout = QHBoxLayout()
-        expanded_uncertainty_layout.addWidget(QLabel("拡張不確かさ:"))
+        # 拡張不確かさ
         self.expanded_uncertainty_label = QLabel("")
-        expanded_uncertainty_layout.addWidget(self.expanded_uncertainty_label)
-        result_display_layout.addLayout(expanded_uncertainty_layout)
+        self.expanded_uncertainty_text = QLabel(self.tr(EXPANDED_UNCERTAINTY) + ":")
+        result_display_layout.addRow(self.expanded_uncertainty_text, self.expanded_uncertainty_label)
         
-        result_display_group.setLayout(result_display_layout)
-        right_layout.addWidget(result_display_group)
+        self.result_display_group.setLayout(result_display_layout)
+        right_layout.addWidget(self.result_display_group)
         
         # メインレイアウトに左右のレイアウトを追加
         main_layout.addLayout(left_layout, 1)  # 左側のレイアウト（幅の比率1）
@@ -169,7 +170,7 @@ class UncertaintyCalculationTab(QWidget):
                 value_count = self.parent.value_count
                 print(f"【デバッグ】校正点の数: {value_count}")
                 for i in range(value_count):
-                    self.value_combo.addItem(f"校正点 {i+1}")
+                    self.value_combo.addItem(f"{self.tr(CALIBRATION_POINT)} {i+1}")
             else:
                 print("【デバッグ】親ウィンドウにvalue_count属性なし")
                 
@@ -221,6 +222,37 @@ class UncertaintyCalculationTab(QWidget):
             print(f"【エラー】校正点変更エラー: {str(e)}")
             print(traceback.format_exc())
             
+    def retranslate_ui(self):
+        """UIのテキストを現在の言語で更新"""
+        # グループボックスのタイトル
+        self.result_group.setTitle(self.tr(RESULT_SELECTION))
+        self.calibration_group.setTitle(self.tr(CALIBRATION_VALUE))
+        self.result_display_group.setTitle(self.tr(CALCULATION_RESULT))
+        
+        # ラベル
+        self.result_variable_label.setText(self.tr(RESULT_VARIABLE) + ":")
+        self.calibration_point_label.setText(self.tr(CALIBRATION_POINT) + ":")
+        
+        # テーブルヘッダー
+        self.headers = [
+            self.tr(VARIABLE),
+            self.tr(CENTRAL_VALUE),
+            self.tr(STANDARD_UNCERTAINTY),
+            self.tr(DEGREES_OF_FREEDOM),
+            self.tr(DISTRIBUTION),
+            self.tr(SENSITIVITY_COEFFICIENT),
+            self.tr(CONTRIBUTION_UNCERTAINTY),
+            self.tr(CONTRIBUTION_RATE)
+        ]
+        self.calibration_table.setHorizontalHeaderLabels(self.headers)
+        
+        # 計算結果表示のラベル
+        self.central_value_text.setText(self.tr(CENTRAL_VALUE) + ":")
+        self.combined_uncertainty_text.setText(self.tr(COMBINED_STANDARD_UNCERTAINTY) + ":")
+        self.effective_dof_text.setText(self.tr(EFFECTIVE_DEGREES_OF_FREEDOM) + ":")
+        self.coverage_factor_text.setText(self.tr(COVERAGE_FACTOR) + ":")
+        self.expanded_uncertainty_text.setText(self.tr(EXPANDED_UNCERTAINTY) + ":")
+    
     def calculate_sensitivity_coefficients(self, equation):
         """感度係数を計算して表示"""
         try:
