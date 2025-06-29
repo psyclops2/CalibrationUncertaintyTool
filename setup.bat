@@ -1,22 +1,21 @@
 @echo off
-REM ディレクトリを移動
-cd /d "%~dp0"
-
-REM 仮想環境がなければ作成
+REM Create virtual environment if it doesn't exist
 if not exist venv (
+    echo Creating virtual environment...
     python -m venv venv
 )
 
-REM 仮想環境を有効化
+REM Activate virtual environment
 call venv\Scripts\activate
 
-REM 必要なパッケージをインストール
+REM Install required packages
+echo Installing dependencies from requirements.txt...
 pip install --upgrade pip
 pip install -r requirements.txt
 
 echo.
 echo ==============================
-echo セットアップが完了しました！
-echo run.batでアプリを起動してください。
+echo Setup complete!
+echo You can now run the application using run.bat
 echo ==============================
 pause

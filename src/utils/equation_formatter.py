@@ -14,7 +14,7 @@ class EquationFormatter:
     def format_equation(self, equation):
         """方程式をHTML形式で表示"""
         try:
-            print(f"【デバッグ】方程式のフォーマット開始: '{equation}'")
+
             # 方程式を分割
             equations = [eq.strip() for eq in equation.split(',')]
             formatted_parts = []
@@ -27,7 +27,7 @@ class EquationFormatter:
                 left_side = eq.split('=', 1)[0].strip()
                 result_vars.add(left_side)
             
-            print(f"【デバッグ】計算結果の変数: {result_vars}")
+
             
             for eq in equations:
                 if '=' not in eq:
@@ -36,7 +36,7 @@ class EquationFormatter:
                 left_side, right_side = eq.split('=', 1)
                 left_side = left_side.strip()
                 right_side = right_side.strip()
-                print(f"【デバッグ】分割: 左辺='{left_side}', 右辺='{right_side}'")
+
                 
                 # 右辺のトークン化（下付き文字に対応）
                 tokens = []
@@ -63,7 +63,7 @@ class EquationFormatter:
                 if current_token:
                     tokens.append(current_token)
                 
-                print(f"【デバッグ】トークン化結果: {tokens}")
+
                 
                 # トークンをHTMLに変換
                 html_parts = []
@@ -122,11 +122,11 @@ class EquationFormatter:
                 formatted_parts.append(f"{''.join(left_html)} = {''.join(html_parts)}")
             
             html_content = '<br>'.join(formatted_parts)
-            print(f"【デバッグ】最終HTML: '{html_content}'")
+
             return html_content
             
         except Exception as e:
-            print(f"【デバッグ】方程式のフォーマットエラー: {str(e)}")
+
             raise
             
     def _format_variables(self, text):

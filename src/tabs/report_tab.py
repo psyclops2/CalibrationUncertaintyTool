@@ -16,7 +16,7 @@ class ReportTab(BaseTab):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent
-        print("【デバッグ】ReportTab初期化")
+
         
         # ユーティリティクラスの初期化
         self.equation_handler = EquationHandler(parent)
@@ -24,10 +24,18 @@ class ReportTab(BaseTab):
         self.uncertainty_calculator = UncertaintyCalculator(parent)
         
         self.setup_ui()
+
+    def retranslate_ui(self):
+        """UIのテキストを現在の言語で更新"""
+        self.result_label.setText(self.tr(RESULT_VARIABLE) + ":")
+        self.generate_button.setText(self.tr(GENERATE_REPORT))
+        self.save_button.setText(self.tr(SAVE_REPORT))
+        # レポートを再生成して表示を更新
+        self.generate_report()
         
     def setup_ui(self):
         """UIの設定"""
-        print("【デバッグ】setup_ui開始")
+
         main_layout = QVBoxLayout()
         
         # 選択部分のレイアウト
@@ -36,7 +44,8 @@ class ReportTab(BaseTab):
         # 計算結果選択
         self.result_combo = QComboBox()
         self.result_combo.currentTextChanged.connect(self.on_result_changed)
-        selection_layout.addWidget(QLabel(self.tr(RESULT_VARIABLE) + ":"))
+        self.result_label = QLabel(self.tr(RESULT_VARIABLE) + ":")
+        selection_layout.addWidget(self.result_label)
         selection_layout.addWidget(self.result_combo)
         
         # レポート生成ボタン
@@ -58,25 +67,26 @@ class ReportTab(BaseTab):
         main_layout.addWidget(self.report_display)
         
         self.setLayout(main_layout)
-        print("【デバッグ】setup_ui完了")
+
         
     def update_variable_list(self, variables=None, result_variables=None):
         """変数リストの更新（メインウィンドウからの呼び出し用）"""
         try:
-            print("【デバッグ】update_variable_list開始")
+
             self.result_combo.clear()
             
             # 引数で渡された場合はそれを使用
             if result_variables:
-                print(f"【デバッグ】引数から計算結果変数取得: {result_variables}")
+
                 self.result_combo.addItems(result_variables)
             # 親ウィンドウから計算結果変数を取得
             elif hasattr(self.parent, 'result_variables'):
                 result_vars = self.parent.result_variables
-                print(f"【デバッグ】親ウィンドウから計算結果変数取得: {result_vars}")
+
                 self.result_combo.addItems(result_vars)
             else:
-                print("【デバッグ】計算結果変数が見つかりません")
+                pass
+
                 
             # レポートの更新
             self.update_report()
@@ -99,18 +109,18 @@ class ReportTab(BaseTab):
     def generate_report(self):
         """レポートを生成して表示"""
         try:
-            print("【デバッグ】レポート生成開始")
+
             
             # 選択された計算結果変数を取得
             result_var = self.result_combo.currentText()
             if not result_var:
-                print("【デバッグ】計算結果が未選択")
+
                 return
                 
             # 選択された計算結果変数の式を取得
             equation = self.equation_handler.get_target_equation(result_var)
             if not equation:
-                print("【デバッグ】式が取得できません")
+
                 return
                 
             # レポートのHTMLを生成
@@ -118,7 +128,7 @@ class ReportTab(BaseTab):
             
             # レポートを表示
             self.report_display.setHtml(html)
-            print("【デバッグ】レポート生成完了")
+
             
         except Exception as e:
             print(f"【エラー】レポート生成エラー: {str(e)}")
@@ -128,367 +138,162 @@ class ReportTab(BaseTab):
     def generate_report_html(self, equation):
         """レポートのHTMLを生成"""
         try:
-            print(f"【デバッグ】HTML生成開始: {equation}")
-            
-            # 選択された計算結果変数を取得
             result_var = self.result_combo.currentText()
-            
-            # HTMLのヘッダー部分
+            if not result_var or not equation:
+                return ""
+
+            # ヘッダー部分
             html = f"""
-            <!DOCTYPE html>
             <html>
             <head>
+                <title>{self.tr(REPORT_TITLE_HTML)}</title>
                 <style>
-                    body {{ font-family: Arial, sans-serif; margin: 20px;font-size: 12px; }}
-                    table {{ border-collapse: collapse; width: 100%; margin: 10px 0; }}
-                    th, td {{ border: 1px solid black; padding: 8px; text-align: left; }}
+                    body {{ font-family: sans-serif; margin: 20px; }}
+                    .container {{ max-width: 800px; margin: auto; }}
+                    .title {{ font-size: 20px; font-weight: bold; margin-top: 20px; margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px;}}
+                    table {{ width: 100%; border-collapse: collapse; margin-bottom: 20px; }}
+                    th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
                     th {{ background-color: #f2f2f2; }}
-                    .section {{ margin: 20px 0; }}
-                    .title {{ font-size: 17px; font-weight: bold; margin: 10px 0; }}
-                    .variable-details {{ margin: 10px 0; padding: 10px; border: 1px solid #ddd; }}
-                    .variable-name {{ font-weight: bold; }}
-                    .separator {{ border-top: 1px dashed #ccc; margin: 10px 0; }}
-                    .variable-details div {{ white-space: pre-wrap; }}
+                    .equation {{ font-family: 'Times New Roman', serif; font-size: 16px; padding: 10px; border: 1px solid #ccc; background-color: #f9f9f9; margin-bottom: 20px; }}
                 </style>
             </head>
             <body>
+            <div class="container">
+                <div class="title">{self.tr(REPORT_MODEL_EQUATION)}</div>
+                <div class="equation">${sp.latex(equation)}$</div>
             """
-            
-            # 値の数を取得
-            value_count = self.parent.value_count if hasattr(self.parent, 'value_count') else 1
-            value_names = self.parent.value_names if hasattr(self.parent, 'value_names') else [f'校正点 {i+1}' for i in range(value_count)]
-            
-            # モデル式を表示
+
+            # 変数一覧テーブル
             html += f"""
-            <div class="section">
-                <div class="title">{self.tr(MODEL_EQUATION_HTML)}</div>
-                <div>
+            <div class="title">{self.tr(REPORT_VARIABLE_LIST)}</div>
+            <table>
+                <tr>
+                    <th>{self.tr(REPORT_QUANTITY)}</th>
+                    <th>{self.tr(REPORT_UNIT)}</th>
+                    <th>{self.tr(REPORT_DEFINITION)}</th>
+                    <th>{self.tr(REPORT_UNCERTAINTY_TYPE)}</th>
+                </tr>
             """
-            
-            # 選択された計算結果変数の式を表示
-            if result_var and equation:
-                html += f"[{equation}]"
-            
-            html += """
-                </div>
-            </div>
-            """
-            
-            # 変数リストテーブルを追加（値1の計算結果の前）
-            html += f"""
-            <div class="section">
-                <div class="title">{self.tr(VARIABLE_LIST_HTML)}</div>
-                <table class="data-table">
-                    <tr>
-                        <th>{self.tr(QUANTITY_HTML)}</th>
-                        <th>{self.tr(UNIT_HTML)}</th>
-                        <th>{self.tr(DEFINITION_HTML)}</th>
-                        <th>{self.tr(UNCERTAINTY_TYPE_HTML)}</th>
-                    </tr>
-            """
-            
-            # 入力変数を追加
-            input_vars = sorted([var for var in self.parent.variables if var not in self.parent.result_variables])
-            for var in input_vars:
-                var_info = self.parent.variable_values.get(var, {})
-                unit = var_info.get('unit', '')
-                definition = var_info.get('definition', '')
+            variables = self.parent.variables
+            for var_name, var_data in variables.items():
+                var_symbol = sp.Symbol(var_name)
+                unit = var_data.get('unit', '')
+                definition = var_data.get('definition', '')
+                uncertainty_type = self.get_uncertainty_type_display(var_data.get('uncertainty_type', ''), var_name)
                 html += f"""
+                <tr>
+                    <td>${sp.latex(var_symbol)}$</td>
+                    <td>{unit}</td>
+                    <td>{definition}</td>
+                    <td>{uncertainty_type}</td>
+                </tr>
+                """
+            html += "</table>"
+
+            # 各変数の詳細
+            html += f'<div class="title">{self.tr(REPORT_VARIABLE_DETAILS)}</div>'
+            point_name = self.parent.uncertainty_calc_tab.point_combo.currentText()
+            for var_name, var_data in variables.items():
+                if var_name in self.parent.result_variables:
+                    continue
+
+                var_symbol = sp.Symbol(var_name)
+                html += f"<h3>${sp.latex(var_symbol)}$</h3>"
+                
+                uncertainty_type = var_data.get('uncertainty_type')
+                if uncertainty_type == 'A':
+                    values_by_point = var_data.get('values', {})
+                    values = values_by_point.get(point_name, [])
+
+                    if values:
+                        html += f"""
+                        <h4>{self.tr(REPORT_MEASUREMENT_VALUES)} ({self.tr(REPORT_CALIBRATION_POINT)}: {point_name})</h4>
+                        <table>
+                            <tr><th>{self.tr(REPORT_MEASUREMENT_NUMBER)}</th><th>{self.tr(REPORT_VALUE)}</th></tr>
+                        """
+                        for i, val in enumerate(values):
+                            html += f"<tr><td>{i+1}</td><td>{val}</td></tr>"
+                        html += "</table>"
+
+            # 不確かさのバジェット
+            html += f'<div class="title">{self.tr(REPORT_UNCERTAINTY_BUDGET)}</div>'
+            results = self.parent.calculation_results.get(result_var, {}).get(point_name, {})
+            
+            if results:
+                budget = results.get('budget', [])
+                html += f"""
+                <table>
                     <tr>
-                        <td>{var}</td>
-                        <td>{unit}</td>
-                        <td>{definition}</td>
-                        <td>{self.get_uncertainty_type_display(var_info.get('type', 'A'), var)}</td>
+                        <th>{self.tr(REPORT_FACTOR)}</th>
+                        <th>{self.tr(REPORT_CENTRAL_VALUE)}</th>
+                        <th>{self.tr(REPORT_STANDARD_UNCERTAINTY)}</th>
+                        <th>{self.tr(REPORT_DOF)}</th>
+                        <th>{self.tr(REPORT_DISTRIBUTION)}</th>
+                        <th>{self.tr(REPORT_SENSITIVITY)}</th>
+                        <th>{self.tr(REPORT_CONTRIBUTION)}</th>
+                        <th>{self.tr(REPORT_CONTRIBUTION_RATE)}</th>
                     </tr>
                 """
-            
-            # 計算結果変数を追加
-            result_vars = sorted(self.parent.result_variables)
-            for var in result_vars:
-                var_info = self.parent.variable_values.get(var, {})
-                unit = var_info.get('unit', '')
-                definition = var_info.get('definition', '')
-                html += f"""
+                for item in budget:
+                    var_symbol = sp.Symbol(item['variable'])
+                    html += f"""
                     <tr>
-                        <td>{var}</td>
-                        <td>{unit}</td>
-                        <td>{definition}</td>
-                        <td>{self.get_uncertainty_type_display(var_info.get('type', 'A'), var)}</td>
+                        <td>${sp.latex(var_symbol)}$</td>
+                        <td>{format_number_str(item['central_value'])}</td>
+                        <td>{format_number_str(item['standard_uncertainty'])}</td>
+                        <td>{item['dof']}</td>
+                        <td>{item['distribution']}</td>
+                        <td>{format_number_str(item['sensitivity'])}</td>
+                        <td>{format_number_str(item['contribution'])}</td>
+                        <td>{item['contribution_rate']:.2f} %</td>
                     </tr>
-                """
-            
-            html += """
+                    """
+                html += "</table>"
+
+                # 計算結果
+                result_central_value = results.get('result_central_value')
+                result_standard_uncertainty = results.get('result_standard_uncertainty')
+                effective_df = results.get('effective_df')
+                coverage_factor = results.get('coverage_factor')
+                expanded_uncertainty = results.get('expanded_uncertainty')
+                
+                html += f"""
+                <div class="title">{self.tr(REPORT_CALCULATION_RESULT)} ({self.tr(REPORT_CALIBRATION_POINT)}: {point_name})</div>
+                <table>
+                    <tr>
+                        <th>{self.tr(REPORT_ITEM)}</th>
+                        <th>{self.tr(REPORT_VALUE)}</th>
+                    </tr>
+                    <tr>
+                        <td>{self.tr(REPORT_EQUATION)}</td>
+                        <td>${sp.latex(equation)}$</td>
+                    </tr>
+                    <tr>
+                        <td>{self.tr(REPORT_CENTRAL_VALUE)}</td>
+                        <td>{format_number_str(result_central_value)}</td>
+                    </tr>
+                    <tr>
+                        <td>{self.tr(REPORT_COMBINED_UNCERTAINTY)}</td>
+                        <td>{format_number_str(result_standard_uncertainty)}</td>
+                    </tr>
+                    <tr>
+                        <td>{self.tr(REPORT_EFFECTIVE_DOF)}</td>
+                        <td>{effective_df:.2f}</td>
+                    </tr>
+                    <tr>
+                        <td>{self.tr(REPORT_COVERAGE_FACTOR)}</td>
+                        <td>{coverage_factor:.3f}</td>
+                    </tr>
+                    <tr>
+                        <td>{self.tr(REPORT_EXPANDED_UNCERTAINTY)}</td>
+                        <td>{format_number_str(expanded_uncertainty)}</td>
+                    </tr>
                 </table>
-            </div>
-            """
-            
-            # 各値について計算
-            for value_index in range(value_count):
-                point_name = value_names[value_index] if value_index < len(value_names) else f'校正点 {value_index+1}'
-                print(f"【デバッグ】値{value_index + 1} ({point_name}) の処理開始")
-                
-                # ValueHandlerの現在の値インデックスを更新
-                self.value_handler.current_value_index = value_index
-                
-                # 式を解析
-                left_side, right_side = equation.split('=', 1)
-                left_side = left_side.strip()
-                right_side = right_side.strip()
-                
-                # 変数を抽出
-                variables = self.equation_handler.get_variables_from_equation(right_side)
-                print(f"【デバッグ】抽出された変数: {variables}")
-                
-                # 各変数の情報を収集
-                contributions = []  # 寄与不確かさを保存するリスト
-                degrees_of_freedom_list = []  # 自由度を保存するリスト
-                variable_data = []  # 変数データを保存するリスト
-                
-                for var in variables:
-                    print(f"【デバッグ】変数処理開始: {var}")
-                    data = {}
-                    data['name'] = var
-                    
-                    # 中央値
-                    data['central_value'] = self.value_handler.get_central_value(var)
-                    print(f"【デバッグ】中央値: {data['central_value']}")
-                    
-                    # 標準不確かさ
-                    data['standard_uncertainty'] = self.value_handler.get_standard_uncertainty(var)
-                    print(f"【デバッグ】標準不確かさ: {data['standard_uncertainty']}")
-                    
-                    # 自由度
-                    data['degrees_of_freedom'] = self.value_handler.get_degrees_of_freedom(var)
-                    print(f"【デバッグ】自由度: {data['degrees_of_freedom']}")
-                    degrees_of_freedom_list.append(data['degrees_of_freedom'])
-                    
-                    # 分布
-                    data['distribution'] = self.value_handler.get_distribution(var)
-                    print(f"【デバッグ】分布: {data['distribution']}")
-                    
-                    # 感度係数
-                    data['sensitivity'] = self.equation_handler.calculate_sensitivity(right_side, var, variables, self.value_handler)
-                    print(f"【デバッグ】感度係数: {data['sensitivity']}")
-                    
-                    # 寄与不確かさ
-                    try:
-                        if data['standard_uncertainty'] and data['sensitivity']:
-                            contribution = float(data['standard_uncertainty']) * float(data['sensitivity'])
-                            print(f"【デバッグ】寄与不確かさ: {contribution}")
-                            data['contribution'] = contribution
-                            contributions.append(contribution)
-                        else:
-                            print(f"【デバッグ】寄与不確かさ計算スキップ")
-                            data['contribution'] = 0
-                            contributions.append(0)
-                    except (ValueError, TypeError) as e:
-                        print(f"【デバッグ】寄与不確かさ計算エラー: {str(e)}")
-                        data['contribution'] = 0
-                        contributions.append(0)
-                    
-                    variable_data.append(data)
-                
-                # 合成標準不確かさの計算
-                result_standard_uncertainty = self.uncertainty_calculator.calculate_combined_uncertainty(contributions)
-                
-                # 寄与率の計算
-                contribution_rates = self.uncertainty_calculator.calculate_contribution_rates(contributions)
-                for data, rate in zip(variable_data, contribution_rates):
-                    data['contribution_rate'] = rate
-                
-                # 計算結果の取得
-                result_central_value = self.equation_handler.calculate_result_central_value(right_side, variables, self.value_handler)
-                
-                # 有効自由度の計算
-                effective_df = self.uncertainty_calculator.calculate_effective_degrees_of_freedom(
-                    result_standard_uncertainty, contributions, degrees_of_freedom_list
-                )
-                
-                # 包含係数の計算
-                coverage_factor = self.uncertainty_calculator.get_coverage_factor(effective_df)
-                
-                # 拡張不確かさの計算
-                expanded_uncertainty = coverage_factor * result_standard_uncertainty
-                
-                # 値ごとのセクションを追加
-                html += f"""
-                <hr style="border: 1px solid black;"/>
-                <div class="section">
-                    <div class="title">{self.tr(CALCULATION_RESULT_DISPLAY)} ({point_name})</div>
-                    
-                    <div class="section">
-                        <div class="title">各量の値の詳細説明</div>
-                """
-                
-                # 入力変数の詳細説明を追加
-                input_vars = sorted([var for var in self.parent.variables if var not in self.parent.result_variables])
-                for var in input_vars:
-                    var_info = self.parent.variable_values.get(var, {})
-                    values = var_info.get('values', [])
-                    description = values[value_index].get('description', '') if values and len(values) > value_index else ''
-                    html += f"""
-                    <div class="variable-details">
-                        <div class="variable-name">[{var}]：</div>
-                        <div>{description}</div>
-                    </div>
-                    """
-                    
-                    # Type Aの量の場合、測定値のテーブルを表示
-                    if var_info.get('type') == 'A' and values and len(values) > value_index:
-                        measurements = values[value_index].get('measurements', '')
-                        if measurements:
-                            # カンマで区切られた測定値をリストに変換
-                            measurement_list = [m.strip() for m in measurements.split(',') if m.strip()]
-                            
-                            html += f"""
-                            <div class="section">
-                                <div>[{var}]の測定値</div>
-                                <table>
-                                    <tr>
-                                        <th>n回目</th>
-                                        <th>測定値</th>
-                                    </tr>
-                            """
-                            
-                            for i, measurement in enumerate(measurement_list, 1):
-                                html += f"""
-                                    <tr>
-                                        <td>{i}</td>
-                                        <td>{measurement}</td>
-                                    </tr>
-                                """
-                                
-                            html += """
-                                </table>
-                            </div>
-                            """
-                    
-                    html += """
-                    <div class="separator"></div>
-                    """
-                
-                # 計算結果変数の詳細説明を追加
-                result_vars = sorted(self.parent.result_variables)
-                for var in result_vars:
-                    var_info = self.parent.variable_values.get(var, {})
-                    values = var_info.get('values', [])
-                    description = values[value_index].get('description', '') if values and len(values) > value_index else ''
-                    html += f"""
-                    <div class="variable-details">
-                        <div class="variable-name">[{var}]：</div>
-                        <div>{description}</div>
-                    </div>
-                    """
-                    
-                    # Type Aの量の場合、測定値のテーブルを表示
-                    if var_info.get('type') == 'A' and values and len(values) > value_index:
-                        measurements = values[value_index].get('measurements', '')
-                        if measurements:
-                            # カンマで区切られた測定値をリストに変換
-                            measurement_list = [m.strip() for m in measurements.split(',') if m.strip()]
-                            
-                            html += f"""
-                            <div class="section">
-                                <div class="title">[{var}]の測定値</div>
-                                <table>
-                                    <tr>
-                                        <th>n回目</th>
-                                        <th>測定値</th>
-                                    </tr>
-                            """
-                            
-                            for i, measurement in enumerate(measurement_list, 1):
-                                html += f"""
-                                    <tr>
-                                        <td>{i}</td>
-                                        <td>{measurement}</td>
-                                    </tr>
-                                """
-                                
-                            html += """
-                                </table>
-                            </div>
-                            """
-                    
-                    html += """
-                    <div class="separator"></div>
-                    """
-                
-                html += """
-                    </div>
-                    
-                    <div class="section">
-                        <div class="title">不確かさバジェット</div>
-                        <table>
-                            <tr>
-                                <th>変数</th>
-                                <th>中央値</th>
-                                <th>標準不確かさ</th>
-                                <th>自由度</th>
-                                <th>分布</th>
-                                <th>感度係数</th>
-                                <th>寄与不確かさ</th>
-                                <th>寄与率</th>
-                            </tr>
-                """
-                
-                # 変数データの追加
-                for data in variable_data:
-                    html += f"""
-                            <tr>
-                                <td>{data['name']}</td>
-                                <td>{data['central_value']}</td>
-                                <td>{format_number_str(data['standard_uncertainty'])}</td>
-                                <td>{data['degrees_of_freedom']}</td>
-                                <td>{data['distribution']}</td>
-                                <td>{format_number_str(data['sensitivity'])}</td>
-                                <td>{format_number_str(data['contribution'])}</td>
-                                <td>{data['contribution_rate']:.2f}%</td>
-                            </tr>
-                    """
-                
-                html += f"""
-                        </table>
-                    </div>
-                    
-                    <div class="section">
-                        <div class="title">計算結果</div>
-                        <table>
-                            <tr>
-                                <th>項目</th>
-                                <th>値</th>
-                            </tr>
-                            <tr>
-                                <td>計算式</td>
-                                <td>{equation}</td>
-                            </tr>
-                            <tr>
-                                <td>中央値</td>
-                                <td>{format_number_str(result_central_value)}</td>
-                            </tr>
-                            <tr>
-                                <td>合成標準不確かさ</td>
-                                <td>{format_number_str(result_standard_uncertainty)}</td>
-                            </tr>
-                            <tr>
-                                <td>有効自由度</td>
-                                <td>{effective_df:.2f}</td>
-                            </tr>
-                            <tr>
-                                <td>包含係数</td>
-                                <td>{coverage_factor:.3f}</td>
-                            </tr>
-                            <tr>
-                                <td>拡張不確かさ</td>
-                                <td>{format_number_str(expanded_uncertainty)}</td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
                 """
             
             # HTMLのフッター部分
             html += """
+            </div>
             </body>
             </html>
             """
@@ -497,33 +302,7 @@ class ReportTab(BaseTab):
         except Exception as e:
             print(f"【エラー】HTML生成エラー: {str(e)}")
             print(traceback.format_exc())
-            return "<html><body><h1>エラーが発生しました</h1></body></html>"
-
-    def save_report(self):
-        """レポートをHTMLファイルとして保存"""
-        try:
-            print("【デバッグ】レポート保存開始")
-            
-            # 保存先のファイル名を取得
-            file_name, _ = QFileDialog.getSaveFileName(
-                self,
-                self.tr(SAVE_REPORT_DIALOG_TITLE),
-                "",
-                self.tr(HTML_FILE) + " (*.html)"
-            )
-            
-            if not file_name:
-                print("【デバッグ】" + self.tr(SAVE_CANCELLED))
-                return
-                
-            # 現在表示中のHTMLを取得して保存
-            html = self.report_display.toHtml()
-            self.save_html_to_file(html, file_name)
-            
-        except Exception as e:
-            print(f"【エラー】レポート保存エラー: {str(e)}")
-            print(traceback.format_exc())
-            QMessageBox.warning(self, self.tr(SAVE_ERROR), self.tr(REPORT_SAVE_ERROR))
+            return self.tr(HTML_GENERATION_ERROR)
 
     def update_report(self):
         """レポートを更新するための外部インターフェース"""
@@ -535,7 +314,7 @@ class ReportTab(BaseTab):
         try:
             with open(file_name, 'w', encoding='utf-8') as f:
                 f.write(html)
-            print(f"【デバッグ】{self.tr(REPORT_SAVED)}: {file_name}")
+
             QMessageBox.information(self, self.tr(SAVE_SUCCESS), self.tr(REPORT_SAVED))
         except Exception as e:
             print(f"【エラー】ファイル保存エラー: {str(e)}")
@@ -545,7 +324,7 @@ class ReportTab(BaseTab):
     def get_uncertainty_type_display(self, type_code, var_name=None):
         """不確かさの種類のコードを表示用の文字列に変換"""
         # 計算結果変数の場合は「計算結果」と表示
-        if var_name and var_name in self.parent.result_variables:
+        if var_name and hasattr(self.parent, 'result_variables') and var_name in self.parent.result_variables:
             return self.tr(CALCULATION_RESULT_DISPLAY)
             
         type_map = {
@@ -554,3 +333,10 @@ class ReportTab(BaseTab):
             'fixed': self.tr(FIXED_VALUE_DISPLAY)
         }
         return type_map.get(type_code, self.tr(UNKNOWN_TYPE))
+
+    def save_report(self):
+        """現在表示中のレポートをファイルに保存する"""
+        html = self.report_display.toHtml()
+        file_name, _ = QFileDialog.getSaveFileName(self, self.tr(SAVE_REPORT_DIALOG_TITLE), "", "HTML File (*.html);;All Files (*)")
+        if file_name:
+            self.save_html_to_file(html, file_name)

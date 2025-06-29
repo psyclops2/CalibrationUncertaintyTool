@@ -12,7 +12,7 @@ from src.tabs.partial_derivative_tab import PartialDerivativeTab
 from src.tabs.point_settings_tab import PointSettingsTab
 from src.dialogs.about_dialog import AboutDialog
 from src.utils.language_manager import LanguageManager
-from src.i18n.translator import Translator
+
 from src.utils.translation_keys import *
 
 class MainWindow(QMainWindow):
@@ -21,7 +21,7 @@ class MainWindow(QMainWindow):
         
         # 言語管理の初期化
         self.language_manager = language_manager or LanguageManager()
-        self.translator = Translator(self.language_manager.current_language)
+
         
         # ウィンドウの設定
         self.setWindowTitle(self.tr(APP_TITLE))
@@ -34,7 +34,7 @@ class MainWindow(QMainWindow):
         self.last_equation = ""
         self.value_count = 1
         self.current_value_index = 0
-        self.value_names = [f"校正点 {i+1}" for i in range(self.value_count)]
+        self.value_names = [f"{self.tr(CALIBRATION_POINT_NAME)} {i+1}" for i in range(self.value_count)]
         
         # UIの初期化
         self.setup_ui()
@@ -71,96 +71,73 @@ class MainWindow(QMainWindow):
         
         # Connect signals
         self.point_settings_tab.points_changed.connect(self.on_points_changed)
-        self.point_settings_tab.point_count_changed.connect(self.on_value_count_changed)
         
         layout.addWidget(self.tab_widget)
 
     @Slot()
     def on_points_changed(self):
         """
-        Handles changes from PointSettingsTab (e.g., name edited).
-        The `value_names` list in MainWindow is assumed to be updated by the tab.
+        Handles changes from PointSettingsTab (e.g., name edited, points added/removed).
+        The `value_names` list in MainWindow is updated by the tab.
         This method propagates the changes to other tabs.
         """
         self.variables_tab.update_value_combo()
         self.uncertainty_calculation_tab.update_value_combo()
         self.report_tab.update_report()
 
-    @Slot(int)
-    def on_value_count_changed(self, new_count):
-        """
-        Handles changes in the number of calibration points from the PointSettingsTab.
-        """
-        if self.value_count == new_count:
-            return
+    def update_menu_bar_text(self):
+        """メニューバーのテキストを現在の言語で更新"""
+        self.file_menu.setTitle(self.tr(MENU_FILE))
+        self.save_action.setText(self.tr(FILE_SAVE_AS))
+        self.open_action.setText(self.tr(FILE_OPEN))
+        self.exit_action.setText(self.tr(FILE_EXIT))
+        self.language_menu.setTitle(self.tr(MENU_LANGUAGE))
+        self.ja_action.setText(self.tr(LANGUAGE_JAPANESE))
+        self.en_action.setText(self.tr(LANGUAGE_ENGLISH))
+        self.system_locale_action.setText(self.tr(USE_SYSTEM_LOCALE))
+        self.help_menu.setTitle(self.tr(MENU_HELP))
+        self.about_action.setText(self.tr(ABOUT_APP))
 
-        self.value_count = new_count
-        
-        # Adjust the length of the value_names list
-        current_len = len(self.value_names)
-        if new_count > current_len:
-            # Add new default names for the new points
-            for i in range(current_len, new_count):
-                self.value_names.append(f"校正点 {i + 1}")
-        else:
-            # Truncate the list if points were removed
-            self.value_names = self.value_names[:new_count]
-
-        # Notify other tabs about the change
-        self.variables_tab.on_parent_value_count_changed(new_count)
-        self.uncertainty_calculation_tab.update_value_combo()
-        self.report_tab.update_report()
-        
     def create_menu_bar(self):
         """メニューバーの作成"""
         menubar = self.menuBar()
+        self.file_menu = menubar.addMenu(self.tr(MENU_FILE))
+        self.language_menu = menubar.addMenu(self.tr(MENU_LANGUAGE))
+        self.help_menu = menubar.addMenu(self.tr(MENU_HELP))
         
         # ファイルメニュー
-        file_menu = menubar.addMenu(self.tr(MENU_FILE))
+        self.save_action = QAction(self.tr(FILE_SAVE_AS), self)
+        self.save_action.triggered.connect(self.save_file)
+        self.file_menu.addAction(self.save_action)
         
-        # 保存アクション
-        save_action = QAction(self.tr(FILE_SAVE_AS), self)
-        save_action.triggered.connect(self.save_file)
-        file_menu.addAction(save_action)
+        self.open_action = QAction(self.tr(FILE_OPEN), self)
+        self.open_action.triggered.connect(self.open_file)
+        self.file_menu.addAction(self.open_action)
         
-        # 開くアクション
-        open_action = QAction(self.tr(FILE_OPEN), self)
-        open_action.triggered.connect(self.open_file)
-        file_menu.addAction(open_action)
-        
-        # 終了アクション
-        exit_action = QAction(self.tr(FILE_EXIT), self)
-        exit_action.triggered.connect(self.close)
-        file_menu.addAction(exit_action)
+        self.exit_action = QAction(self.tr(FILE_EXIT), self)
+        self.exit_action.triggered.connect(self.close)
+        self.file_menu.addAction(self.exit_action)
         
         # 言語メニュー
-        language_menu = menubar.addMenu(self.tr(MENU_LANGUAGE))
+        self.ja_action = QAction(self.tr(LANGUAGE_JAPANESE), self)
+        self.ja_action.triggered.connect(lambda: self.change_language('ja'))
+        self.language_menu.addAction(self.ja_action)
         
-        # 日本語アクション
-        ja_action = QAction(self.tr(LANGUAGE_JAPANESE), self)
-        ja_action.triggered.connect(lambda: self.change_language('ja'))
-        language_menu.addAction(ja_action)
+        self.en_action = QAction(self.tr(LANGUAGE_ENGLISH), self)
+        self.en_action.triggered.connect(lambda: self.change_language('en'))
+        self.language_menu.addAction(self.en_action)
         
-        # 英語アクション
-        en_action = QAction(self.tr(LANGUAGE_ENGLISH), self)
-        en_action.triggered.connect(lambda: self.change_language('en'))
-        language_menu.addAction(en_action)
-        
-        # システムロケール使用オプション
-        system_locale_action = QAction(self.tr(USE_SYSTEM_LOCALE), self)
-        system_locale_action.setCheckable(True)
+        self.system_locale_action = QAction(self.tr(USE_SYSTEM_LOCALE), self)
+        self.system_locale_action.setCheckable(True)
         use_system = self.language_manager.config.config.getboolean('Language', 'use_system_locale', fallback=False)
-        system_locale_action.setChecked(use_system)
-        system_locale_action.triggered.connect(self.toggle_system_locale)
-        language_menu.addAction(system_locale_action)
+        self.system_locale_action.setChecked(use_system)
+        self.system_locale_action.triggered.connect(self.toggle_system_locale)
+        self.language_menu.addAction(self.system_locale_action)
         
         # ヘルプメニュー
-        help_menu = menubar.addMenu(self.tr(MENU_HELP))
-        
-        # Aboutアクション
-        about_action = QAction(self.tr('About'), self)
-        about_action.triggered.connect(self.show_about_dialog)
-        help_menu.addAction(about_action)
+        self.about_action = QAction(self.tr(ABOUT_APP), self)
+        self.about_action.triggered.connect(self.show_about_dialog)
+        self.help_menu.addAction(self.about_action)
         
     def get_save_data(self):
         """保存するデータを辞書にまとめる"""
@@ -183,7 +160,7 @@ class MainWindow(QMainWindow):
             self.last_equation = data.get('last_equation', "")
             self.value_count = data.get('value_count', 1)
             self.current_value_index = data.get('current_value_index', 0)
-            self.value_names = data.get('value_names', [f"校正点 {i+1}" for i in range(self.value_count)])
+            self.value_names = data.get('value_names', [f"{self.tr(CALIBRATION_POINT_NAME)} {i+1}" for i in range(self.value_count)])
             
             # UIの更新
             if hasattr(self, 'variables_tab'):
@@ -191,12 +168,12 @@ class MainWindow(QMainWindow):
             if hasattr(self, 'model_equation_tab'):
                 self.model_equation_tab.set_equation(self.last_equation)
                 
-            QMessageBox.information(self, self.tr("成功"), self.tr("ファイルを読み込みました。"))
+            QMessageBox.information(self, self.tr(MESSAGE_SUCCESS), self.tr(FILE_LOADED))
             
         except Exception as e:
             print(f"【エラー】データ読み込みエラー: {str(e)}")
             print(traceback.format_exc())
-            QMessageBox.critical(self, self.tr("エラー"), f"データの読み込みに失敗しました:\n{str(e)}")
+            QMessageBox.critical(self, self.tr(MESSAGE_ERROR), f"データの読み込みに失敗しました:\n{str(e)}")
             
     def save_file(self):
         """ファイルを保存"""
@@ -204,7 +181,7 @@ class MainWindow(QMainWindow):
             options = QFileDialog.Options()
             file_path, _ = QFileDialog.getSaveFileName(
                 self,
-                self.tr("名前を付けて保存"),
+                self.tr(SAVE_DIALOG_TITLE),
                 "",
                 "JSON Files (*.json);;All Files (*)",
                 options=options
@@ -214,12 +191,12 @@ class MainWindow(QMainWindow):
                 save_data = self.get_save_data()
                 with open(file_path, 'w', encoding='utf-8') as f:
                     json.dump(save_data, f, indent=4, ensure_ascii=False)
-                QMessageBox.information(self, self.tr("成功"), self.tr("ファイルを保存しました。"))
+                QMessageBox.information(self, self.tr(MESSAGE_SUCCESS), self.tr(FILE_SAVED))
                 
         except Exception as e:
             print(f"【エラー】ファイル保存エラー: {str(e)}")
             print(traceback.format_exc())
-            QMessageBox.critical(self, self.tr("エラー"), f"ファイルの保存に失敗しました:\n{str(e)}")
+            QMessageBox.critical(self, self.tr(MESSAGE_ERROR), self.tr(FILE_SAVE_ERROR) + f"\n{str(e)}")
             
     def open_file(self):
         """ファイルを開く"""
@@ -227,7 +204,7 @@ class MainWindow(QMainWindow):
             options = QFileDialog.Options()
             file_path, _ = QFileDialog.getOpenFileName(
                 self,
-                self.tr("開く"),
+                self.tr(OPEN_DIALOG_TITLE),
                 "",
                 "JSON Files (*.json);;All Files (*)",
                 options=options
@@ -239,13 +216,13 @@ class MainWindow(QMainWindow):
                 self.load_data(loaded_data)
                 
         except FileNotFoundError:
-            QMessageBox.critical(self, self.tr("エラー"), self.tr("ファイルが見つかりません。"))
+            QMessageBox.critical(self, self.tr(MESSAGE_ERROR), self.tr(FILE_NOT_FOUND))
         except json.JSONDecodeError:
-            QMessageBox.critical(self, self.tr("エラー"), self.tr("ファイル形式が正しくありません。JSONファイルを選択してください。"))
+            QMessageBox.critical(self, self.tr(MESSAGE_ERROR), self.tr(INVALID_FILE_FORMAT))
         except Exception as e:
             print(f"【エラー】ファイル読み込みエラー: {str(e)}")
             print(traceback.format_exc())
-            QMessageBox.critical(self, self.tr("エラー"), f"ファイルの読み込みに失敗しました:\n{str(e)}")
+            QMessageBox.critical(self, self.tr(MESSAGE_ERROR), self.tr(FILE_LOAD_ERROR) + f"\n{str(e)}")
             
     def on_tab_changed(self, index):
         """タブが切り替えられたときの処理"""
@@ -313,30 +290,26 @@ class MainWindow(QMainWindow):
         print(f"{error_type}: {message}")
         
     def change_language(self, language_code):
-        """言語を変更して再起動を促す"""
+        """言語を動的に変更する"""
+        # システムロケールの使用をオフにする
+        self.language_manager.toggle_system_locale(False)
+        self.system_locale_action.setChecked(False)
+        
         if self.language_manager.change_language(language_code):
-            QMessageBox.information(
-                self,
-                self.tr(LANGUAGE_SETTINGS),
-                self.tr(LANGUAGE_CHANGED_RESTART_MESSAGE)
-            )
+            # 新しい言語をロード
+            self.language_manager.load_language()
+            # UIを再翻訳
+            self.retranslate_ui()
     
     def toggle_system_locale(self, checked):
         """システムロケール使用の切り替え"""
-        if not self.language_manager.config.config.has_section('Language'):
-            self.language_manager.config.config.add_section('Language')
-        self.language_manager.config.config.set('Language', 'use_system_locale', str(checked).lower())
-        self.language_manager.config.save_config()
-        
-        QMessageBox.information(
-            self,
-            self.tr(LANGUAGE_SETTINGS),
-            self.tr(RESTART_REQUIRED)
-        )
+        self.language_manager.toggle_system_locale(checked)
+        # 新しい設定で言語をロード
+        self.language_manager.load_language()
+        # UIを再翻訳
+        self.retranslate_ui()
     
-    def tr(self, key):
-        """翻訳キーに対応する文字列を取得"""
-        return self.translator.translate(key, key)
+
     
     def changeEvent(self, event):
         """イベント処理（言語変更イベントを検知）"""
@@ -355,6 +328,7 @@ class MainWindow(QMainWindow):
         self.tab_widget.setTabText(2, self.tr(TAB_CALCULATION))
         self.tab_widget.setTabText(3, self.tr(TAB_REPORT))
         self.tab_widget.setTabText(4, self.tr(PARTIAL_DERIVATIVE))
+        self.tab_widget.setTabText(5, self.tr(POINT_SETTINGS_TAB))
         
         # 各タブのUIテキストを更新
         if hasattr(self, 'model_equation_tab') and hasattr(self.model_equation_tab, 'retranslate_ui'):
@@ -371,23 +345,26 @@ class MainWindow(QMainWindow):
             
         if hasattr(self, 'report_tab') and hasattr(self.report_tab, 'retranslate_ui'):
             self.report_tab.retranslate_ui()
+
+        if hasattr(self, 'point_settings_tab') and hasattr(self.point_settings_tab, 'retranslate_ui'):
+            self.point_settings_tab.retranslate_ui()
         
         # メニューバーの更新
-        self.create_menu_bar()
+        self.update_menu_bar_text()
 
     def select_model_equation_tab(self):
         """モデル式タブを選択"""
-        print("\n【デバッグ】モデル式タブを明示的に選択")
+
         self.tab_widget.setCurrentIndex(0)
         
     def select_variables_tab(self):
         """変数管理タブを選択"""
-        print("\n【デバッグ】変数管理タブを明示的に選択")
+
         self.tab_widget.setCurrentIndex(1)
         
     def select_report_tab(self):
         """レポートタブを選択"""
-        print("\n【デバッグ】レポートタブを明示的に選択")
+
         self.tab_widget.setCurrentIndex(4)
 
     # ... existing code ... 

@@ -27,31 +27,73 @@ class VariablesTab(BaseTab):
         self.parent = parent
         self.handlers = VariablesTabHandlers(self)
         self.setup_ui()
+
+    def retranslate_ui(self):
+        """UIのテキストを現在の言語で更新"""
+        # グループボックスのタイトル
+        self.value_select_group.setTitle(self.tr(CALIBRATION_POINT_SELECTION))
+        self.variable_list_group.setTitle(self.tr(VARIABLE_LIST_AND_VALUES))
+        self.settings_group.setTitle(self.tr(VARIABLE_DETAIL_SETTINGS))
         
+        # ラベル
+        self.var_label.setText(self.tr(VARIABLE_MODE) + ":")
+        if self.mode_display.text() == self.tr(NOT_SELECTED, "未選択"):
+            self.mode_display.setText(self.tr(NOT_SELECTED))
+            
+        self.nominal_value_label.setText(self.tr(LABEL_NOMINAL_VALUE) + ":")
+        self.unit_label.setText(self.tr(LABEL_UNIT) + ":")
+        self.definition_label.setText(self.tr(LABEL_DEFINITION) + ":")
+        self.uncertainty_type_label.setText(self.tr(UNCERTAINTY_TYPE) + ":")
+        
+        # ラジオボタン
+        self.type_a_radio.setText(self.tr(TYPE_A))
+        self.type_b_radio.setText(self.tr(TYPE_B))
+        self.type_fixed_radio.setText(self.tr(FIXED_VALUE))
+        
+        # TypeA用ウィジェット
+        self.type_a_widgets['measurements'].setPlaceholderText(self.tr(MEASUREMENT_VALUES_PLACEHOLDER))
+        self.measurement_values_label.setText(self.tr(MEASUREMENT_VALUES) + ":")
+        self.degrees_of_freedom_label_a.setText(self.tr(DEGREES_OF_FREEDOM) + ":")
+        self.central_value_label_a.setText(self.tr(CENTRAL_VALUE) + ":")
+        self.standard_uncertainty_label_a.setText(self.tr(STANDARD_UNCERTAINTY) + ":")
+        self.detail_description_label_a.setText(self.tr(DETAIL_DESCRIPTION) + ":")
+        
+        # TypeB用ウィジェット
+        # 分布コンボボックスの項目を更新
+        current_index = self.type_b_widgets['distribution'].currentIndex()
+        self.type_b_widgets['distribution'].clear()
+        self.type_b_widgets['distribution'].addItems([
+            self.tr(NORMAL_DISTRIBUTION),
+            self.tr(RECTANGULAR_DISTRIBUTION),
+            self.tr(TRIANGULAR_DISTRIBUTION),
+            self.tr(U_DISTRIBUTION)
+        ])
+        self.type_b_widgets['distribution'].setCurrentIndex(current_index)
+        
+        self.distribution_label.setText(self.tr(DISTRIBUTION) + ":")
+        self.divisor_label.setText(self.tr(DIVISOR) + ":")
+        self.degrees_of_freedom_label_b.setText(self.tr(DEGREES_OF_FREEDOM) + ":")
+        self.central_value_label_b.setText(self.tr(CENTRAL_VALUE) + ":")
+        self.half_width_label.setText(self.tr(HALF_WIDTH) + ":")
+        self.type_b_widgets['calculation_formula'].setPlaceholderText(self.tr(CALCULATION_FORMULA))
+        self.type_b_widgets['calculate_button'].setText(self.tr(CALCULATE))
+        self.standard_uncertainty_label_b.setText(self.tr(STANDARD_UNCERTAINTY) + ":")
+        self.detail_description_label_b.setText(self.tr(DETAIL_DESCRIPTION) + ":")
+        
+        # 固定値用ウィジェット
+        self.central_value_label_fixed.setText(self.tr(CENTRAL_VALUE) + ":")
+        self.detail_description_label_fixed.setText(self.tr(DETAIL_DESCRIPTION) + ":")
+        
+        # 変数リストを更新
+        self.update_variable_list(self.parent.variables, self.parent.result_variables)
+
     def setup_ui(self):
         main_layout = QHBoxLayout()  # メインレイアウトを水平方向に変更
         
         # 左側のレイアウト（値の設定関連と量一覧）
         left_layout = QVBoxLayout()
         
-        # 1. 値の数設定
-        self.value_count_group = QGroupBox(self.tr(CALIBRATION_POINT_SETTINGS))
-        value_count_layout = QHBoxLayout()
-        self.value_count_label = QLabel(self.tr(CALIBRATION_POINT_COUNT) + ":")
-        self.value_count_spin = QSpinBox()
-        config = ConfigLoader()
-        limits = config.get_calibration_point_limits()
-        self.value_count_spin.setMinimum(limits['min_count'])
-        self.value_count_spin.setMaximum(limits['max_count'])
-        self.value_count_spin.setValue(self.parent.value_count)
-        self.value_count_spin.valueChanged.connect(self.handlers.on_value_count_changed)
-        value_count_layout.addWidget(self.value_count_label)
-        value_count_layout.addWidget(self.value_count_spin)
-        value_count_layout.addStretch()
-        self.value_count_group.setLayout(value_count_layout)
-        left_layout.addWidget(self.value_count_group)
-        
-        # 2. 値の選択
+        # 1. 値の選択（校正点設定タブで管理された校正点から選択）
         self.value_select_group = QGroupBox(self.tr(CALIBRATION_POINT_SELECTION))
         value_select_layout = QVBoxLayout()
         self.value_combo = QComboBox()
@@ -60,7 +102,7 @@ class VariablesTab(BaseTab):
         self.value_select_group.setLayout(value_select_layout)
         left_layout.addWidget(self.value_select_group)
         
-        # 3. 量一覧
+        # 2. 量一覧
         self.variable_list_group = QGroupBox(self.tr(VARIABLE_LIST_AND_VALUES))
         var_list_layout = QVBoxLayout()
         variable_info_layout = QHBoxLayout()
@@ -250,64 +292,6 @@ class VariablesTab(BaseTab):
         self.type_a_radio.setChecked(True)
         self.handlers.on_type_changed(True)  # 初期表示を設定
         
-    def retranslate_ui(self):
-        """UIのテキストを現在の言語で更新"""
-        # グループボックスのタイトル
-        self.value_count_group.setTitle(self.tr(CALIBRATION_POINT_SETTINGS))
-        self.value_select_group.setTitle(self.tr(CALIBRATION_POINT_SELECTION))
-        self.variable_list_group.setTitle(self.tr(VARIABLE_LIST_AND_VALUES))
-        self.settings_group.setTitle(self.tr(VARIABLE_DETAIL_SETTINGS))
-        
-        # ラベル
-        self.value_count_label.setText(self.tr(CALIBRATION_POINT_COUNT) + ":")
-        self.var_label.setText(self.tr(VARIABLE_MODE) + ":")
-        if self.mode_display.text() == self.translator.translate(NOT_SELECTED, "未選択"):
-            self.mode_display.setText(self.tr(NOT_SELECTED))
-            
-        self.nominal_value_label.setText(self.tr(LABEL_NOMINAL_VALUE) + ":")
-        self.unit_label.setText(self.tr(LABEL_UNIT) + ":")
-        self.definition_label.setText(self.tr(LABEL_DEFINITION) + ":")
-        self.uncertainty_type_label.setText(self.tr(UNCERTAINTY_TYPE) + ":")
-        
-        # ラジオボタン
-        self.type_a_radio.setText(self.tr(TYPE_A))
-        self.type_b_radio.setText(self.tr(TYPE_B))
-        self.type_fixed_radio.setText(self.tr(FIXED_VALUE))
-        
-        # TypeA用ウィジェット
-        self.type_a_widgets['measurements'].setPlaceholderText(self.tr(MEASUREMENT_VALUES_PLACEHOLDER))
-        self.measurement_values_label.setText(self.tr(MEASUREMENT_VALUES) + ":")
-        self.degrees_of_freedom_label_a.setText(self.tr(DEGREES_OF_FREEDOM) + ":")
-        self.central_value_label_a.setText(self.tr(CENTRAL_VALUE) + ":")
-        self.standard_uncertainty_label_a.setText(self.tr(STANDARD_UNCERTAINTY) + ":")
-        self.detail_description_label_a.setText(self.tr(DETAIL_DESCRIPTION) + ":")
-        
-        # TypeB用ウィジェット
-        # 分布コンボボックスの項目を更新
-        current_index = self.type_b_widgets['distribution'].currentIndex()
-        self.type_b_widgets['distribution'].clear()
-        self.type_b_widgets['distribution'].addItems([
-            self.tr(NORMAL_DISTRIBUTION),
-            self.tr(RECTANGULAR_DISTRIBUTION),
-            self.tr(TRIANGULAR_DISTRIBUTION),
-            self.tr(U_DISTRIBUTION)
-        ])
-        self.type_b_widgets['distribution'].setCurrentIndex(current_index)
-        
-        self.distribution_label.setText(self.tr(DISTRIBUTION) + ":")
-        self.divisor_label.setText(self.tr(DIVISOR) + ":")
-        self.degrees_of_freedom_label_b.setText(self.tr(DEGREES_OF_FREEDOM) + ":")
-        self.central_value_label_b.setText(self.tr(CENTRAL_VALUE) + ":")
-        self.half_width_label.setText(self.tr(HALF_WIDTH) + ":")
-        self.type_b_widgets['calculation_formula'].setPlaceholderText(self.tr(CALCULATION_FORMULA))
-        self.type_b_widgets['calculate_button'].setText(self.tr(CALCULATE))
-        self.standard_uncertainty_label_b.setText(self.tr(STANDARD_UNCERTAINTY) + ":")
-        self.detail_description_label_b.setText(self.tr(DETAIL_DESCRIPTION) + ":")
-        
-        # 固定値用ウィジェット
-        self.central_value_label_fixed.setText(self.tr(CENTRAL_VALUE) + ":")
-        self.detail_description_label_fixed.setText(self.tr(DETAIL_DESCRIPTION) + ":")
-        
     def update_variable_list(self, variables, result_variables):
         """変数リストを更新"""
         try:
@@ -336,7 +320,7 @@ class VariablesTab(BaseTab):
                         self.variable_list.setCurrentItem(item)
                         break
             
-            print(f"【デバッグ】変数リストを更新: 計算結果量={result_vars}, 入力量={input_vars}")
+
             
         except Exception as e:
             print(f"【エラー】変数リスト更新エラー: {str(e)}")
@@ -352,21 +336,21 @@ class VariablesTab(BaseTab):
             var_info = self.parent.variable_values[self.handlers.current_variable]
             
             # 呼び値の設定
-            print("【デバッグ】display_common_settings: 呼び値の設定")
+
             nominal_value = var_info.get('nominal_value', '')
-            print(f"【デバッグ】呼び値: {nominal_value}")
+
             self.nominal_value_input.setText(nominal_value)
             
             # 単位の設定
-            print("【デバッグ】display_common_settings: 単位の設定")
+
             unit = var_info.get('unit', '')
-            print(f"【デバッグ】単位: {unit}")
+
             self.unit_input.setText(unit)
             
             # 定義の設定
-            print("【デバッグ】display_common_settings: 定義の設定")
+
             definition = var_info.get('definition', '')
-            print(f"【デバッグ】定義: {definition}")
+
             self.definition_input.setText(definition)
             
             # 不確かさ種類の設定
@@ -514,25 +498,21 @@ class VariablesTab(BaseTab):
             print(f"【エラー】現在値の表示エラー: {str(e)}")
             print(traceback.format_exc())
 
-    def on_parent_value_count_changed(self, new_count):
-        """親ウィンドウの値の数が変更されたときに呼び出される"""
-        # このタブで値の数を変更した場合は、循環呼び出しを防ぐ
-        if self.value_count_spin.value() != new_count:
-            self.value_count_spin.setValue(new_count)
-        self.update_value_combo()
-
     def update_value_combo(self):
-        """値の選択コンボボックスを更新"""
+        """値の選択コンボボックスを更新（校正点設定タブの情報を参照）"""
         try:
             self.value_combo.blockSignals(True)
             self.value_combo.clear()
             
-            # グローバルな value_names を使用して項目を追加
-            for name in self.parent.value_names:
+            # 校正点設定タブで管理された校正点リストを取得
+            value_names = getattr(self.parent, 'value_names', [])
+            
+            # 校正点リストから項目を追加
+            for name in value_names:
                 self.value_combo.addItem(name)
             
-            # 現在のインデックスを設定
-            if 0 <= self.parent.current_value_index < len(self.parent.value_names):
+            # 現在のインデックスを設定（範囲内の場合のみ）
+            if 0 <= self.parent.current_value_index < len(value_names):
                 self.value_combo.setCurrentIndex(self.parent.current_value_index)
             
             self.value_combo.blockSignals(False)

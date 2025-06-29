@@ -11,6 +11,7 @@ import os
 from src.utils.equation_formatter import EquationFormatter
 from src.tabs.base_tab import BaseTab
 from src.utils.translation_keys import *
+from src.utils.equation_handler import EquationHandler
 
 class DraggableListWidget(QListWidget):
     order_changed = Signal(list)  # 並び順が変更されたときに発火するシグナル
@@ -35,20 +36,28 @@ class ModelEquationTab(BaseTab):
         super().__init__(parent)
         self.parent = parent
         self.variable_order_file = os.path.join("data", "variable_order.json")
-        print(f"【デバッグ】model_equation_tab: {hasattr(self, 'translator')}")
+
         self.setup_ui()
+
+    def retranslate_ui(self):
+        """UIのテキストを現在の言語で更新"""
+        print(f"[DEBUG] Retranslating UI for context: {self.metaObject().className()}")
+        self.equation_group.setTitle(self.tr(MODEL_EQUATION_INPUT))
+        self.equation_input.setPlaceholderText(self.tr(EQUATION_PLACEHOLDER))
+        self.variable_group.setTitle(self.tr(VARIABLE_LIST_DRAG_DROP))
+        self.display_group.setTitle(self.tr(HTML_DISPLAY))
         
     def setup_ui(self):
         """メインウィンドウの作成と表示"""
-        print("【デバッグ】setup_ui開始")
+
         layout = QVBoxLayout()
         
         # モデル方程式入力エリア
-        equation_group = QGroupBox(self.tr("MODEL_EQUATION_INPUT"))
+        self.equation_group = QGroupBox(self.tr(MODEL_EQUATION_INPUT))
         equation_layout = QVBoxLayout()
         
         self.equation_input = QTextEdit()
-        self.equation_input.setPlaceholderText(self.tr("EQUATION_PLACEHOLDER"))
+        self.equation_input.setPlaceholderText(self.tr(EQUATION_PLACEHOLDER))
         self.equation_input.setMaximumHeight(300)
         self.equation_input.focusOutEvent = self._on_equation_focus_lost
         equation_layout.addWidget(self.equation_input)
@@ -56,22 +65,22 @@ class ModelEquationTab(BaseTab):
         self.equation_status = QLabel("")
         equation_layout.addWidget(self.equation_status)
         
-        equation_group.setLayout(equation_layout)
-        layout.addWidget(equation_group)
+        self.equation_group.setLayout(equation_layout)
+        layout.addWidget(self.equation_group)
         
         # 変数リスト表示エリア
-        variable_group = QGroupBox(self.tr("VARIABLE_LIST_DRAG_DROP"))
+        self.variable_group = QGroupBox(self.tr(VARIABLE_LIST_DRAG_DROP))
         variable_layout = QVBoxLayout()
         
         self.variable_list = DraggableListWidget(self)
         self.variable_list.order_changed.connect(self.on_variable_order_changed)
         variable_layout.addWidget(self.variable_list)
         
-        variable_group.setLayout(variable_layout)
-        layout.addWidget(variable_group)
+        self.variable_group.setLayout(variable_layout)
+        layout.addWidget(self.variable_group)
         
         # HTML表示エリア
-        display_group = QGroupBox(self.tr("HTML_DISPLAY"))
+        self.display_group = QGroupBox(self.tr(HTML_DISPLAY))
         display_layout = QVBoxLayout()
         
         self.html_display = QTextEdit()
@@ -79,11 +88,11 @@ class ModelEquationTab(BaseTab):
         self.html_display.setMaximumHeight(200)
         display_layout.addWidget(self.html_display)
         
-        display_group.setLayout(display_layout)
-        layout.addWidget(display_group)
+        self.display_group.setLayout(display_layout)
+        layout.addWidget(self.display_group)
         
         self.setLayout(layout)
-        print("【デバッグ】setup_ui完了")
+
 
     def on_variable_order_changed(self, new_order):
         """変数の並び順が変更されたときの処理"""
@@ -111,7 +120,7 @@ class ModelEquationTab(BaseTab):
                     self.parent.result_variables
                 )
             
-            print(f"【デバッグ】変数の並び順を更新: {self.parent.variables}")
+
             
         except Exception as e:
             print(f"【エラー】変数の並び順更新エラー: {str(e)}")
@@ -133,7 +142,7 @@ class ModelEquationTab(BaseTab):
                     'result_variables': self.parent.result_variables
                 }, f, ensure_ascii=False, indent=2)
                 
-            print(f"【デバッグ】変数の並び順を保存: {self.variable_order_file}")
+
             
         except Exception as e:
             print(f"【エラー】変数の並び順保存エラー: {str(e)}")
@@ -166,7 +175,7 @@ class ModelEquationTab(BaseTab):
             # 変数リストの更新
             self.update_variable_list()
             
-            print(f"【デバッグ】変数の並び順を読み込み: {self.parent.variables}")
+
             
         except Exception as e:
             print(f"【エラー】変数の並び順読み込みエラー: {str(e)}")
@@ -183,7 +192,7 @@ class ModelEquationTab(BaseTab):
                     item = QListWidgetItem(var)
                     self.variable_list.addItem(item)
                     
-            print(f"【デバッグ】変数リストを更新: {self.parent.variables}")
+
         except Exception as e:
             print(f"【エラー】変数リスト更新エラー: {str(e)}")
             print(traceback.format_exc())
@@ -222,13 +231,14 @@ class ModelEquationTab(BaseTab):
                 # 前回の方程式を更新
                 self.parent.last_equation = current_equation
                 
-                print(f"【デバッグ】方程式を解析: {variables}")
-                
         except Exception as e:
             print(f"【エラー】方程式解析エラー: {str(e)}")
             print(traceback.format_exc())
             self.equation_status.setText(f"エラー: {str(e)}")
-            
+        
+        # HTML表示を必ず更新
+        self.update_html_display(current_equation)
+        
     def on_equation_focus_lost(self, event):
         """方程式入力エリアからフォーカスが外れたときの処理（公開メソッド）"""
         # 内部メソッドを呼び出す
@@ -248,7 +258,7 @@ class ModelEquationTab(BaseTab):
             result_vars = set()  # 計算結果変数
             
             # まず左辺の変数を収集（計算結果変数）
-            print("\n【デバッグ】計算結果変数の検出:")
+
             for eq in equations:
                 if '=' not in eq:
                     continue
@@ -256,10 +266,10 @@ class ModelEquationTab(BaseTab):
                 result_vars.add(left_side)
                 print(f"  - 左辺から検出: {left_side}")
             
-            print(f"【デバッグ】計算結果変数セット: {result_vars}")
+
             
             # 右辺から入力変数を検出
-            print("\n【デバッグ】入力変数の検出:")
+
             for eq in equations:
                 if '=' not in eq:
                     continue
@@ -286,21 +296,21 @@ class ModelEquationTab(BaseTab):
                                 new_vars.add(term)
                                 print(f"    → 入力変数として追加: {term}")
             
-            print(f"\n【デバッグ】新しい入力変数セット: {new_vars}")
-            print(f"【デバッグ】計算結果変数セット: {result_vars}")
-            print(f"【デバッグ】現在の変数セット: {set(self.parent.variables)}")
+
+
+
             
             # 変数の追加・削除を検出
             all_vars = new_vars | result_vars
             added_vars = all_vars - set(self.parent.variables)
             removed_vars = set(self.parent.variables) - all_vars
             
-            print(f"\n【デバッグ】追加される変数: {added_vars}")
-            print(f"【デバッグ】削除される変数: {removed_vars}")
+
+
             
             # 変数の変更がある場合は確認ダイアログを表示
             if added_vars or removed_vars:
-                print("\n【デバッグ】変数変更の確認ダイアログを表示")
+
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Question)
                 msg.setWindowTitle("変数の変更確認")
@@ -328,7 +338,7 @@ class ModelEquationTab(BaseTab):
                 print(message)
                 
                 if msg.exec_() == QMessageBox.Yes:
-                    print("\n【デバッグ】変数の変更を適用")
+
                     
                     # 現在の変数の並び順を取得
                     current_order = self.parent.variables.copy()
@@ -351,8 +361,8 @@ class ModelEquationTab(BaseTab):
                     self.parent.variables = result_var_list + input_vars
                     self.parent.result_variables = result_var_list
                     
-                    print(f"【デバッグ】変数リストを更新: {self.parent.variables}")
-                    print(f"【デバッグ】計算結果変数リストを更新: {self.parent.result_variables}")
+        
+
                     
                     # 新しい変数のために変数値辞書を初期化
                     for var in added_vars:
@@ -366,7 +376,7 @@ class ModelEquationTab(BaseTab):
                                     'definition': '',
                                     'mode': 'result'
                                 }
-                                print(f"【デバッグ】計算結果変数を初期化: {var}")
+
                             else:
                                 # 入力変数の初期化
                                 self.parent.variable_values[var] = {
@@ -376,22 +386,22 @@ class ModelEquationTab(BaseTab):
                                     'definition': '',
                                     'mode': 'input'
                                 }
-                                print(f"【デバッグ】入力変数を初期化: {var}")
+
                     
                     # 削除される変数の値を削除
                     for var in removed_vars:
                         if var in self.parent.variable_values:
                             del self.parent.variable_values[var]
-                            print(f"【デバッグ】変数の値を削除: {var}")
+
                     
                     # 親オブジェクトの変数検出メソッドを呼び出す
                     if hasattr(self.parent, 'detect_variables'):
-                        print("\n【デバッグ】親オブジェクトのdetect_variablesメソッドを呼び出し")
+
                         self.parent.detect_variables()
                     
                     # 変数タブの強制更新
                     if hasattr(self.parent, 'variables_tab'):
-                        print("\n【デバッグ】変数タブを強制的に更新")
+
                         self.parent.variables_tab.update_variable_list(
                             self.parent.variables, 
                             self.parent.result_variables
@@ -402,16 +412,16 @@ class ModelEquationTab(BaseTab):
                     
                     # 最後に入力した方程式を保存
                     self.parent.last_equation = equation
-                    print(f"【デバッグ】最後に入力した方程式を保存: '{equation}'")
+
                     
                 else:
-                    print("\n【デバッグ】変数の変更をキャンセル - 元の方程式に戻します")
+
                     # キャンセルの場合は元の方程式に戻す
                     self.equation_input.setText(self.parent.last_equation)
             else:
                 # 変数の変更がない場合も方程式を保存
                 self.parent.last_equation = equation
-                print(f"\n【デバッグ】変数変更なし - 方程式のみ保存: '{equation}'")
+
             
             print(f"\n{'#'*80}")
             print(f"#" + " " * 30 + "方程式変更チェック完了" + " " * 30 + "#")
@@ -528,8 +538,8 @@ class ModelEquationTab(BaseTab):
     def detect_variables(self, equation):
         """モデル式から変数を検出"""
         try:
-            print(f"【デバッグ】変数検出開始: '{equation}'")
-            print(f"【デバッグ】現在の変数リスト: {self.variables}")
+
+
             
             # 現在の変数リストをクリア
             self.variables.clear()
@@ -547,7 +557,7 @@ class ModelEquationTab(BaseTab):
                 left_side = eq.split('=', 1)[0].strip()
                 result_variables.add(left_side)
             
-            print(f"【デバッグ】計算結果変数: {result_variables}")
+
             
             # 右辺から変数を検出
             for eq in equations:
@@ -557,11 +567,11 @@ class ModelEquationTab(BaseTab):
                 left_side, right_side = eq.split('=', 1)
                 left_side = left_side.strip()
                 right_side = right_side.strip()
-                print(f"【デバッグ】方程式解析: 左辺='{left_side}', 右辺='{right_side}'")
+
                 
                 # 右辺から変数を検出（正規表現で直接検出）
                 detected_vars = re.findall(r'[a-zA-Z][a-zA-Z0-9_]*', right_side)
-                print(f"【デバッグ】検出された変数: {detected_vars}")
+
                 
                 # 計算結果変数でない変数のみを追加
                 for var in detected_vars:
@@ -570,10 +580,10 @@ class ModelEquationTab(BaseTab):
             
             # 重複を除去
             self.variables = list(dict.fromkeys(self.variables))
-            print(f"【デバッグ】最終変数リスト: {self.variables}")
+
             
         except Exception as e:
-            print(f"【デバッグ】変数検出エラー: {str(e)}")
+
             raise 
 
     def set_equation(self, equation):
@@ -608,3 +618,28 @@ class ModelEquationTab(BaseTab):
         except Exception as e:
             print(f"【エラー】数式変更処理エラー: {str(e)}")
             print(traceback.format_exc()) 
+
+    def parse_equation(self, equation):
+        import re
+        equations = [eq.strip() for eq in equation.split(',')]
+        result_vars = []
+        input_vars = set()
+        for eq in equations:
+            if '=' not in eq:
+                continue
+            left, right = eq.split('=', 1)
+            left = left.strip()
+            right = right.strip()
+            result_vars.append(left)
+            for var in re.findall(r'[a-zA-Z_][a-zA-Z0-9_]*', right):
+                if var != left:
+                    input_vars.add(var)
+        # 一貫性のためself.parentのリストも更新
+        if hasattr(self.parent, 'result_variables'):
+            self.parent.result_variables = result_vars
+        if hasattr(self.parent, 'input_variables'):
+            self.parent.input_variables = list(input_vars)
+        variables = result_vars + [v for v in input_vars if v not in result_vars]
+        if hasattr(self.parent, 'variables'):
+            self.parent.variables = variables
+        return variables 

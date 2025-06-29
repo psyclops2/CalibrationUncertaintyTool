@@ -24,7 +24,7 @@ class LanguageManager:
             self.current_language = system_locale if system_locale in ['ja', 'en'] else 'en'
         else:
             # 設定ファイルから言語を取得
-            self.current_language = self.config.config.get('Language', 'current', fallback='ja')
+            self.current_language = self.config.config.get('Language', 'current', fallback='ja').strip().lower()
         
         # 現在の言語に基づいてQLocaleを設定
         self.locale = QLocale(self.current_language)
@@ -32,17 +32,31 @@ class LanguageManager:
     
     def load_language(self):
         """現在の言語設定に基づいて翻訳をロード"""
+        print(f"[DEBUG] load_language called for language: {self.current_language}")
+        
         # 翻訳ファイルのパス（絶対パスで指定）
         app_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        translation_file = os.path.join(app_dir, f"i18n/{self.current_language}.qm")
+        translation_file = os.path.join(app_dir, "i18n", f"{self.current_language}.qm")
+        print(f"[DEBUG] Attempting to load translation file: {translation_file}")
         
         # 翻訳をロード
+        if not os.path.exists(translation_file):
+            print(f"[DEBUG][ERROR] Translation file not found: {translation_file}")
+            return False
+
+        # 既存のTranslatorを一旦削除してから新しいものをロードする
+        QCoreApplication.removeTranslator(self.translator)
+        self.translator = QTranslator()
+
         if self.translator.load(translation_file):
-            QCoreApplication.installTranslator(self.translator)
-            print(f"【デバッグ】言語ファイルをロードしました: {translation_file}")
+            print(f"[DEBUG] Successfully loaded translation file: {translation_file}")
+            if QCoreApplication.installTranslator(self.translator):
+                print("[DEBUG] Translator installed successfully.")
+            else:
+                print("[DEBUG][ERROR] Failed to install translator.")
             return True
         else:
-            print(f"【エラー】言語ファイルのロードに失敗しました: {translation_file}")
+            print(f"[DEBUG][ERROR] Failed to load language file (file exists but content may be invalid or unreadable): {translation_file}")
             return False
     
     def get_locale(self):
@@ -66,10 +80,10 @@ class LanguageManager:
             if not self.config.config.has_section('Language'):
                 self.config.config.add_section('Language')
             
-            self.config.config.set('Language', 'current', language_code)
+            self.config.config.set('Language', 'current', language_code.strip())
             self.config.save_config()
             
-            print(f"【デバッグ】言語を変更しました: {language_code}")
+
             return True
         
         print(f"【エラー】サポートされていない言語コード: {language_code}")
@@ -91,5 +105,5 @@ class LanguageManager:
         self.config.config.set('Language', 'use_system_locale', str(use_system).lower())
         self.config.save_config()
         
-        print(f"【デバッグ】システムロケール使用設定を変更しました: {use_system}")
+
         return True

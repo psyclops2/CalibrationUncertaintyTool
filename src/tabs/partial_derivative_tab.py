@@ -13,38 +13,45 @@ class PartialDerivativeTab(BaseTab):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent
-        print("【デバッグ】PartialDerivativeTab初期化")
+
         self.setup_ui()
+
+    def retranslate_ui(self):
+        """UIのテキストを現在の言語で更新"""
+        self.equation_group.setTitle(self.tr(LABEL_EQUATION))
+        self.derivative_group.setTitle(self.tr(PARTIAL_DERIVATIVE_TITLE))
+        # 式の表示と偏微分を再計算して表示を更新
+        self.update_equation_display()
         
     def setup_ui(self):
         """UIの設定"""
-        print("【デバッグ】setup_ui開始")
+
         layout = QVBoxLayout()
         
         # 現在のモデル式表示エリア
-        equation_group = QGroupBox(self.tr(LABEL_EQUATION))
+        self.equation_group = QGroupBox(self.tr(LABEL_EQUATION))
         equation_layout = QVBoxLayout()
         
         self.equation_display = QTextEdit()
         self.equation_display.setReadOnly(True)
         equation_layout.addWidget(self.equation_display)
         
-        equation_group.setLayout(equation_layout)
-        layout.addWidget(equation_group)
+        self.equation_group.setLayout(equation_layout)
+        layout.addWidget(self.equation_group)
         
         # 偏微分表示エリア
-        derivative_group = QGroupBox(self.tr(PARTIAL_DERIVATIVE_TITLE))
+        self.derivative_group = QGroupBox(self.tr(PARTIAL_DERIVATIVE_TITLE))
         derivative_layout = QVBoxLayout()
         
         self.partial_diff_area = QTextEdit()
         self.partial_diff_area.setReadOnly(True)
         derivative_layout.addWidget(self.partial_diff_area)
         
-        derivative_group.setLayout(derivative_layout)
-        layout.addWidget(derivative_group)
+        self.derivative_group.setLayout(derivative_layout)
+        layout.addWidget(self.derivative_group)
         
         self.setLayout(layout)
-        print("【デバッグ】setup_ui完了")
+
         
     def update_equation_display(self):
         """現在のモデル式を表示エリアに更新"""
@@ -143,7 +150,7 @@ class PartialDerivativeTab(BaseTab):
                         
                         derivative_parts.append(f"∂{formatted_left}/∂{var} = {derivative_str}")
                     except Exception as e:
-                        print(f"【デバッグ】変数 {var} の偏微分計算エラー: {str(e)}")
+
                         self.parent.log_error(f"変数 {var} の偏微分計算エラー: {str(e)}", self.tr(DERIVATIVE_CALCULATION_ERROR))
                         derivative_parts.append(f"∂{left_side}/∂{var} = {self.tr(ERROR_OCCURRED)}: {str(e)}")
             
@@ -153,12 +160,12 @@ class PartialDerivativeTab(BaseTab):
                 for part in derivative_parts:
                     html_content += f'<div>{part}</div><br>'
                 html_content += '</div>'
-                print(f"【デバッグ】偏微分HTML: {html_content}")
+
                 self.partial_diff_area.setHtml(html_content)
             else:
                 self.partial_diff_area.clear()
                 
         except Exception as e:
-            print(f"【デバッグ】偏微分の計算でエラー: {str(e)}")
+
             self.parent.log_error(f"偏微分計算エラー: {str(e)}", self.tr(DERIVATIVE_CALCULATION_ERROR))
             self.partial_diff_area.setText(f"{self.tr(DERIVATIVE_CALCULATION_ERROR)}: {str(e)}") 

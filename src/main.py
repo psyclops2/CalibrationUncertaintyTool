@@ -11,6 +11,9 @@ def main():
     
     # 言語設定の初期化と適用
     language_manager = LanguageManager()
+
+
+
     language_manager.load_language()
     
     # メインウィンドウの作成と表示

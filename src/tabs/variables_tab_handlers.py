@@ -19,47 +19,6 @@ class VariablesTabHandlers:
         self.last_selected_variable = None
         self.last_selected_value_index = 0
 
-    def on_value_count_changed(self, new_count):
-        """値の数が変更された時の処理"""
-        try:
-            # 親クラスの値の数を更新
-            self.parent.parent.value_count = new_count
-            
-            # すべての量に対して値の数を更新
-            for var_name in self.parent.parent.variable_values:
-                var_values = self.parent.parent.variable_values[var_name].get('values', [])
-                current_count = len(var_values)
-
-                if new_count < current_count:
-                    # 値を削除する場合
-                    var_values = var_values[:new_count]
-                elif new_count > current_count:
-                    # 値を追加する場合
-                    for _ in range(new_count - current_count):
-                        # 既存の値の単位と定義を取得
-                        unit = self.parent.parent.variable_values[var_name].get('unit', '')
-                        definition = self.parent.parent.variable_values[var_name].get('definition', '')
-                        var_values.append({
-                            'value': '',
-                            'type': 'A',
-                            'unit': unit,  # 単位を保持
-                            'definition': definition,  # 定義を保持
-                            'stddev': '',
-                            'sample_count': '',
-                            'nominal_value': '',
-                            'error_range': ''
-                        })
-
-                # 量辞書を更新
-                self.parent.parent.variable_values[var_name]['values'] = var_values
-
-            # 値の選択コンボボックスを更新
-            self.parent.update_value_combo()
-
-        except Exception as e:
-            print(f"【エラー】値の数変更エラー: {str(e)}")
-            print(traceback.format_exc())
-
     def on_value_selected(self, index):
         """値が選択された時の処理"""
         if index < 0:
@@ -102,17 +61,15 @@ class VariablesTabHandlers:
                     'type': 'A'
                 }
 
-            # 値の数を設定
-            self.parent.value_count_spin.setValue(self.parent.parent.value_count)
-
             # 値の選択コンボボックスのシグナルを一時的に切断
             self.parent.value_combo.blockSignals(True)
             
-            # 値の選択コンボボックスを更新
+            # 値の選択コンボボックスを更新（校正点設定タブの情報を参照）
             self.parent.update_value_combo()
             
             # 現在選択されている値のインデックスを設定
-            self.parent.value_combo.setCurrentIndex(self.parent.parent.current_value_index)
+            if 0 <= self.parent.parent.current_value_index < self.parent.value_combo.count():
+                self.parent.value_combo.setCurrentIndex(self.parent.parent.current_value_index)
             
             # 値の選択コンボボックスのシグナルを再接続
             self.parent.value_combo.blockSignals(False)

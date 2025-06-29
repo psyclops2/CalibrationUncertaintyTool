@@ -8,7 +8,7 @@ class EquationHandler:
     def get_target_equation(self, result_var):
         """選択された計算結果変数の式を取得"""
         try:
-            print(f"【デバッグ】式取得開始: {result_var}")
+
             # モデル式から連立方程式を取得
             equations = [eq.strip() for eq in self.main_window.last_equation.split(',')]
             

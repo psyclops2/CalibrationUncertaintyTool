@@ -7,12 +7,12 @@ class ConfigLoader:
         if config_path is None:
             config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'config.ini')
         self.config_path = config_path  # 設定ファイルのパスを保存
-        print(f"【デバッグ】設定ファイルのパス: {config_path}")
-        print(f"【デバッグ】設定ファイルの存在確認: {os.path.exists(config_path)}")
+
+
         # UTF-8エンコーディングでファイルを読み込む
         with open(config_path, 'r', encoding='utf-8') as f:
             self.config.read_file(f)
-        print(f"【デバッグ】設定ファイルのセクション: {self.config.sections()}")
+
 
     def get_precision(self) -> int:
         """計算の精度を取得"""
@@ -70,7 +70,7 @@ class ConfigLoader:
     def get_distribution_divisors(self) -> dict:
         """分布の除数を取得"""
         try:
-            print(f"【デバッグ】Distributionセクションの内容: {dict(self.config.items('Distribution'))}")
+
             return {
                 'normal': self.config.get('Distribution', 'normal_distribution'),
                 'rectangular': self.config.get('Distribution', 'rectangular_distribution'),
@@ -131,7 +131,7 @@ class ConfigLoader:
         try:
             with open(self.config_path, 'w', encoding='utf-8') as f:
                 self.config.write(f)
-            print(f"【デバッグ】設定ファイルを保存しました: {self.config_path}")
+
             return True
         except Exception as e:
             print(f"【エラー】設定ファイルの保存に失敗しました: {str(e)}")

@@ -15,11 +15,12 @@ class UncertaintyCalculationTab(BaseTab):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent
-        print("【デバッグ】UncertaintyCalculationTab初期化")
+
         if self.parent:
-            print(f"【デバッグ】親ウィンドウの属性: {dir(self.parent)}")
-            print(f"【デバッグ】model_equation_tab: {hasattr(self.parent, 'model_equation_tab')}")
-            print(f"【デバッグ】variables_tab: {hasattr(self.parent, 'variables_tab')}")
+            pass
+
+
+
         
         # ユーティリティクラスの初期化
         self.equation_handler = EquationHandler(parent)
@@ -27,13 +28,38 @@ class UncertaintyCalculationTab(BaseTab):
         self.uncertainty_calculator = UncertaintyCalculator(parent)
         
         self.setup_ui()
+
+    def retranslate_ui(self):
+        """UIのテキストを現在の言語で更新"""
+        self.result_group.setTitle(self.tr(RESULT_SELECTION))
+        self.result_variable_label.setText(self.tr(RESULT_VARIABLE) + ":")
+        self.calibration_point_label.setText(self.tr(CALIBRATION_POINT) + ":")
+        self.calibration_group.setTitle(self.tr(CALIBRATION_VALUE))
+        self.headers = [
+            self.tr(VARIABLE),
+            self.tr(CENTRAL_VALUE),
+            self.tr(STANDARD_UNCERTAINTY),
+            self.tr(DEGREES_OF_FREEDOM),
+            self.tr(DISTRIBUTION),
+            self.tr(SENSITIVITY_COEFFICIENT),
+            self.tr(CONTRIBUTION_UNCERTAINTY),
+            self.tr(CONTRIBUTION_RATE)
+        ]
+        self.calibration_table.setHorizontalHeaderLabels(self.headers)
+        self.result_display_group.setTitle(self.tr(CALCULATION_RESULT))
+        self.central_value_text.setText(self.tr(CENTRAL_VALUE) + ":")
+        self.combined_uncertainty_text.setText(self.tr(COMBINED_STANDARD_UNCERTAINTY) + ":")
+        self.effective_dof_text.setText(self.tr(EFFECTIVE_DEGREES_OF_FREEDOM) + ":")
+        self.coverage_factor_text.setText(self.tr(COVERAGE_FACTOR) + ":")
+        self.expanded_uncertainty_text.setText(self.tr(EXPANDED_UNCERTAINTY) + ":")
+
         # 初期表示時にプルダウンを更新
         self.update_result_combo()
         self.update_value_combo()
         
     def setup_ui(self):
         """UIの設定"""
-        print("【デバッグ】setup_ui開始")
+
         main_layout = QHBoxLayout()
         
         # 左側のレイアウト（1/4）
@@ -135,25 +161,26 @@ class UncertaintyCalculationTab(BaseTab):
         main_layout.addLayout(right_layout, 3)  # 右側のレイアウト（幅の比率3）
         
         self.setLayout(main_layout)
-        print("【デバッグ】setup_ui完了")
+
         
     def update_result_combo(self):
         """計算結果の選択肢を更新"""
         try:
-            print("【デバッグ】update_result_combo開始")
+
             self.result_combo.clear()
             
             # 親ウィンドウから計算結果変数を取得
             if hasattr(self.parent, 'result_variables'):
                 result_vars = self.parent.result_variables
-                print(f"【デバッグ】計算結果変数: {result_vars}")
+
                 
                 # 計算結果変数をmodel_equation_tab.pyの順序に合わせる
                 for var in self.parent.variables:
                     if var in result_vars:
                         self.result_combo.addItem(var)
             else:
-                print("【デバッグ】親ウィンドウにresult_variables属性なし")
+                pass
+
                 
         except Exception as e:
             print(f"【エラー】計算結果選択肢更新エラー: {str(e)}")
@@ -162,7 +189,7 @@ class UncertaintyCalculationTab(BaseTab):
     def update_value_combo(self):
         """校正点の選択肢を更新"""
         try:
-            print("【デバッグ】update_value_combo開始")
+
             self.value_combo.clear()
             
             value_names = getattr(self.parent, 'value_names', [])
@@ -217,41 +244,12 @@ class UncertaintyCalculationTab(BaseTab):
             print(f"【エラー】校正点変更エラー: {str(e)}")
             print(traceback.format_exc())
             
-    def retranslate_ui(self):
-        """UIのテキストを現在の言語で更新"""
-        # グループボックスのタイトル
-        self.result_group.setTitle(self.tr(RESULT_SELECTION))
-        self.calibration_group.setTitle(self.tr(CALIBRATION_VALUE))
-        self.result_display_group.setTitle(self.tr(CALCULATION_RESULT))
-        
-        # ラベル
-        self.result_variable_label.setText(self.tr(RESULT_VARIABLE) + ":")
-        self.calibration_point_label.setText(self.tr(CALIBRATION_POINT) + ":")
-        
-        # テーブルヘッダー
-        self.headers = [
-            self.tr(VARIABLE),
-            self.tr(CENTRAL_VALUE),
-            self.tr(STANDARD_UNCERTAINTY),
-            self.tr(DEGREES_OF_FREEDOM),
-            self.tr(DISTRIBUTION),
-            self.tr(SENSITIVITY_COEFFICIENT),
-            self.tr(CONTRIBUTION_UNCERTAINTY),
-            self.tr(CONTRIBUTION_RATE)
-        ]
-        self.calibration_table.setHorizontalHeaderLabels(self.headers)
-        
-        # 計算結果表示のラベル
-        self.central_value_text.setText(self.tr(CENTRAL_VALUE) + ":")
-        self.combined_uncertainty_text.setText(self.tr(COMBINED_STANDARD_UNCERTAINTY) + ":")
-        self.effective_dof_text.setText(self.tr(EFFECTIVE_DEGREES_OF_FREEDOM) + ":")
-        self.coverage_factor_text.setText(self.tr(COVERAGE_FACTOR) + ":")
-        self.expanded_uncertainty_text.setText(self.tr(EXPANDED_UNCERTAINTY) + ":")
+
     
     def calculate_sensitivity_coefficients(self, equation):
         """感度係数を計算して表示"""
         try:
-            print(f"【デバッグ】感度係数計算開始: {equation}")
+
             # 式を解析
             left_side, right_side = equation.split('=', 1)
             left_side = left_side.strip()
@@ -259,7 +257,7 @@ class UncertaintyCalculationTab(BaseTab):
             
             # 変数を抽出
             variables = self.equation_handler.get_variables_from_equation(right_side)
-            print(f"【デバッグ】抽出された変数: {variables}")
+
             
             # 親ウィンドウの変数リストの順序に合わせる
             ordered_variables = []
@@ -275,49 +273,49 @@ class UncertaintyCalculationTab(BaseTab):
             degrees_of_freedom_list = []
             
             for i, var in enumerate(ordered_variables):
-                print(f"【デバッグ】変数処理開始: {var}")
+
                 # 変数名
                 self.calibration_table.setItem(i, 0, QTableWidgetItem(var))
                 
                 # 中央値
                 central_value = self.value_handler.get_central_value(var)
-                print(f"【デバッグ】中央値: {central_value}")
+
                 self.calibration_table.setItem(i, 1, QTableWidgetItem(format_number_str(float(central_value))))
                 
                 # 標準不確かさ
                 standard_uncertainty = self.value_handler.get_standard_uncertainty(var)
-                print(f"【デバッグ】標準不確かさ: {standard_uncertainty}")
+
                 self.calibration_table.setItem(i, 2, QTableWidgetItem(format_number_str(standard_uncertainty)))
                 
                 # 自由度
                 degrees_of_freedom = self.value_handler.get_degrees_of_freedom(var)
-                print(f"【デバッグ】自由度: {degrees_of_freedom}")
+
                 self.calibration_table.setItem(i, 3, QTableWidgetItem(str(degrees_of_freedom)))
                 degrees_of_freedom_list.append(degrees_of_freedom)
                 
                 # 分布
                 distribution = self.value_handler.get_distribution(var)
-                print(f"【デバッグ】分布: {distribution}")
+
                 self.calibration_table.setItem(i, 4, QTableWidgetItem(distribution))
                 
                 # 感度係数
                 sensitivity = self.equation_handler.calculate_sensitivity(right_side, var, variables, self.value_handler)
-                print(f"【デバッグ】感度係数: {sensitivity}")
+
                 self.calibration_table.setItem(i, 5, QTableWidgetItem(format_number_str(float(sensitivity))))
                 
                 # 寄与不確かさ
                 try:
                     if standard_uncertainty and sensitivity:
                         contribution = float(standard_uncertainty) * float(sensitivity)
-                        print(f"【デバッグ】寄与不確かさ: {contribution}")
+
                         self.calibration_table.setItem(i, 6, QTableWidgetItem(format_number_str(contribution)))
                         contributions.append(contribution)
                     else:
-                        print(f"【デバッグ】寄与不確かさ計算スキップ: standard_uncertainty={standard_uncertainty}, sensitivity={sensitivity}")
+
                         self.calibration_table.setItem(i, 6, QTableWidgetItem(""))
                         contributions.append(0)
                 except (ValueError, TypeError) as e:
-                    print(f"【デバッグ】寄与不確かさ計算エラー: {str(e)}")
+
                     self.calibration_table.setItem(i, 6, QTableWidgetItem(""))
                     contributions.append(0)
             
