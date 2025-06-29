@@ -158,5 +158,9 @@
     },
     "last_equation": "A=CAL+MEA^2+CONST",
     "value_count": 2,
-    "current_value_index": 1
+    "current_value_index": 0,
+    "value_names": [
+        "1000V",
+        "100V"
+    ]
 }

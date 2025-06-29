@@ -51,6 +51,7 @@ translations = {
     LABEL_EQUATION: "式",
     LABEL_VARIABLE: "変数",
     LABEL_VALUE: "値",
+    LABEL_NOMINAL_VALUE: "呼び値",
     LABEL_UNIT: "単位",
     LABEL_DEFINITION: "定義",
     LABEL_UNCERTAINTY: "不確かさ",

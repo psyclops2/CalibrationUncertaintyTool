@@ -259,3 +259,16 @@ lrelease src/i18n/*.ts
 - 言語自動検出機能（システム言語に合わせる）
 - 言語リソースの外部ファイル化（JSON/YAMLなど）
 - 翻訳管理ツールの導入（大規模化した場合）
+
+
+## 新しい項目の追加時にやったこと。
+翻訳キーの追加：
+LABEL_NOMINAL_VALUEをtranslation_keys.pyに追加
+日本語翻訳「呼び値」をtranslations_ja.pyに追加
+英語翻訳「Nominal Value」をtranslations_en.pyに追加
+UI要素の追加：
+変数タブの詳細設定に「呼び値」入力フィールドを追加（単位の上に配置）
+入力値の変更を処理するハンドラーメソッドon_nominal_value_changedを追加
+データ処理の更新：
+変数の共通設定表示時に「呼び値」の値を表示するようdisplay_common_settingsメソッドを更新
+JSONファイルの読み込み・保存は既存のコードで対応可能（variable_values辞書に含まれる）

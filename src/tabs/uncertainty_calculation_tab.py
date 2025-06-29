@@ -165,14 +165,9 @@ class UncertaintyCalculationTab(BaseTab):
             print("【デバッグ】update_value_combo開始")
             self.value_combo.clear()
             
-            # 親ウィンドウから校正点の数を取得
-            if hasattr(self.parent, 'value_count'):
-                value_count = self.parent.value_count
-                print(f"【デバッグ】校正点の数: {value_count}")
-                for i in range(value_count):
-                    self.value_combo.addItem(f"{self.tr(CALIBRATION_POINT)} {i+1}")
-            else:
-                print("【デバッグ】親ウィンドウにvalue_count属性なし")
+            value_names = getattr(self.parent, 'value_names', [])
+            for name in value_names:
+                self.value_combo.addItem(name)
                 
         except Exception as e:
             print(f"【エラー】校正点選択肢更新エラー: {str(e)}")

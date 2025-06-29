@@ -84,10 +84,16 @@ class VariablesTab(BaseTab):
         self.settings_group = QGroupBox(self.tr(VARIABLE_DETAIL_SETTINGS))
         settings_layout = QFormLayout()
         
-        # 1段落目：単位
+        # 呼び値フィールドの追加
+        self.nominal_value_input = QLineEdit()
+        self.nominal_value_input.textChanged.connect(self.handlers.on_nominal_value_changed)
+        self.nominal_value_label = QLabel(self.tr(LABEL_NOMINAL_VALUE) + ":")
+        settings_layout.addRow(self.nominal_value_label, self.nominal_value_input)
+        
+        # 単位
         self.unit_input = QLineEdit()
         self.unit_input.textChanged.connect(self.handlers.on_unit_changed)
-        self.unit_label = QLabel(self.tr(UNIT) + ":")
+        self.unit_label = QLabel(self.tr(LABEL_UNIT) + ":")
         settings_layout.addRow(self.unit_label, self.unit_input)
         
         # 定義フィールドを追加
@@ -258,8 +264,9 @@ class VariablesTab(BaseTab):
         if self.mode_display.text() == self.translator.translate(NOT_SELECTED, "未選択"):
             self.mode_display.setText(self.tr(NOT_SELECTED))
             
-        self.unit_label.setText(self.tr(UNIT) + ":")
-        self.definition_label.setText(self.tr(DEFINITION) + ":")
+        self.nominal_value_label.setText(self.tr(LABEL_NOMINAL_VALUE) + ":")
+        self.unit_label.setText(self.tr(LABEL_UNIT) + ":")
+        self.definition_label.setText(self.tr(LABEL_DEFINITION) + ":")
         self.uncertainty_type_label.setText(self.tr(UNCERTAINTY_TYPE) + ":")
         
         # ラジオボタン
@@ -344,18 +351,30 @@ class VariablesTab(BaseTab):
 
             var_info = self.parent.variable_values[self.handlers.current_variable]
             
+            # 呼び値の設定
+            print("【デバッグ】display_common_settings: 呼び値の設定")
+            nominal_value = var_info.get('nominal_value', '')
+            print(f"【デバッグ】呼び値: {nominal_value}")
+            self.nominal_value_input.setText(nominal_value)
+            
             # 単位の設定
-            self.unit_input.setText(var_info.get('unit', ''))
+            print("【デバッグ】display_common_settings: 単位の設定")
+            unit = var_info.get('unit', '')
+            print(f"【デバッグ】単位: {unit}")
+            self.unit_input.setText(unit)
             
             # 定義の設定
-            self.definition_input.setText(var_info.get('definition', ''))
+            print("【デバッグ】display_common_settings: 定義の設定")
+            definition = var_info.get('definition', '')
+            print(f"【デバッグ】定義: {definition}")
+            self.definition_input.setText(definition)
             
             # 不確かさ種類の設定
             uncertainty_type = var_info.get('type', 'A')
             if uncertainty_type == 'A':
-                        self.type_a_radio.setChecked(True)
+                self.type_a_radio.setChecked(True)
             elif uncertainty_type == 'B':
-                        self.type_b_radio.setChecked(True)
+                self.type_b_radio.setChecked(True)
             else:  # fixed
                 self.type_fixed_radio.setChecked(True)
             
@@ -492,8 +511,15 @@ class VariablesTab(BaseTab):
             self.update_form_layout()
 
         except Exception as e:
-            print(f"【エラー】値表示エラー: {str(e)}")
+            print(f"【エラー】現在値の表示エラー: {str(e)}")
             print(traceback.format_exc())
+
+    def on_parent_value_count_changed(self, new_count):
+        """親ウィンドウの値の数が変更されたときに呼び出される"""
+        # このタブで値の数を変更した場合は、循環呼び出しを防ぐ
+        if self.value_count_spin.value() != new_count:
+            self.value_count_spin.setValue(new_count)
+        self.update_value_combo()
 
     def update_value_combo(self):
         """値の選択コンボボックスを更新"""
@@ -501,33 +527,13 @@ class VariablesTab(BaseTab):
             self.value_combo.blockSignals(True)
             self.value_combo.clear()
             
-            if self.handlers.current_variable and self.handlers.current_variable in self.parent.variable_values:
-                values = self.parent.variable_values[self.handlers.current_variable].get('values', [])
-                for i in range(self.parent.value_count):  # value_countを使用
-                    self.value_combo.addItem(f"校正点 {i+1}")
-                    
-                    # 必要に応じて値リストを拡張
-                    if i >= len(values):
-                        # 既存の値の単位と定義を取得
-                        unit = self.parent.variable_values[self.handlers.current_variable].get('unit', '')
-                        definition = self.parent.variable_values[self.handlers.current_variable].get('definition', '')
-                        values.append({
-                            'value': '',
-                            'type': 'A',
-                            'unit': unit,  # 単位を保持
-                            'definition': definition,  # 定義を保持
-                            'stddev': '',
-                            'sample_count': '',
-                            'nominal_value': '',
-                            'error_range': ''
-                        })
-                
-                # 値リストを更新
-                self.parent.variable_values[self.handlers.current_variable]['values'] = values
-                
-                # 現在のインデックスを設定
-                if self.parent.current_value_index < self.parent.value_count:
-                    self.value_combo.setCurrentIndex(self.parent.current_value_index)
+            # グローバルな value_names を使用して項目を追加
+            for name in self.parent.value_names:
+                self.value_combo.addItem(name)
+            
+            # 現在のインデックスを設定
+            if 0 <= self.parent.current_value_index < len(self.parent.value_names):
+                self.value_combo.setCurrentIndex(self.parent.current_value_index)
             
             self.value_combo.blockSignals(False)
             

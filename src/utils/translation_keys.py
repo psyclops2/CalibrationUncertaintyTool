@@ -6,12 +6,36 @@
 # アプリケーション全般
 APP_TITLE = "APP_TITLE"  # アプリケーションのタイトル
 
+# メニューバー
+FILE_MENU = 'file_menu'
+OPEN_FILE = 'open_file'
+SAVE = 'save'
+SAVE_AS = 'save_as'
+EXIT = 'exit'
+EDIT_MENU = 'edit_menu'
+SETTINGS_MENU = 'settings_menu'
+HELP_MENU = 'help_menu'
+
 # メニュー関連
 MENU_FILE = "MENU_FILE"  # ファイルメニュー
 MENU_EDIT = "MENU_EDIT"  # 編集メニュー
 MENU_VIEW = "MENU_VIEW"  # 表示メニュー
 MENU_LANGUAGE = "MENU_LANGUAGE"  # 言語メニュー
 MENU_HELP = "MENU_HELP"  # ヘルプメニュー
+
+# タブ
+TAB_EQUATION = "TAB_EQUATION"  # モデル式
+TAB_VARIABLES = "TAB_VARIABLES"  # 変数
+TAB_CALCULATION = "TAB_CALCULATION"  # 計算
+TAB_REPORT = "TAB_REPORT"  # レポート
+PARTIAL_DERIVATIVE = "PARTIAL_DERIVATIVE"  # 偏微分タブ
+POINT_SETTINGS_TAB = 'point_settings_tab'
+POINT_SETTINGS_TAB_INFO = 'point_settings_tab_info'
+
+# タブ名
+POINT_NAME = 'point_name'
+ADD_POINT = 'add_point'
+REMOVE_POINT = 'remove_point'
 
 # ファイルメニューアクション
 FILE_SAVE_AS = "FILE_SAVE_AS"  # 名前を付けて保存...
@@ -48,6 +72,7 @@ BUTTON_SAVE_REPORT = "BUTTON_SAVE_REPORT"  # レポート保存
 LABEL_EQUATION = "LABEL_EQUATION"  # 式
 LABEL_VARIABLE = "LABEL_VARIABLE"  # 変数
 LABEL_VALUE = "LABEL_VALUE"  # 値
+LABEL_NOMINAL_VALUE = "LABEL_NOMINAL_VALUE"  # 呼び値
 LABEL_UNIT = "LABEL_UNIT"  # 単位
 LABEL_DEFINITION = "LABEL_DEFINITION"  # 定義
 LABEL_UNCERTAINTY = "LABEL_UNCERTAINTY"  # 不確かさ

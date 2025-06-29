@@ -79,7 +79,7 @@ class ReportTab(BaseTab):
                 print("【デバッグ】計算結果変数が見つかりません")
                 
             # レポートの更新
-            self.generate_report()
+            self.update_report()
             
         except Exception as e:
             print(f"【エラー】変数リスト更新エラー: {str(e)}")
@@ -91,7 +91,7 @@ class ReportTab(BaseTab):
             return
             
         try:
-            self.generate_report()
+            self.update_report()
         except Exception as e:
             print(f"【エラー】計算結果変更エラー: {str(e)}")
             print(traceback.format_exc())
@@ -156,6 +156,7 @@ class ReportTab(BaseTab):
             
             # 値の数を取得
             value_count = self.parent.value_count if hasattr(self.parent, 'value_count') else 1
+            value_names = self.parent.value_names if hasattr(self.parent, 'value_names') else [f'校正点 {i+1}' for i in range(value_count)]
             
             # モデル式を表示
             html += f"""
@@ -223,7 +224,8 @@ class ReportTab(BaseTab):
             
             # 各値について計算
             for value_index in range(value_count):
-                print(f"【デバッグ】値{value_index + 1}の処理開始")
+                point_name = value_names[value_index] if value_index < len(value_names) else f'校正点 {value_index+1}'
+                print(f"【デバッグ】値{value_index + 1} ({point_name}) の処理開始")
                 
                 # ValueHandlerの現在の値インデックスを更新
                 self.value_handler.current_value_index = value_index
@@ -312,7 +314,7 @@ class ReportTab(BaseTab):
                 html += f"""
                 <hr style="border: 1px solid black;"/>
                 <div class="section">
-                    <div class="title">校正点{value_index + 1}の計算結果</div>
+                    <div class="title">{self.tr(CALCULATION_RESULT_DISPLAY)} ({point_name})</div>
                     
                     <div class="section">
                         <div class="title">各量の値の詳細説明</div>
@@ -490,14 +492,13 @@ class ReportTab(BaseTab):
             </body>
             </html>
             """
-            
             return html
-            
+
         except Exception as e:
             print(f"【エラー】HTML生成エラー: {str(e)}")
             print(traceback.format_exc())
             return "<html><body><h1>エラーが発生しました</h1></body></html>"
-            
+
     def save_report(self):
         """レポートをHTMLファイルとして保存"""
         try:
@@ -523,7 +524,12 @@ class ReportTab(BaseTab):
             print(f"【エラー】レポート保存エラー: {str(e)}")
             print(traceback.format_exc())
             QMessageBox.warning(self, self.tr(SAVE_ERROR), self.tr(REPORT_SAVE_ERROR))
-            
+
+    def update_report(self):
+        """レポートを更新するための外部インターフェース"""
+        if self.result_combo.count() > 0:
+            self.generate_report()
+
     def save_html_to_file(self, html, file_name):
         """HTMLをファイルに保存"""
         try:

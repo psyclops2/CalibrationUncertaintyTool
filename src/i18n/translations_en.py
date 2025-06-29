@@ -51,6 +51,7 @@ translations = {
     LABEL_EQUATION: "Equation",
     LABEL_VARIABLE: "Variable",
     LABEL_VALUE: "Value",
+    LABEL_NOMINAL_VALUE: "Nominal Value",
     LABEL_UNIT: "Unit",
     LABEL_DEFINITION: "Definition",
     LABEL_UNCERTAINTY: "Uncertainty",

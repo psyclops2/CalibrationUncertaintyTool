@@ -1,7 +1,7 @@
 import traceback
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTabWidget, QMessageBox, QFileDialog, QMenuBar, QMenu
 from PySide6.QtGui import QAction
-from PySide6.QtCore import Qt, QEvent
+from PySide6.QtCore import Qt, QEvent, Slot
 import json
 
 from src.tabs.model_equation_tab import ModelEquationTab
@@ -9,6 +9,7 @@ from src.tabs.variables_tab import VariablesTab
 from src.tabs.uncertainty_calculation_tab import UncertaintyCalculationTab
 from src.tabs.report_tab import ReportTab
 from src.tabs.partial_derivative_tab import PartialDerivativeTab
+from src.tabs.point_settings_tab import PointSettingsTab
 from src.dialogs.about_dialog import AboutDialog
 from src.utils.language_manager import LanguageManager
 from src.i18n.translator import Translator
@@ -33,6 +34,7 @@ class MainWindow(QMainWindow):
         self.last_equation = ""
         self.value_count = 1
         self.current_value_index = 0
+        self.value_names = [f"校正点 {i+1}" for i in range(self.value_count)]
         
         # UIの初期化
         self.setup_ui()
@@ -54,6 +56,7 @@ class MainWindow(QMainWindow):
         self.uncertainty_calculation_tab = UncertaintyCalculationTab(self)
         self.partial_derivative_tab = PartialDerivativeTab(self)
         self.report_tab = ReportTab(self)
+        self.point_settings_tab = PointSettingsTab(self)
         
         # タブの追加
         self.tab_widget.addTab(self.model_equation_tab, self.tr(TAB_EQUATION))
@@ -61,11 +64,52 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(self.uncertainty_calculation_tab, self.tr(TAB_CALCULATION))
         self.tab_widget.addTab(self.report_tab, self.tr(TAB_REPORT))
         self.tab_widget.addTab(self.partial_derivative_tab, self.tr(PARTIAL_DERIVATIVE))
+        self.tab_widget.addTab(self.point_settings_tab, self.tr(POINT_SETTINGS_TAB))
         
         # タブ切り替え時のシグナル接続
         self.tab_widget.currentChanged.connect(self.on_tab_changed)
         
+        # Connect signals
+        self.point_settings_tab.points_changed.connect(self.on_points_changed)
+        self.point_settings_tab.point_count_changed.connect(self.on_value_count_changed)
+        
         layout.addWidget(self.tab_widget)
+
+    @Slot()
+    def on_points_changed(self):
+        """
+        Handles changes from PointSettingsTab (e.g., name edited).
+        The `value_names` list in MainWindow is assumed to be updated by the tab.
+        This method propagates the changes to other tabs.
+        """
+        self.variables_tab.update_value_combo()
+        self.uncertainty_calculation_tab.update_value_combo()
+        self.report_tab.update_report()
+
+    @Slot(int)
+    def on_value_count_changed(self, new_count):
+        """
+        Handles changes in the number of calibration points from the PointSettingsTab.
+        """
+        if self.value_count == new_count:
+            return
+
+        self.value_count = new_count
+        
+        # Adjust the length of the value_names list
+        current_len = len(self.value_names)
+        if new_count > current_len:
+            # Add new default names for the new points
+            for i in range(current_len, new_count):
+                self.value_names.append(f"校正点 {i + 1}")
+        else:
+            # Truncate the list if points were removed
+            self.value_names = self.value_names[:new_count]
+
+        # Notify other tabs about the change
+        self.variables_tab.on_parent_value_count_changed(new_count)
+        self.uncertainty_calculation_tab.update_value_combo()
+        self.report_tab.update_report()
         
     def create_menu_bar(self):
         """メニューバーの作成"""
@@ -126,7 +170,8 @@ class MainWindow(QMainWindow):
             'variable_values': self.variable_values,
             'last_equation': self.last_equation,
             'value_count': self.value_count,
-            'current_value_index': self.current_value_index
+            'current_value_index': self.current_value_index,
+            'value_names': self.value_names
         }
         
     def load_data(self, data):
@@ -135,9 +180,10 @@ class MainWindow(QMainWindow):
             self.variables = data.get('variables', [])
             self.result_variables = data.get('result_variables', [])
             self.variable_values = data.get('variable_values', {})
-            self.last_equation = data.get('last_equation', '')
+            self.last_equation = data.get('last_equation', "")
             self.value_count = data.get('value_count', 1)
             self.current_value_index = data.get('current_value_index', 0)
+            self.value_names = data.get('value_names', [f"校正点 {i+1}" for i in range(self.value_count)])
             
             # UIの更新
             if hasattr(self, 'variables_tab'):
