@@ -164,9 +164,10 @@ class EquationHandler:
                         expr = expr.subs(symbols[var], float(central_value))
                     except (ValueError, TypeError):
                         return ''
-            
-            return float(expr)
-            
+            try:
+                return float(expr)
+            except (TypeError, ValueError):
+                return ''
         except Exception as e:
             print(f"【エラー】中央値計算エラー: {str(e)}")
             print(traceback.format_exc())

@@ -194,7 +194,6 @@
     "current_value_index": 2,
     "value_names": [
         "1000V",
-        "100V",
-        "CALIBRATION_POINT_NAME 3"
+        "100V"
     ]
 }

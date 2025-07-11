@@ -279,43 +279,46 @@ class UncertaintyCalculationTab(BaseTab):
                 
                 # 中央値
                 central_value = self.value_handler.get_central_value(var)
-
-                self.calibration_table.setItem(i, 1, QTableWidgetItem(format_number_str(float(central_value))))
+                if central_value == '' or central_value is None:
+                    self.calibration_table.setItem(i, 1, QTableWidgetItem('--'))
+                    self.calibration_table.setItem(i, 2, QTableWidgetItem('--'))  # 標準不確かさ
+                    self.calibration_table.setItem(i, 3, QTableWidgetItem('--'))  # 自由度
+                    self.calibration_table.setItem(i, 4, QTableWidgetItem('--'))  # 分布
+                    self.calibration_table.setItem(i, 5, QTableWidgetItem('--'))  # 感度係数
+                    self.calibration_table.setItem(i, 6, QTableWidgetItem('--'))  # 寄与不確かさ
+                    contributions.append(0)
+                    degrees_of_freedom_list.append(0)
+                    continue
+                else:
+                    self.calibration_table.setItem(i, 1, QTableWidgetItem(format_number_str(float(central_value))))
                 
                 # 標準不確かさ
                 standard_uncertainty = self.value_handler.get_standard_uncertainty(var)
-
                 self.calibration_table.setItem(i, 2, QTableWidgetItem(format_number_str(standard_uncertainty)))
                 
                 # 自由度
                 degrees_of_freedom = self.value_handler.get_degrees_of_freedom(var)
-
                 self.calibration_table.setItem(i, 3, QTableWidgetItem(str(degrees_of_freedom)))
                 degrees_of_freedom_list.append(degrees_of_freedom)
                 
                 # 分布
                 distribution = self.value_handler.get_distribution(var)
-
                 self.calibration_table.setItem(i, 4, QTableWidgetItem(distribution))
                 
                 # 感度係数
                 sensitivity = self.equation_handler.calculate_sensitivity(right_side, var, variables, self.value_handler)
-
                 self.calibration_table.setItem(i, 5, QTableWidgetItem(format_number_str(float(sensitivity))))
                 
                 # 寄与不確かさ
                 try:
                     if standard_uncertainty and sensitivity:
                         contribution = float(standard_uncertainty) * float(sensitivity)
-
                         self.calibration_table.setItem(i, 6, QTableWidgetItem(format_number_str(contribution)))
                         contributions.append(contribution)
                     else:
-
                         self.calibration_table.setItem(i, 6, QTableWidgetItem(""))
                         contributions.append(0)
                 except (ValueError, TypeError) as e:
-
                     self.calibration_table.setItem(i, 6, QTableWidgetItem(""))
                     contributions.append(0)
             
@@ -331,7 +334,15 @@ class UncertaintyCalculationTab(BaseTab):
             try:
                 # 中央値の計算
                 result_central_value = self.equation_handler.calculate_result_central_value(right_side, variables, self.value_handler)
-                self.central_value_label.setText(format_number_str(float(result_central_value)))
+                try:
+                    self.central_value_label.setText(format_number_str(float(result_central_value)))
+                except (ValueError, TypeError):
+                    self.central_value_label.setText('--')
+                    self.standard_uncertainty_label.setText('--')
+                    self.effective_degrees_of_freedom_label.setText('--')
+                    self.coverage_factor_label.setText('--')
+                    self.expanded_uncertainty_label.setText('--')
+                    return
                 
                 # 合成標準不確かさの表示
                 self.standard_uncertainty_label.setText(format_number_str(result_standard_uncertainty))
@@ -349,7 +360,38 @@ class UncertaintyCalculationTab(BaseTab):
                 # 拡張不確かさの計算
                 expanded_uncertainty = coverage_factor * result_standard_uncertainty
                 self.expanded_uncertainty_label.setText(format_number_str(expanded_uncertainty))
-                
+
+                # --- ここで計算結果をMainWindowに保存 ---
+                result_var = self.result_combo.currentText()
+                point_name = self.value_combo.currentText()
+                # バジェット情報を作成
+                budget = []
+                for i, var in enumerate(ordered_variables):
+                    budget.append({
+                        'variable': var,
+                        'central_value': self.calibration_table.item(i, 1).text() if self.calibration_table.item(i, 1) else '',
+                        'standard_uncertainty': self.calibration_table.item(i, 2).text() if self.calibration_table.item(i, 2) else '',
+                        'dof': self.calibration_table.item(i, 3).text() if self.calibration_table.item(i, 3) else '',
+                        'distribution': self.calibration_table.item(i, 4).text() if self.calibration_table.item(i, 4) else '',
+                        'sensitivity': self.calibration_table.item(i, 5).text() if self.calibration_table.item(i, 5) else '',
+                        'contribution': self.calibration_table.item(i, 6).text() if self.calibration_table.item(i, 6) else '',
+                        'contribution_rate': float(self.calibration_table.item(i, 7).text().replace('%','')) if self.calibration_table.item(i, 7) and self.calibration_table.item(i, 7).text().replace('%','').replace('.','',1).isdigit() else 0.0
+                    })
+                # MainWindowに保存
+                if not hasattr(self.parent, 'calculation_results'):
+                    self.parent.calculation_results = {}
+                if result_var not in self.parent.calculation_results:
+                    self.parent.calculation_results[result_var] = {}
+                self.parent.calculation_results[result_var][point_name] = {
+                    'budget': budget,
+                    'result_central_value': result_central_value,
+                    'result_standard_uncertainty': result_standard_uncertainty,
+                    'effective_df': effective_df,
+                    'coverage_factor': coverage_factor,
+                    'expanded_uncertainty': expanded_uncertainty,
+                }
+                # --- ここまで ---
+
             except Exception as e:
                 print(f"【エラー】計算結果表示エラー: {str(e)}")
                 print(traceback.format_exc())
