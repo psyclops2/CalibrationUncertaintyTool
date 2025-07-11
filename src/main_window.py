@@ -52,19 +52,19 @@ class MainWindow(QMainWindow):
         
         # 各タブの作成
         self.model_equation_tab = ModelEquationTab(self)
+        self.point_settings_tab = PointSettingsTab(self)
         self.variables_tab = VariablesTab(self)
         self.uncertainty_calculation_tab = UncertaintyCalculationTab(self)
         self.partial_derivative_tab = PartialDerivativeTab(self)
         self.report_tab = ReportTab(self)
-        self.point_settings_tab = PointSettingsTab(self)
         
         # タブの追加
         self.tab_widget.addTab(self.model_equation_tab, self.tr(TAB_EQUATION))
+        self.tab_widget.addTab(self.point_settings_tab, self.tr(POINT_SETTINGS_TAB))
         self.tab_widget.addTab(self.variables_tab, self.tr(TAB_VARIABLES))
         self.tab_widget.addTab(self.uncertainty_calculation_tab, self.tr(TAB_CALCULATION))
         self.tab_widget.addTab(self.report_tab, self.tr(TAB_REPORT))
         self.tab_widget.addTab(self.partial_derivative_tab, self.tr(PARTIAL_DERIVATIVE))
-        self.tab_widget.addTab(self.point_settings_tab, self.tr(POINT_SETTINGS_TAB))
         
         # タブ切り替え時のシグナル接続
         self.tab_widget.currentChanged.connect(self.on_tab_changed)
@@ -324,11 +324,11 @@ class MainWindow(QMainWindow):
         
         # タブのタイトル
         self.tab_widget.setTabText(0, self.tr(TAB_EQUATION))
-        self.tab_widget.setTabText(1, self.tr(TAB_VARIABLES))
-        self.tab_widget.setTabText(2, self.tr(TAB_CALCULATION))
-        self.tab_widget.setTabText(3, self.tr(TAB_REPORT))
-        self.tab_widget.setTabText(4, self.tr(PARTIAL_DERIVATIVE))
-        self.tab_widget.setTabText(5, self.tr(POINT_SETTINGS_TAB))
+        self.tab_widget.setTabText(1, self.tr(POINT_SETTINGS_TAB))
+        self.tab_widget.setTabText(2, self.tr(TAB_VARIABLES))
+        self.tab_widget.setTabText(3, self.tr(TAB_CALCULATION))
+        self.tab_widget.setTabText(4, self.tr(TAB_REPORT))
+        self.tab_widget.setTabText(5, self.tr(PARTIAL_DERIVATIVE))
         
         # 各タブのUIテキストを更新
         if hasattr(self, 'model_equation_tab') and hasattr(self.model_equation_tab, 'retranslate_ui'):
@@ -360,7 +360,7 @@ class MainWindow(QMainWindow):
     def select_variables_tab(self):
         """変数管理タブを選択"""
 
-        self.tab_widget.setCurrentIndex(1)
+        self.tab_widget.setCurrentIndex(2)
         
     def select_report_tab(self):
         """レポートタブを選択"""

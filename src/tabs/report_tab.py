@@ -181,7 +181,7 @@ class ReportTab(BaseTab):
                 var_data = variable_values.get(var_name, {})
                 unit = var_data.get('unit', '-')
                 definition = var_data.get('definition', '-')
-                uncertainty_type = self.get_uncertainty_type_display(var_data.get('uncertainty_type', ''), var_name)
+                uncertainty_type = self.get_uncertainty_type_display(var_data.get('type', ''), var_name)
                 html += f"""
                 <tr>
                     <td>{var_name}</td>
@@ -195,34 +195,37 @@ class ReportTab(BaseTab):
             # 各変数の詳細
             html += f'<div class="title">{self.tr(REPORT_VARIABLE_DETAILS)}</div>'
             point_names = getattr(self.parent, 'value_names', [])
-            for point_name in point_names:
+            for idx, point_name in enumerate(point_names):
                 html += f'<h4>{self.tr(REPORT_CALIBRATION_POINT)}: {point_name}</h4>'
                 for var_name in variables:
                     if var_name in self.parent.result_variables:
                         continue
-                    var_data = variable_values.get(var_name, {})
-                    html += f"<h5>{var_name}</h5>"
-                    uncertainty_type = var_data.get('uncertainty_type', '')
-                    if uncertainty_type == 'A':
-                        values_by_point = var_data.get('values', {})
-                        values = values_by_point.get(point_name, [])
-                        if values:
-                            html += f"""
-                            <table>
-                                <tr><th>{self.tr(REPORT_MEASUREMENT_NUMBER)}</th><th>{self.tr(REPORT_VALUE)}</th></tr>
-                            """
-                            for i, val in enumerate(values):
-                                html += f"<tr><td>{i+1}</td><td>{val}</td></tr>"
-                            html += "</table>"
-                    elif uncertainty_type == 'B':
-                        # TypeBの詳細（半値幅・分布など）
-                        half_width = var_data.get('half_width', '-')
-                        distribution = var_data.get('distribution', '-')
-                        html += f"<div>{self.tr(HALF_WIDTH)}: {half_width}, {self.tr(DISTRIBUTION)}: {distribution}</div>"
-                    elif uncertainty_type == 'fixed':
-                        fixed_value = var_data.get('fixed_value', '-')
-                        html += f"<div>{self.tr(FIXED_VALUE)}: {fixed_value}</div>"
-                    else:
+                    try:
+                        var_data = variable_values.get(var_name, {})
+                        html += f"<h5>{var_name}</h5>"
+                        uncertainty_type = var_data.get('type', '')
+                        values_list = var_data.get('values', [])
+                        value_item = values_list[idx] if idx < len(values_list) else None
+                        if uncertainty_type == 'A':
+                            if value_item:
+                                description = value_item.get('description', '-')
+                                html += f"<div>{self.tr(DETAIL_DESCRIPTION)}: {description}</div>"
+                            else:
+                                html += f"<div>{self.tr(DETAIL_DESCRIPTION)}: -</div>"
+                        elif uncertainty_type == 'B':
+                            half_width = var_data.get('half_width', '-')
+                            distribution = var_data.get('distribution', '-')
+                            html += f"<div>{self.tr(HALF_WIDTH)}: {half_width}, {self.tr(DISTRIBUTION)}: {distribution}</div>"
+                            description = value_item.get('description', '-') if value_item else '-'
+                            html += f"<div>{self.tr(DETAIL_DESCRIPTION)}: {description}</div>"
+                        elif uncertainty_type == 'fixed':
+                            fixed_value = var_data.get('fixed_value', '-')
+                            html += f"<div>{self.tr(FIXED_VALUE)}: {fixed_value}</div>"
+                            description = value_item.get('description', '-') if value_item else '-'
+                            html += f"<div>{self.tr(DETAIL_DESCRIPTION)}: {description}</div>"
+                        else:
+                            html += f"<div>{self.tr(DETAIL_DESCRIPTION)}: -</div>"
+                    except Exception as e:
                         html += f"<div>-</div>"
 
             # 不確かさのバジェット・計算結果（計算タブから取得）
