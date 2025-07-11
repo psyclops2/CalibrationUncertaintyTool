@@ -3,6 +3,7 @@ from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTabWidget, QMe
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt, QEvent, Slot
 import json
+import decimal
 
 from src.tabs.model_equation_tab import ModelEquationTab
 from src.tabs.variables_tab import VariablesTab
@@ -189,8 +190,13 @@ class MainWindow(QMainWindow):
             
             if file_path:
                 save_data = self.get_save_data()
+                # Decimal型のみstrに変換するカスタムエンコーダ
+                def decimal_default(obj):
+                    if isinstance(obj, decimal.Decimal):
+                        return str(obj)
+                    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
                 with open(file_path, 'w', encoding='utf-8') as f:
-                    json.dump(save_data, f, indent=4, ensure_ascii=False)
+                    json.dump(save_data, f, indent=4, ensure_ascii=False, default=decimal_default)
                 QMessageBox.information(self, self.tr(MESSAGE_SUCCESS), self.tr(FILE_SAVED))
                 
         except Exception as e:
