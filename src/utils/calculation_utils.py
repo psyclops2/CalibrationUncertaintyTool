@@ -32,7 +32,9 @@ def evaluate_formula(formula, variables=None):
         # 変数を式に代入（Decimalに変換）
         for var_name, var_value in variables.items():
             # 変数名を値に置換（常にDecimal文字列で）
-            formula = formula.replace(var_name, f'Decimal("{var_value}")')
+            # ギリシャ文字を含む変数名も正しく置換されるように、正規表現を使用
+            import re
+            formula = re.sub(r'\b' + re.escape(var_name) + r'\b', f'Decimal("{var_value}")', formula)
             
         # ^演算子を**演算子に置き換え
         formula = formula.replace('^', '**')

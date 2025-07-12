@@ -8,9 +8,21 @@ class EquationHandler:
     def get_target_equation(self, result_var):
         """選択された計算結果変数の式を取得"""
         try:
+            # まず親ウィンドウのlast_equationを確認
+            equation = getattr(self.main_window, 'last_equation', '')
+            
+            # last_equationが空の場合、モデル式タブから直接取得
+            if not equation and hasattr(self.main_window, 'model_equation_tab'):
+                equation = self.main_window.model_equation_tab.equation_input.toPlainText().strip()
+                # 取得した式を親ウィンドウに設定
+                if equation:
+                    self.main_window.last_equation = equation
+            
+            if not equation:
+                return None
 
             # モデル式から連立方程式を取得
-            equations = [eq.strip() for eq in self.main_window.last_equation.split(',')]
+            equations = [eq.strip() for eq in equation.split(',')]
             
             # 連立方程式を整理
             resolved_equation = self.resolve_equation(result_var, equations)
@@ -91,22 +103,11 @@ class EquationHandler:
     def get_variables_from_equation(self, equation):
         """式から変数を抽出"""
         try:
-            # 演算子で式を分割
-            for op in ['+', '-', '*', '/', '^', '(', ')', ',']:
-                equation = equation.replace(op, f' {op} ')
-            terms = equation.split()
-            
-            # 変数を抽出
-            variables = []
-            for term in terms:
-                if term not in ['+', '-', '*', '/', '^', '(', ')', ',']:
-                    try:
-                        float(term)  # 数値かどうかをチェック
-                    except ValueError:
-                        if term not in variables:
-                            variables.append(term)
-            
-            return variables
+            import re
+            # 正規表現で変数を抽出（ギリシャ文字対応）
+            variables = re.findall(r'[a-zA-Zα-ωΑ-Ω][a-zA-Z0-9_α-ωΑ-Ω]*', equation)
+            # 重複を除去
+            return list(dict.fromkeys(variables))
             
         except Exception as e:
             print(f"【エラー】変数抽出エラー: {str(e)}")

@@ -56,9 +56,22 @@ class PartialDerivativeTab(BaseTab):
     def update_equation_display(self):
         """現在のモデル式を表示エリアに更新"""
         try:
-            if hasattr(self.parent, 'last_equation'):
-                self.equation_display.setText(self.parent.last_equation)
+            # まず親ウィンドウのlast_equationを確認
+            equation = getattr(self.parent, 'last_equation', '')
+            
+            # last_equationが空の場合、モデル式タブから直接取得
+            if not equation and hasattr(self.parent, 'model_equation_tab'):
+                equation = self.parent.model_equation_tab.equation_input.toPlainText().strip()
+                # 取得した式を親ウィンドウに設定
+                if equation:
+                    self.parent.last_equation = equation
+            
+            if equation:
+                self.equation_display.setText(equation)
                 self.calculate_partial_derivatives()
+            else:
+                self.equation_display.clear()
+                self.partial_diff_area.clear()
         except Exception as e:
             print(f"【エラー】モデル式表示更新エラー: {str(e)}")
             print(traceback.format_exc())
@@ -66,7 +79,16 @@ class PartialDerivativeTab(BaseTab):
     def calculate_partial_derivatives(self):
         """偏微分の計算と表示"""
         try:
-            equation = self.parent.last_equation
+            # まず親ウィンドウのlast_equationを確認
+            equation = getattr(self.parent, 'last_equation', '')
+            
+            # last_equationが空の場合、モデル式タブから直接取得
+            if not equation and hasattr(self.parent, 'model_equation_tab'):
+                equation = self.parent.model_equation_tab.equation_input.toPlainText().strip()
+                # 取得した式を親ウィンドウに設定
+                if equation:
+                    self.parent.last_equation = equation
+            
             if not equation:
                 self.partial_diff_area.clear()
                 return
@@ -113,16 +135,12 @@ class PartialDerivativeTab(BaseTab):
                     right = right.strip()
                     symbols[left] = sp.Symbol(left)
                     
-                    # 右辺の変数も追加
-                    for op in ['+', '-', '*', '/', '^', '(', ')', ',']:
-                        right = right.replace(op, f' {op} ')
-                    terms = right.split()
-                    for term in terms:
-                        if term not in ['+', '-', '*', '/', '^', '(', ')', ',']:
-                            try:
-                                float(term)
-                            except ValueError:
-                                symbols[term] = sp.Symbol(term)
+                    # 右辺の変数も追加（ギリシャ文字対応）
+                    import re
+                    right_vars = re.findall(r'[a-zA-Zα-ωΑ-Ω][a-zA-Z0-9_α-ωΑ-Ω]*', right)
+                    for var in right_vars:
+                        if var not in symbols:
+                            symbols[var] = sp.Symbol(var)
                 
                 # 結果変数の式を解析
                 expr_str = right_side.replace('^', '**')
@@ -143,10 +161,10 @@ class PartialDerivativeTab(BaseTab):
                         derivative_str = derivative_str.replace('*', '·')
                         
                         # 下付き文字と上付き文字の処理
-                        derivative_str = re.sub(r'([a-zA-Z])_([a-zA-Z0-9]+)', r'\1<sub>\2</sub>', derivative_str)
+                        derivative_str = re.sub(r'([a-zA-Zα-ωΑ-Ω])_([a-zA-Z0-9α-ωΑ-Ω]+)', r'\1<sub>\2</sub>', derivative_str)
                         derivative_str = re.sub(r'\^([0-9]+)', r'<sup>\1</sup>', derivative_str)
                         
-                        formatted_left = re.sub(r'([a-zA-Z])_([a-zA-Z0-9]+)', r'\1<sub>\2</sub>', left_side)
+                        formatted_left = re.sub(r'([a-zA-Zα-ωΑ-Ω])_([a-zA-Z0-9α-ωΑ-Ω]+)', r'\1<sub>\2</sub>', left_side)
                         
                         derivative_parts.append(f"∂{formatted_left}/∂{var} = {derivative_str}")
                     except Exception as e:

@@ -231,6 +231,19 @@ class ModelEquationTab(BaseTab):
                 # 前回の方程式を更新
                 self.parent.last_equation = current_equation
                 
+                # 偏微分タブの更新
+                if hasattr(self.parent, 'partial_derivative_tab'):
+                    self.parent.partial_derivative_tab.update_equation_display()
+                
+                # レポートタブの更新（新規追加）
+                if hasattr(self.parent, 'report_tab'):
+                    self.parent.report_tab.update_report()
+                
+                # 不確かさ計算タブの更新（新規追加）
+                if hasattr(self.parent, 'uncertainty_calculation_tab'):
+                    self.parent.uncertainty_calculation_tab.update_result_combo()
+                    self.parent.uncertainty_calculation_tab.update_value_combo()
+                
         except Exception as e:
             print(f"【エラー】方程式解析エラー: {str(e)}")
             print(traceback.format_exc())
@@ -517,7 +530,7 @@ class ModelEquationTab(BaseTab):
                 processed_eq = eq.replace('*', '･')
 
                 # 下付き文字の処理（_の後の文字や数字を下付き文字に変換）
-                processed_eq = re.sub(r'([a-zA-Z])_([a-zA-Z0-9]+)', r'\1<sub>\2</sub>', processed_eq)
+                processed_eq = re.sub(r'([a-zA-Zα-ωΑ-Ω])_([a-zA-Z0-9α-ωΑ-Ω]+)', r'\1<sub>\2</sub>', processed_eq)
                 
                 # 上付き文字の処理（^の後の数字や文字を上付き文字に変換）
                 processed_eq = re.sub(r'\^(\d+|\([^)]+\))', r'<sup>\1</sup>', processed_eq)
@@ -570,7 +583,7 @@ class ModelEquationTab(BaseTab):
 
                 
                 # 右辺から変数を検出（正規表現で直接検出）
-                detected_vars = re.findall(r'[a-zA-Z][a-zA-Z0-9_]*', right_side)
+                detected_vars = re.findall(r'[a-zA-Zα-ωΑ-Ω][a-zA-Z0-9_α-ωΑ-Ω]*', right_side)
 
                 
                 # 計算結果変数でない変数のみを追加
@@ -602,18 +615,27 @@ class ModelEquationTab(BaseTab):
     def on_equation_changed(self):
         """数式が変更されたときの処理"""
         try:
-            equation = self.equation_input.toPlainText()
+            equation = self.equation_input.toPlainText().strip()
             self.parent.last_equation = equation
             
             # HTML表示の更新
-            self.update_html_display()
+            self.update_html_display(equation)
             
             # 変数の検出と更新
-            self.detect_variables()
+            self.detect_variables(equation)
             
             # 偏微分タブの更新（新規追加）
             if hasattr(self.parent, 'partial_derivative_tab'):
                 self.parent.partial_derivative_tab.update_equation_display()
+            
+            # レポートタブの更新（新規追加）
+            if hasattr(self.parent, 'report_tab'):
+                self.parent.report_tab.update_report()
+            
+            # 不確かさ計算タブの更新（新規追加）
+            if hasattr(self.parent, 'uncertainty_calculation_tab'):
+                self.parent.uncertainty_calculation_tab.update_result_combo()
+                self.parent.uncertainty_calculation_tab.update_value_combo()
                 
         except Exception as e:
             print(f"【エラー】数式変更処理エラー: {str(e)}")
@@ -631,7 +653,7 @@ class ModelEquationTab(BaseTab):
             left = left.strip()
             right = right.strip()
             result_vars.append(left)
-            for var in re.findall(r'[a-zA-Z_][a-zA-Z0-9_]*', right):
+            for var in re.findall(r'[a-zA-Z_α-ωΑ-Ω][a-zA-Z0-9_α-ωΑ-Ω]*', right):
                 if var != left:
                     input_vars.add(var)
         # 一貫性のためself.parentのリストも更新
