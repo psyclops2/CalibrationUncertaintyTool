@@ -100,22 +100,44 @@ class ValueHandler:
     def get_distribution(self, var):
         """変数の分布を取得"""
         try:
-
             if var in self.main_window.variable_values:
                 var_data = self.main_window.variable_values[var]
-
-                
                 if var_data.get('type') == 'B':
                     distribution = var_data.get('distribution', '')
-
                     return distribution
                 else:
-
                     return ''
-
             return ''
             
         except Exception as e:
             print(f"【エラー】分布取得エラー: {str(e)}")
             print(traceback.format_exc())
-            return '' 
+            return ''
+            
+    def update_variable_value(self, var, field, value):
+        """Update a specific field of a variable's value"""
+        try:
+            if var not in self.main_window.variable_values:
+                return False
+                
+            var_data = self.main_window.variable_values[var]
+            
+            # Ensure we have a values list
+            if 'values' not in var_data:
+                var_data['values'] = [{}]
+                
+            # Ensure we have the current index
+            while len(var_data['values']) <= self.current_value_index:
+                var_data['values'].append({})
+                
+            # Update the value
+            if self.current_value_index >= 0:
+                var_data['values'][self.current_value_index][field] = value
+                return True
+                
+            return False
+            
+        except Exception as e:
+            print(f"【エラー】変数値更新エラー: {str(e)}")
+            print(traceback.format_exc())
+            return False

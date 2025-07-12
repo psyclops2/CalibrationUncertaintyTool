@@ -150,12 +150,12 @@ class MainWindow(QMainWindow):
             last_selected_value_index = self.variables_tab.handlers.last_selected_value_index
         return {
             'last_equation': self.last_equation,
-            'value_names': self.value_names,
             'variables': self.variables,
             'result_variables': self.result_variables,
             'variable_values': self.variable_values,
             'value_count': self.value_count,
             'current_value_index': self.current_value_index,
+            'value_names': self.value_names,
             'last_selected_variable': last_selected_variable,
             'last_selected_value_index': last_selected_value_index
         }

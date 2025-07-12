@@ -383,21 +383,39 @@ class ModelEquationTab(BaseTab):
                             if var in result_vars:
                                 # 計算結果変数の初期化
                                 self.parent.variable_values[var] = {
-                                    'value': '計算結果',
-                                    'type': None,
+                                    'values': [{
+                                        'measurements': '',
+                                        'degrees_of_freedom': 0,
+                                        'central_value': '',
+                                        'standard_uncertainty': '',
+                                        'half_width': '',
+                                        'fixed_value': '',
+                                        'description': '',
+                                        'calculation_formula': '',
+                                        'divisor': ''
+                                    }],
+                                    'type': 'A',
                                     'unit': '',
-                                    'definition': '',
-                                    'mode': 'result'
+                                    'definition': ''
                                 }
 
                             else:
                                 # 入力変数の初期化
                                 self.parent.variable_values[var] = {
-                                    'value': '',
+                                    'values': [{
+                                        'measurements': '',
+                                        'degrees_of_freedom': 0,
+                                        'central_value': '',
+                                        'standard_uncertainty': '',
+                                        'half_width': '',
+                                        'fixed_value': '',
+                                        'description': '',
+                                        'calculation_formula': '',
+                                        'divisor': ''
+                                    }],
                                     'type': 'A',
                                     'unit': '',
-                                    'definition': '',
-                                    'mode': 'input'
+                                    'definition': ''
                                 }
 
                     

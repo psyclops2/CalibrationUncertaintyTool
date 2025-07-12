@@ -142,40 +142,8 @@ class VariablesTabHandlers:
             # フォームレイアウトの更新
             self.parent.update_form_layout()
             
-            # ウィジェットの値を明示的にクリアしてから再表示
-            self.clear_widget_values()
-            self.parent.display_current_value()
-            
         except Exception as e:
             print(f"【エラー】不確かさ種類変更エラー: {str(e)}")
-            print(traceback.format_exc())
-
-    def clear_widget_values(self):
-        """ウィジェットの値を明示的にクリア"""
-        try:
-            # TypeA用ウィジェットをクリア
-            for widget_name, widget in self.parent.type_a_widgets.items():
-                if hasattr(widget, 'setText'):
-                    widget.setText('')
-                elif hasattr(widget, 'setPlainText'):
-                    widget.setPlainText('')
-            
-            # TypeB用ウィジェットをクリア
-            for widget_name, widget in self.parent.type_b_widgets.items():
-                if hasattr(widget, 'setText'):
-                    widget.setText('')
-                elif hasattr(widget, 'setPlainText'):
-                    widget.setPlainText('')
-            
-            # 固定値用ウィジェットをクリア
-            for widget_name, widget in self.parent.fixed_value_widgets.items():
-                if hasattr(widget, 'setText'):
-                    widget.setText('')
-                elif hasattr(widget, 'setPlainText'):
-                    widget.setPlainText('')
-                    
-        except Exception as e:
-            print(f"【エラー】ウィジェット値クリアエラー: {str(e)}")
             print(traceback.format_exc())
 
     def on_nominal_value_changed(self):

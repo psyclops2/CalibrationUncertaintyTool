@@ -173,28 +173,32 @@ class VariablesTab(BaseTab):
         self.type_a_widgets['measurements'] = QLineEdit()
         self.type_a_widgets['measurements'].setPlaceholderText(self.tr(MEASUREMENT_VALUES_PLACEHOLDER))
         self.type_a_widgets['measurements'].focusOutEvent = lambda e: self.handlers.on_measurements_focus_lost(e)
+        self.type_a_widgets['measurements'].textChanged.connect(self.handlers.on_measurements_changed)
         self.measurement_values_label = QLabel(self.tr(MEASUREMENT_VALUES) + ":")
         settings_layout.addRow(self.measurement_values_label, self.type_a_widgets['measurements'])
         
         self.type_a_widgets['degrees_of_freedom'] = QLineEdit()
         self.type_a_widgets['degrees_of_freedom'].setReadOnly(True)
+        self.type_a_widgets['degrees_of_freedom'].textChanged.connect(self.handlers.on_type_a_degrees_of_freedom_changed)
         self.degrees_of_freedom_label_a = QLabel(self.tr(DEGREES_OF_FREEDOM) + ":")
         settings_layout.addRow(self.degrees_of_freedom_label_a, self.type_a_widgets['degrees_of_freedom'])
         
         self.type_a_widgets['central_value'] = QLineEdit()
         self.type_a_widgets['central_value'].setReadOnly(True)
+        self.type_a_widgets['central_value'].textChanged.connect(self.handlers.on_type_a_central_value_changed)
         self.central_value_label_a = QLabel(self.tr(CENTRAL_VALUE) + ":")
         settings_layout.addRow(self.central_value_label_a, self.type_a_widgets['central_value'])
         
         self.type_a_widgets['standard_uncertainty'] = QLineEdit()
         self.type_a_widgets['standard_uncertainty'].setReadOnly(True)
+        self.type_a_widgets['standard_uncertainty'].textChanged.connect(self.handlers.on_type_a_standard_uncertainty_changed)
         self.standard_uncertainty_label_a = QLabel(self.tr(STANDARD_UNCERTAINTY) + ":")
         settings_layout.addRow(self.standard_uncertainty_label_a, self.type_a_widgets['standard_uncertainty'])
         
         # 詳細説明フィールドを追加
         self.type_a_widgets['description'] = QTextEdit()
         self.type_a_widgets['description'].setMaximumHeight(100)
-        self.type_a_widgets['description'].textChanged.connect(self.handlers.on_description_changed)
+        self.type_a_widgets['description'].textChanged.connect(self.handlers.on_type_a_description_changed)
         self.detail_description_label_a = QLabel(self.tr(DETAIL_DESCRIPTION) + ":")
         settings_layout.addRow(self.detail_description_label_a, self.type_a_widgets['description'])
         
@@ -218,12 +222,12 @@ class VariablesTab(BaseTab):
         settings_layout.addRow(self.divisor_label, self.type_b_widgets['divisor'])
         
         self.type_b_widgets['degrees_of_freedom'] = QLineEdit()
-        self.type_b_widgets['degrees_of_freedom'].textChanged.connect(self.handlers.on_degrees_of_freedom_changed)
+        self.type_b_widgets['degrees_of_freedom'].textChanged.connect(self.handlers.on_type_b_degrees_of_freedom_changed)
         self.degrees_of_freedom_label_b = QLabel(self.tr(DEGREES_OF_FREEDOM) + ":")
         settings_layout.addRow(self.degrees_of_freedom_label_b, self.type_b_widgets['degrees_of_freedom'])
         
         self.type_b_widgets['central_value'] = QLineEdit()
-        self.type_b_widgets['central_value'].textChanged.connect(self.handlers.on_central_value_changed)
+        self.type_b_widgets['central_value'].textChanged.connect(self.handlers.on_type_b_central_value_changed)
         self.central_value_label_b = QLabel(self.tr(CENTRAL_VALUE) + ":")
         settings_layout.addRow(self.central_value_label_b, self.type_b_widgets['central_value'])
         
@@ -231,6 +235,7 @@ class VariablesTab(BaseTab):
         half_width_layout = QHBoxLayout()
         self.type_b_widgets['half_width'] = QLineEdit()
         self.type_b_widgets['half_width'].focusOutEvent = lambda e: self.handlers.on_half_width_focus_lost(e)
+        self.type_b_widgets['half_width'].textChanged.connect(self.handlers.on_type_b_half_width_changed)
         half_width_layout.addWidget(self.type_b_widgets['half_width'])
         
         # 計算式の入力欄
@@ -250,13 +255,14 @@ class VariablesTab(BaseTab):
         
         self.type_b_widgets['standard_uncertainty'] = QLineEdit()
         self.type_b_widgets['standard_uncertainty'].setReadOnly(True)
+        self.type_b_widgets['standard_uncertainty'].textChanged.connect(self.handlers.on_type_b_standard_uncertainty_changed)
         self.standard_uncertainty_label_b = QLabel(self.tr(STANDARD_UNCERTAINTY) + ":")
         settings_layout.addRow(self.standard_uncertainty_label_b, self.type_b_widgets['standard_uncertainty'])
         
         # 詳細説明フィールドを追加
         self.type_b_widgets['description'] = QTextEdit()
         self.type_b_widgets['description'].setMaximumHeight(100)
-        self.type_b_widgets['description'].textChanged.connect(self.handlers.on_description_changed)
+        self.type_b_widgets['description'].textChanged.connect(self.handlers.on_type_b_description_changed)
         self.detail_description_label_b = QLabel(self.tr(DETAIL_DESCRIPTION) + ":")
         settings_layout.addRow(self.detail_description_label_b, self.type_b_widgets['description'])
         
@@ -264,16 +270,30 @@ class VariablesTab(BaseTab):
         self.fixed_value_widgets = {}
         
         self.fixed_value_widgets['central_value'] = QLineEdit()
-        self.fixed_value_widgets['central_value'].textChanged.connect(self.handlers.on_fixed_value_changed)
+        self.fixed_value_widgets['central_value'].textChanged.connect(self.handlers.on_fixed_value_central_value_changed)
         self.central_value_label_fixed = QLabel(self.tr(CENTRAL_VALUE) + ":")
         settings_layout.addRow(self.central_value_label_fixed, self.fixed_value_widgets['central_value'])
         
         # 詳細説明フィールドを追加
         self.fixed_value_widgets['description'] = QTextEdit()
         self.fixed_value_widgets['description'].setMaximumHeight(100)
-        self.fixed_value_widgets['description'].textChanged.connect(self.handlers.on_description_changed)
+        self.fixed_value_widgets['description'].textChanged.connect(self.handlers.on_fixed_value_description_changed)
         self.detail_description_label_fixed = QLabel(self.tr(DETAIL_DESCRIPTION) + ":")
         settings_layout.addRow(self.detail_description_label_fixed, self.fixed_value_widgets['description'])
+        
+        # 保存・復元ボタンを追加
+        button_layout = QHBoxLayout()
+        
+        self.save_button = QPushButton("辞書に保存")
+        self.save_button.clicked.connect(self.handlers.on_save_button_clicked)
+        button_layout.addWidget(self.save_button)
+        
+        self.restore_button = QPushButton("辞書から復元")
+        self.restore_button.clicked.connect(self.handlers.on_restore_button_clicked)
+        button_layout.addWidget(self.restore_button)
+        
+        button_layout.addStretch()
+        settings_layout.addRow("", button_layout)
         
         self.settings_group.setLayout(settings_layout)
         self.settings_group.setEnabled(False)
@@ -288,9 +308,20 @@ class VariablesTab(BaseTab):
         
         self.setLayout(main_layout)
         
-        # 初期状態ではTypeAを選択
+        # 初期状態ではTypeAを選択し、ウィジェットの表示/非表示を設定
         self.type_a_radio.setChecked(True)
-        self.handlers.on_type_changed(True)  # 初期表示を設定
+        # 初期状態のウィジェット表示/非表示を設定（クリア処理なし）
+        is_result = False  # 初期状態では入力量として扱う
+        editable = True
+        for widget in self.type_a_widgets.values():
+            widget.setVisible(True)
+            widget.setEnabled(editable)
+        for widget in self.type_b_widgets.values():
+            widget.setVisible(False)
+            widget.setEnabled(False)
+        for widget in self.fixed_value_widgets.values():
+            widget.setVisible(False)
+            widget.setEnabled(False)
         
     def update_variable_list(self, variables, result_variables):
         """変数リストを更新"""
@@ -336,21 +367,15 @@ class VariablesTab(BaseTab):
             var_info = self.parent.variable_values[self.handlers.current_variable]
             
             # 呼び値の設定
-
             nominal_value = var_info.get('nominal_value', '')
-
             self.nominal_value_input.setText(nominal_value)
             
             # 単位の設定
-
             unit = var_info.get('unit', '')
-
             self.unit_input.setText(unit)
             
             # 定義の設定
-
             definition = var_info.get('definition', '')
-
             self.definition_input.setText(definition)
             
             # 不確かさ種類の設定
@@ -369,29 +394,58 @@ class VariablesTab(BaseTab):
                 
                 # 分布に応じた除数を設定
                 divisor = get_distribution_divisor(distribution)
-                
                 self.type_b_widgets['divisor'].setText(divisor)
                 self.type_b_widgets['divisor'].setReadOnly(distribution != '正規分布')
             
             # 不確かさ種類に応じたウィジェットの表示を更新
-            self.handlers.on_type_changed(True)
+            self.handlers.update_widget_visibility(uncertainty_type)
                 
         except Exception as e:
             print(f"【エラー】共通設定表示エラー: {str(e)}")
             print(traceback.format_exc())
-            
+
     def display_current_value(self):
         """現在選択されている値の情報を表示"""
+        if not hasattr(self, 'value_combo') or not hasattr(self, 'handlers') or not self.handlers.current_variable:
+            return
+            
         try:
-            if not self.handlers.current_variable or self.value_combo.currentIndex() < 0:
-                return
+            current_var = self.handlers.current_variable
+            print(f"[DEBUG] display_current_value: 開始 - 変数={current_var}")
+            
+            # 変数の辞書が存在することを確認
+            if current_var not in self.parent.variable_values:
+                print(f"[DEBUG] display_current_value: 変数の辞書が存在しないため作成 - {current_var}")
+                # 完全に新しい辞書を作成（前の変数の値の影響を受けないように）
+                self.parent.variable_values[current_var] = {
+                    'values': [{
+                        'measurements': '',
+                        'degrees_of_freedom': 0,
+                        'central_value': '',
+                        'standard_uncertainty': '',
+                        'half_width': '',
+                        'fixed_value': '',
+                        'description': '',
+                        'calculation_formula': '',
+                        'divisor': ''
+                    }],
+                    'unit': '',
+                    'type': 'A',
+                    'definition': ''
+                }
                 
-            var_info = self.parent.variable_values[self.handlers.current_variable]
-            values = var_info.get('values', [])
-            index = self.value_combo.currentIndex()
-
-            # インデックスが範囲外の場合、新しい値を追加
-            while len(values) <= index:
+            var_info = self.parent.variable_values[current_var]
+            
+            # valuesが存在しない、またはリストでない場合は初期化
+            if 'values' not in var_info or not isinstance(var_info['values'], list):
+                print(f"[DEBUG] display_current_value: valuesリストが不正なため初期化")
+                var_info['values'] = []
+                
+            values = var_info['values']
+            
+            # 値のリストが空の場合はデフォルト値を追加
+            if not values:
+                print(f"[DEBUG] display_current_value: 値のリストが空のため初期化")
                 values.append({
                     'measurements': '',
                     'degrees_of_freedom': 0,
@@ -400,99 +454,108 @@ class VariablesTab(BaseTab):
                     'half_width': '',
                     'fixed_value': '',
                     'description': '',
-                    'calculation_formula': ''
+                    'calculation_formula': '',
+                    'divisor': ''
                 })
-
+            
+            # 現在のインデックスを取得（範囲外の場合は0にリセット）
+            index = self.value_combo.currentIndex()
+            if index < 0 or index >= len(values):
+                print(f"[DEBUG] display_current_value: インデックスが範囲外のため0にリセット - index={index}, length={len(values)}")
+                index = 0
+                if self.value_combo.count() > 0:
+                    self.value_combo.setCurrentIndex(0)
+            
+            # 現在の値を取得
             value_info = values[index]
+            print(f"[DEBUG] display_current_value: 辞書から取得した値={value_info}")
+            print(f"[DEBUG] display_current_value: 使用する値のインデックス={index}, 値の総数={len(values)}")
             
-            # 不確かさ種類に応じた値の設定
+            # 不確かさ種類を取得（デフォルトはA）
             uncertainty_type = var_info.get('type', 'A')
+            print(f"[DEBUG] display_current_value: 復元開始 - 変数={current_var}, type={uncertainty_type}, value_index={index}")
             
+            # 型の整合性を確保
+            if 'degrees_of_freedom' in value_info:
+                if value_info['degrees_of_freedom'] == '':
+                    value_info['degrees_of_freedom'] = 0
+                try:
+                    value_info['degrees_of_freedom'] = int(float(value_info['degrees_of_freedom']))
+                except (ValueError, TypeError):
+                    value_info['degrees_of_freedom'] = 0
+            
+            # 値をセット（ウィジェットの表示/非表示は既に設定済み）
             if uncertainty_type == 'A':
-                self.type_a_widgets['measurements'].setText(value_info.get('measurements', ''))
-                self.type_a_widgets['degrees_of_freedom'].setText(str(value_info.get('degrees_of_freedom', 0)))
-                # 数値の表示精度を統一
+                # 辞書から値を取得（読み取り専用）
+                measurements = value_info.get('measurements', '')
+                degrees_of_freedom = value_info.get('degrees_of_freedom', 0)
                 central_value = value_info.get('central_value', '')
-                if isinstance(central_value, (int, float)) and central_value != '':
+                standard_uncertainty = value_info.get('standard_uncertainty', '')
+                description = value_info.get('description', '')
+                
+                # ウィジェットに値を設定
+                self.type_a_widgets['measurements'].setText(str(measurements))
+                self.type_a_widgets['degrees_of_freedom'].setText(str(degrees_of_freedom))
+                
+                # 数値の表示精度を統一
+                if isinstance(central_value, (int, float)) or (isinstance(central_value, str) and central_value.replace('.', '', 1).isdigit()):
                     central_value = f"{float(central_value):.15g}"
                 self.type_a_widgets['central_value'].setText(str(central_value))
                 
-                standard_uncertainty = value_info.get('standard_uncertainty', '')
-                if isinstance(standard_uncertainty, (int, float)) and standard_uncertainty != '':
+                if isinstance(standard_uncertainty, (int, float)) or (isinstance(standard_uncertainty, str) and standard_uncertainty.replace('.', '', 1).isdigit()):
                     standard_uncertainty = f"{float(standard_uncertainty):.15g}"
                 self.type_a_widgets['standard_uncertainty'].setText(str(standard_uncertainty))
-                self.type_a_widgets['description'].setText(value_info.get('description', ''))
+                
+                self.type_a_widgets['description'].setText(str(description))
+                
+                print(f"[DEBUG] TypeA復元: measurements='{measurements}', degrees_of_freedom='{degrees_of_freedom}', central_value='{central_value}', description='{description}'")
                 
             elif uncertainty_type == 'B':
+                # 辞書から値を取得（読み取り専用）
                 central_value = value_info.get('central_value', '')
-                if isinstance(central_value, (int, float)) and central_value != '':
+                half_width = value_info.get('half_width', '')
+                standard_uncertainty = value_info.get('standard_uncertainty', '')
+                degrees_of_freedom = value_info.get('degrees_of_freedom', 0)
+                description = value_info.get('description', '')
+                calculation_formula = value_info.get('calculation_formula', '')
+                divisor = value_info.get('divisor', '')
+                
+                # ウィジェットに値を設定
+                if isinstance(central_value, (int, float)) or (isinstance(central_value, str) and central_value.replace('.', '', 1).isdigit()):
                     central_value = f"{float(central_value):.15g}"
                 self.type_b_widgets['central_value'].setText(str(central_value))
                 
-                half_width = value_info.get('half_width', '')
-                if isinstance(half_width, (int, float)) and half_width != '':
+                if isinstance(half_width, (int, float)) or (isinstance(half_width, str) and half_width.replace('.', '', 1).isdigit()):
                     half_width = f"{float(half_width):.15g}"
                 self.type_b_widgets['half_width'].setText(str(half_width))
                 
-                standard_uncertainty = value_info.get('standard_uncertainty', '')
-                if isinstance(standard_uncertainty, (int, float)) and standard_uncertainty != '':
+                if isinstance(standard_uncertainty, (int, float)) or (isinstance(standard_uncertainty, str) and standard_uncertainty.replace('.', '', 1).isdigit()):
                     standard_uncertainty = f"{float(standard_uncertainty):.15g}"
                 self.type_b_widgets['standard_uncertainty'].setText(str(standard_uncertainty))
                 
-                self.type_b_widgets['degrees_of_freedom'].setText(str(value_info.get('degrees_of_freedom', '')))
-                self.type_b_widgets['description'].setText(value_info.get('description', ''))
-                self.type_b_widgets['calculation_formula'].setText(value_info.get('calculation_formula', ''))
+                self.type_b_widgets['degrees_of_freedom'].setText(str(degrees_of_freedom))
+                self.type_b_widgets['description'].setText(str(description))
+                self.type_b_widgets['calculation_formula'].setText(str(calculation_formula))
+                self.type_b_widgets['divisor'].setText(str(divisor))
+                
+                print(f"[DEBUG] TypeB復元: central_value='{central_value}', half_width='{half_width}', degrees_of_freedom='{degrees_of_freedom}', description='{description}', divisor='{divisor}'")
                 
             else:  # fixed
+                # 辞書から値を取得（読み取り専用）
                 fixed_value = value_info.get('fixed_value', '')
-                if isinstance(fixed_value, (int, float)) and fixed_value != '':
+                description = value_info.get('description', '')
+                
+                # ウィジェットに値を設定
+                if isinstance(fixed_value, (int, float)) or (isinstance(fixed_value, str) and fixed_value.replace('.', '', 1).isdigit()):
                     fixed_value = f"{float(fixed_value):.15g}"
                 self.fixed_value_widgets['central_value'].setText(str(fixed_value))
-                self.fixed_value_widgets['description'].setText(value_info.get('description', ''))
-            
-            # フィールドの表示を更新
-            is_result = self.handlers.current_variable in self.parent.result_variables
-            editable = not is_result
-            self.unit_input.setEnabled(True)  # 計算結果量でも単位を編集可能に
-            self.definition_input.setEnabled(True)  # 計算結果量でも定義を編集可能に
-            self.type_a_radio.setEnabled(editable)
-            self.type_b_radio.setEnabled(editable)
-            self.type_fixed_radio.setEnabled(editable)
-            
-            # 不確かさ種類に応じたウィジェットの表示を更新
-            if uncertainty_type == 'A':
-                for widget in self.type_a_widgets.values():
-                    widget.setVisible(True)
-                    widget.setEnabled(editable)
-                for widget in self.type_b_widgets.values():
-                    widget.setVisible(False)
-                    widget.setEnabled(False)
-                for widget in self.fixed_value_widgets.values():
-                    widget.setVisible(False)
-                    widget.setEnabled(False)
-            elif uncertainty_type == 'B':
-                for widget in self.type_a_widgets.values():
-                    widget.setVisible(False)
-                    widget.setEnabled(False)
-                for widget in self.type_b_widgets.values():
-                    widget.setVisible(True)
-                    widget.setEnabled(editable)
-                for widget in self.fixed_value_widgets.values():
-                    widget.setVisible(False)
-                    widget.setEnabled(False)
-            else:  # fixed
-                for widget in self.type_a_widgets.values():
-                    widget.setVisible(False)
-                    widget.setEnabled(False)
-                for widget in self.type_b_widgets.values():
-                    widget.setVisible(False)
-                    widget.setEnabled(False)
-                for widget in self.fixed_value_widgets.values():
-                    widget.setVisible(True)
-                    widget.setEnabled(editable)
+                self.fixed_value_widgets['description'].setText(str(description))
+                
+                print(f"[DEBUG] Fixed復元: fixed_value='{fixed_value}', description='{description}'")
                     
             # フォームレイアウトの更新
             self.update_form_layout()
+            print(f"[DEBUG] display_current_value: 復元完了")
 
         except Exception as e:
             print(f"【エラー】現在値の表示エラー: {str(e)}")

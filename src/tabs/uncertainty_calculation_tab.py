@@ -15,13 +15,11 @@ class UncertaintyCalculationTab(BaseTab):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent
+        self._updating_table = False  # Flag to prevent recursive updates
 
         if self.parent:
             pass
 
-
-
-        
         # ユーティリティクラスの初期化
         self.equation_handler = EquationHandler(parent)
         self.value_handler = ValueHandler(parent)
@@ -57,9 +55,54 @@ class UncertaintyCalculationTab(BaseTab):
         self.update_result_combo()
         self.update_value_combo()
         
+    def on_table_item_changed(self, item):
+        """Handle changes to table items"""
+        # Skip if we're the ones updating the table
+        if self._updating_table:
+            return
+            
+        if item.column() in [1, 2, 3, 4]:  # Columns with editable values
+            row = item.row()
+            var_item = self.calibration_table.item(row, 0)
+            if not var_item:
+                return
+                
+            var = var_item.text()  # Get variable name
+            
+            # Get the value handler
+            value_handler = self.value_handler
+            
+            try:
+                # Block signals to prevent recursion
+                self.calibration_table.blockSignals(True)
+                
+                if item.column() == 1:  # Central value
+                    value_handler.update_variable_value(var, 'central_value', item.text())
+                elif item.column() == 2:  # Standard uncertainty
+                    value_handler.update_variable_value(var, 'standard_uncertainty', item.text())
+                elif item.column() == 3:  # Degrees of freedom
+                    value_handler.update_variable_value(var, 'degrees_of_freedom', item.text())
+                elif item.column() == 4:  # Distribution
+                    value_handler.update_variable_value(var, 'distribution', item.text())
+                
+                # Recalculate to update everything
+                result_var = self.result_combo.currentText()
+                if result_var:
+                    equation = self.equation_handler.get_target_equation(result_var)
+                    if equation:
+                        self._updating_table = True
+                        self.calculate_sensitivity_coefficients(equation)
+                        self._updating_table = False
+                        
+            except Exception as e:
+                print(f"【エラー】テーブル値更新エラー: {str(e)}")
+                print(traceback.format_exc())
+            finally:
+                # Always unblock signals
+                self.calibration_table.blockSignals(False)
+
     def setup_ui(self):
         """UIの設定"""
-
         main_layout = QHBoxLayout()
         
         # 左側のレイアウト（1/4）
@@ -161,6 +204,9 @@ class UncertaintyCalculationTab(BaseTab):
         main_layout.addLayout(right_layout, 3)  # 右側のレイアウト（幅の比率3）
         
         self.setLayout(main_layout)
+        
+        # Connect the itemChanged signal
+        self.calibration_table.itemChanged.connect(self.on_table_item_changed)
 
         
     def update_result_combo(self):
@@ -248,7 +294,13 @@ class UncertaintyCalculationTab(BaseTab):
     
     def calculate_sensitivity_coefficients(self, equation):
         """感度係数を計算して表示"""
+        # If we're already updating, skip to prevent recursion
+        if self._updating_table:
+            return
+            
         try:
+            # Set updating flag
+            self._updating_table = True
 
             # 式を解析
             left_side, right_side = equation.split('=', 1)
@@ -398,4 +450,7 @@ class UncertaintyCalculationTab(BaseTab):
                 
         except Exception as e:
             print(f"【エラー】感度係数計算エラー: {str(e)}")
-            print(traceback.format_exc()) 
+            print(traceback.format_exc())
+        finally:
+            # Always reset the updating flag
+            self._updating_table = False 
