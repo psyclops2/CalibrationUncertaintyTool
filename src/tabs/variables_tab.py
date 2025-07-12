@@ -579,19 +579,25 @@ class VariablesTab(BaseTab):
             # 量リストを更新
             self.update_variable_list(self.parent.variables, self.parent.result_variables)
             
-            # 最後に選択された量がある場合、それを選択
-            if self.handlers.last_selected_variable:
-                # 量リストから該当する量を探す
-                item = find_variable_item(self.variable_list, self.handlers.last_selected_variable)
-                if item:
-                    self.variable_list.setCurrentItem(item)
+            # 選択状態がNoneや不正値の場合は最初の変数・値を自動で選択
+            if not self.handlers.last_selected_variable and self.variable_list.count() > 0:
+                first_item = self.variable_list.item(0)
+                if first_item:
+                    self.handlers.last_selected_variable = first_item.data(Qt.UserRole)
+            item = find_variable_item(self.variable_list, self.handlers.last_selected_variable)
+            if item:
+                self.variable_list.setCurrentItem(item)
             
-            # 値の選択コンボボックスを更新
             self.update_value_combo()
-            
-            # 最後に選択された値のインデックスを設定
-            if self.handlers.last_selected_value_index < self.value_combo.count():
+            if (not isinstance(self.handlers.last_selected_value_index, int) or
+                self.handlers.last_selected_value_index < 0 or
+                self.handlers.last_selected_value_index >= self.value_combo.count()):
+                self.handlers.last_selected_value_index = 0
+            if self.value_combo.count() > 0:
                 self.value_combo.setCurrentIndex(self.handlers.last_selected_value_index)
+            
+            self.display_common_settings()
+            self.display_current_value()
                 
         except Exception as e:
             print(f"【エラー】選択状態の復元エラー: {str(e)}")

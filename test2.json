@@ -1,0 +1,201 @@
+{
+    "last_equation": "A=CAL+MEA^2+CONST",
+    "value_names": [
+        "1000V",
+        "100V"
+    ],
+    "variables": [
+        "A",
+        "CONST",
+        "CAL",
+        "MEA"
+    ],
+    "result_variables": [
+        "A"
+    ],
+    "variable_values": {
+        "CONST": {
+            "value": "",
+            "type": "fixed",
+            "unit": "",
+            "definition": "",
+            "mode": "input",
+            "values": [
+                {
+                    "value": "",
+                    "type": "A",
+                    "unit": "",
+                    "definition": "",
+                    "stddev": "",
+                    "sample_count": "",
+                    "nominal_value": "",
+                    "error_range": "",
+                    "fixed_value": "1000",
+                    "central_value": "1000",
+                    "description": ""
+                },
+                {
+                    "value": "",
+                    "type": "A",
+                    "unit": "",
+                    "definition": "",
+                    "stddev": "",
+                    "sample_count": "",
+                    "nominal_value": "",
+                    "error_range": "",
+                    "fixed_value": "100",
+                    "central_value": "100",
+                    "description": ""
+                },
+                {
+                    "measurements": "",
+                    "degrees_of_freedom": 0,
+                    "central_value": "",
+                    "standard_uncertainty": "",
+                    "half_width": "",
+                    "fixed_value": "",
+                    "description": "",
+                    "calculation_formula": ""
+                }
+            ]
+        },
+        "MEA": {
+            "value": "",
+            "type": "A",
+            "unit": "",
+            "definition": "",
+            "mode": "input",
+            "values": [
+                {
+                    "value": "",
+                    "type": "A",
+                    "unit": "",
+                    "definition": "",
+                    "stddev": "",
+                    "sample_count": "",
+                    "nominal_value": "",
+                    "error_range": "",
+                    "measurements": "10.001,10.002,10.003",
+                    "degrees_of_freedom": 2,
+                    "central_value": 10.002,
+                    "standard_uncertainty": 0.0005773502691898186,
+                    "description": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nuuuuuuuuuuuuuuuuuuuuuuuuuuu"
+                },
+                {
+                    "value": "",
+                    "type": "A",
+                    "unit": "",
+                    "definition": "",
+                    "stddev": "",
+                    "sample_count": "",
+                    "nominal_value": "",
+                    "error_range": "",
+                    "measurements": "20.01,20.02,20.03,20.04",
+                    "degrees_of_freedom": 3,
+                    "central_value": 20.025,
+                    "standard_uncertainty": 0.006454972243678661,
+                    "description": ""
+                }
+            ]
+        },
+        "CAL": {
+            "value": "",
+            "type": "B",
+            "unit": "C",
+            "definition": "CALCAL",
+            "mode": "input",
+            "values": [
+                {
+                    "value": "",
+                    "type": "A",
+                    "unit": "",
+                    "definition": "",
+                    "stddev": "",
+                    "sample_count": "",
+                    "nominal_value": "",
+                    "error_range": "",
+                    "central_value": "10",
+                    "half_width": 0.1,
+                    "standard_uncertainty": 0.05773502690459182,
+                    "description": "詳細情報\nここで計算方法を示す？",
+                    "calculation_formula": "0.2-0.1"
+                },
+                {
+                    "value": "",
+                    "type": "A",
+                    "unit": "",
+                    "definition": "",
+                    "stddev": "",
+                    "sample_count": "",
+                    "nominal_value": "",
+                    "error_range": "",
+                    "central_value": "20",
+                    "half_width": 0.3,
+                    "standard_uncertainty": 0.17320508071377547,
+                    "description": "0.173205080713775",
+                    "calculation_formula": "1-0.7",
+                    "degrees_of_freedom": ""
+                },
+                {
+                    "measurements": "",
+                    "degrees_of_freedom": "0",
+                    "central_value": "",
+                    "standard_uncertainty": "",
+                    "half_width": "",
+                    "fixed_value": "",
+                    "description": "",
+                    "calculation_formula": ""
+                }
+            ],
+            "divisor": "1.732050808",
+            "distribution": "矩形分布"
+        },
+        "A": {
+            "value": "計算結果",
+            "type": "fixed",
+            "unit": "A",
+            "definition": "AAAAA",
+            "mode": "result",
+            "values": [
+                {
+                    "value": "",
+                    "type": "A",
+                    "unit": "",
+                    "definition": "",
+                    "stddev": "",
+                    "sample_count": "",
+                    "nominal_value": "",
+                    "error_range": "",
+                    "fixed_value": "",
+                    "central_value": "",
+                    "description": ""
+                },
+                {
+                    "value": "",
+                    "type": "A",
+                    "unit": "",
+                    "definition": "",
+                    "stddev": "",
+                    "sample_count": "",
+                    "nominal_value": "",
+                    "error_range": "",
+                    "description": ""
+                },
+                {
+                    "measurements": "",
+                    "degrees_of_freedom": 0,
+                    "central_value": "",
+                    "standard_uncertainty": "",
+                    "half_width": "",
+                    "fixed_value": "",
+                    "description": "",
+                    "calculation_formula": ""
+                }
+            ]
+        }
+    },
+    "value_count": 2,
+    "current_value_index": 2,
+    "last_selected_variable": "A",
+    "last_selected_value_index": 0
+}

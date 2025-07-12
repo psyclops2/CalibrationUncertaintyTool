@@ -142,14 +142,22 @@ class MainWindow(QMainWindow):
         
     def get_save_data(self):
         """保存するデータを辞書にまとめる"""
+        # 変数タブの選択状態も保存
+        last_selected_variable = None
+        last_selected_value_index = 0
+        if hasattr(self, 'variables_tab') and hasattr(self.variables_tab, 'handlers'):
+            last_selected_variable = self.variables_tab.handlers.last_selected_variable
+            last_selected_value_index = self.variables_tab.handlers.last_selected_value_index
         return {
+            'last_equation': self.last_equation,
+            'value_names': self.value_names,
             'variables': self.variables,
             'result_variables': self.result_variables,
             'variable_values': self.variable_values,
-            'last_equation': self.last_equation,
             'value_count': self.value_count,
             'current_value_index': self.current_value_index,
-            'value_names': self.value_names
+            'last_selected_variable': last_selected_variable,
+            'last_selected_value_index': last_selected_value_index
         }
         
     def load_data(self, data):
@@ -162,13 +170,33 @@ class MainWindow(QMainWindow):
             self.value_count = data.get('value_count', 1)
             self.current_value_index = data.get('current_value_index', 0)
             self.value_names = data.get('value_names', [f"{self.tr(CALIBRATION_POINT_NAME)} {i+1}" for i in range(self.value_count)])
-            
+            # 変数タブの選択状態も復元（古いデータとの互換性あり）
+            last_selected_variable = data.get('last_selected_variable', None)
+            last_selected_value_index = data.get('last_selected_value_index', 0)
+            if hasattr(self, 'variables_tab') and hasattr(self.variables_tab, 'handlers'):
+                self.variables_tab.handlers.last_selected_variable = last_selected_variable
+                self.variables_tab.handlers.last_selected_value_index = last_selected_value_index
             # UIの更新
             if hasattr(self, 'variables_tab'):
                 self.variables_tab.update_variable_list(self.variables, self.result_variables)
+                self.variables_tab.restore_selection_state()  # 選択状態と詳細表示をリフレッシュ
             if hasattr(self, 'model_equation_tab'):
                 self.model_equation_tab.set_equation(self.last_equation)
-                
+            # 不確かさ計算タブの計算・テーブル再構築
+            if hasattr(self, 'uncertainty_calculation_tab'):
+                self.uncertainty_calculation_tab.update_result_combo()
+                self.uncertainty_calculation_tab.update_value_combo()
+                # 選択状態を復元し、計算を実行
+                if self.uncertainty_calculation_tab.result_combo.count() > 0:
+                    self.uncertainty_calculation_tab.result_combo.setCurrentIndex(0)
+                    self.uncertainty_calculation_tab.on_result_changed(self.uncertainty_calculation_tab.result_combo.currentText())
+                if self.uncertainty_calculation_tab.value_combo.count() > 0:
+                    self.uncertainty_calculation_tab.value_combo.setCurrentIndex(0)
+                    self.uncertainty_calculation_tab.on_value_changed(0)
+            # レポートタブも必ずリフレッシュ
+            if hasattr(self, 'report_tab'):
+                self.report_tab.update_variable_list(self.variables, self.result_variables)
+                self.report_tab.update_report()
             QMessageBox.information(self, self.tr(MESSAGE_SUCCESS), self.tr(FILE_LOADED))
             
         except Exception as e:
@@ -236,9 +264,14 @@ class MainWindow(QMainWindow):
             self.uncertainty_calculation_tab.update_result_combo()
             self.uncertainty_calculation_tab.update_value_combo()
         elif index == 3:  # レポートタブ
-            self.report_tab.update_variable_list(self.variables, self.result_variables)
+            if hasattr(self, 'report_tab'):
+                self.report_tab.update_variable_list(self.variables, self.result_variables)
+                self.report_tab.update_report()
         elif index == 4:  # 偏微分タブ
             self.partial_derivative_tab.update_equation_display()
+        elif index == 1:  # 変数タブ（indexはタブ順に応じて調整）
+            if hasattr(self, 'variables_tab'):
+                self.variables_tab.restore_selection_state()
             
     def add_variable(self, var_name):
         """変数を追加"""
