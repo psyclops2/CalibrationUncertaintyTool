@@ -468,4 +468,241 @@ class VariablesTabHandlers:
                 
         except Exception as e:
             print(f"【エラー】計算ボタンクリックエラー: {str(e)}")
+            print(traceback.format_exc())
+
+    def on_measurements_changed(self):
+        """測定値が変更されたときの処理"""
+        try:
+            if not self.current_variable or self.parent.value_combo.currentIndex() < 0:
+                return
+                
+            measurements = self.parent.type_a_widgets['measurements'].text().strip()
+            
+            # データを保存
+            value_index = self.parent.value_combo.currentIndex()
+            if 'values' in self.parent.parent.variable_values[self.current_variable]:
+                self.parent.parent.variable_values[self.current_variable]['values'][value_index]['measurements'] = measurements
+                
+        except Exception as e:
+            print(f"【エラー】測定値変更エラー: {str(e)}")
+            print(traceback.format_exc())
+
+    def on_type_a_degrees_of_freedom_changed(self):
+        """TypeAの自由度が変更されたときの処理"""
+        try:
+            if not self.current_variable or self.parent.value_combo.currentIndex() < 0:
+                return
+                
+            degrees_of_freedom = self.parent.type_a_widgets['degrees_of_freedom'].text().strip()
+            
+            # データを保存
+            value_index = self.parent.value_combo.currentIndex()
+            if 'values' in self.parent.parent.variable_values[self.current_variable]:
+                self.parent.parent.variable_values[self.current_variable]['values'][value_index]['degrees_of_freedom'] = degrees_of_freedom
+                
+        except Exception as e:
+            print(f"【エラー】TypeA自由度変更エラー: {str(e)}")
+            print(traceback.format_exc())
+
+    def on_type_a_central_value_changed(self):
+        """TypeAの中央値が変更されたときの処理"""
+        try:
+            if not self.current_variable or self.parent.value_combo.currentIndex() < 0:
+                return
+                
+            central_value = self.parent.type_a_widgets['central_value'].text().strip()
+            
+            # データを保存
+            value_index = self.parent.value_combo.currentIndex()
+            if 'values' in self.parent.parent.variable_values[self.current_variable]:
+                self.parent.parent.variable_values[self.current_variable]['values'][value_index]['central_value'] = central_value
+                
+        except Exception as e:
+            print(f"【エラー】TypeA中央値変更エラー: {str(e)}")
+            print(traceback.format_exc())
+
+    def on_type_a_standard_uncertainty_changed(self):
+        """TypeAの標準不確かさが変更されたときの処理"""
+        try:
+            if not self.current_variable or self.parent.value_combo.currentIndex() < 0:
+                return
+                
+            standard_uncertainty = self.parent.type_a_widgets['standard_uncertainty'].text().strip()
+            
+            # データを保存
+            value_index = self.parent.value_combo.currentIndex()
+            if 'values' in self.parent.parent.variable_values[self.current_variable]:
+                self.parent.parent.variable_values[self.current_variable]['values'][value_index]['standard_uncertainty'] = standard_uncertainty
+                
+        except Exception as e:
+            print(f"【エラー】TypeA標準不確かさ変更エラー: {str(e)}")
+            print(traceback.format_exc())
+
+    def on_type_a_description_changed(self):
+        """TypeAの詳細説明が変更されたときの処理"""
+        try:
+            if not self.current_variable or self.parent.value_combo.currentIndex() < 0:
+                return
+                
+            description = self.parent.type_a_widgets['description'].toPlainText()
+            
+            # データを保存
+            value_index = self.parent.value_combo.currentIndex()
+            if 'values' in self.parent.parent.variable_values[self.current_variable]:
+                self.parent.parent.variable_values[self.current_variable]['values'][value_index]['description'] = description
+                
+        except Exception as e:
+            print(f"【エラー】TypeA詳細説明変更エラー: {str(e)}")
+            print(traceback.format_exc())
+
+    def on_type_b_degrees_of_freedom_changed(self):
+        """TypeBの自由度が変更されたときの処理"""
+        try:
+            if not self.current_variable or self.parent.value_combo.currentIndex() < 0:
+                return
+                
+            degrees_of_freedom = self.parent.type_b_widgets['degrees_of_freedom'].text().strip()
+            
+            # データを保存
+            value_index = self.parent.value_combo.currentIndex()
+            if 'values' in self.parent.parent.variable_values[self.current_variable]:
+                self.parent.parent.variable_values[self.current_variable]['values'][value_index]['degrees_of_freedom'] = degrees_of_freedom
+                
+        except Exception as e:
+            print(f"【エラー】TypeB自由度変更エラー: {str(e)}")
+            print(traceback.format_exc())
+
+    def on_type_b_central_value_changed(self):
+        """TypeBの中央値が変更されたときの処理"""
+        try:
+            if not self.current_variable or self.parent.value_combo.currentIndex() < 0:
+                return
+                
+            central_value = self.parent.type_b_widgets['central_value'].text().strip()
+            
+            # データを保存
+            value_index = self.parent.value_combo.currentIndex()
+            if 'values' in self.parent.parent.variable_values[self.current_variable]:
+                self.parent.parent.variable_values[self.current_variable]['values'][value_index]['central_value'] = central_value
+                
+        except Exception as e:
+            print(f"【エラー】TypeB中央値変更エラー: {str(e)}")
+            print(traceback.format_exc())
+
+    def on_type_b_half_width_changed(self):
+        """TypeBの半値幅が変更されたときの処理"""
+        try:
+            if not self.current_variable or self.parent.value_combo.currentIndex() < 0:
+                return
+                
+            half_width = self.parent.type_b_widgets['half_width'].text().strip()
+            
+            # データを保存
+            value_index = self.parent.value_combo.currentIndex()
+            if 'values' in self.parent.parent.variable_values[self.current_variable]:
+                self.parent.parent.variable_values[self.current_variable]['values'][value_index]['half_width'] = half_width
+                
+        except Exception as e:
+            print(f"【エラー】TypeB半値幅変更エラー: {str(e)}")
+            print(traceback.format_exc())
+
+    def on_type_b_standard_uncertainty_changed(self):
+        """TypeBの標準不確かさが変更されたときの処理"""
+        try:
+            if not self.current_variable or self.parent.value_combo.currentIndex() < 0:
+                return
+                
+            standard_uncertainty = self.parent.type_b_widgets['standard_uncertainty'].text().strip()
+            
+            # データを保存
+            value_index = self.parent.value_combo.currentIndex()
+            if 'values' in self.parent.parent.variable_values[self.current_variable]:
+                self.parent.parent.variable_values[self.current_variable]['values'][value_index]['standard_uncertainty'] = standard_uncertainty
+                
+        except Exception as e:
+            print(f"【エラー】TypeB標準不確かさ変更エラー: {str(e)}")
+            print(traceback.format_exc())
+
+    def on_type_b_description_changed(self):
+        """TypeBの詳細説明が変更されたときの処理"""
+        try:
+            if not self.current_variable or self.parent.value_combo.currentIndex() < 0:
+                return
+                
+            description = self.parent.type_b_widgets['description'].toPlainText()
+            
+            # データを保存
+            value_index = self.parent.value_combo.currentIndex()
+            if 'values' in self.parent.parent.variable_values[self.current_variable]:
+                self.parent.parent.variable_values[self.current_variable]['values'][value_index]['description'] = description
+                
+        except Exception as e:
+            print(f"【エラー】TypeB詳細説明変更エラー: {str(e)}")
+            print(traceback.format_exc())
+
+    def on_fixed_value_central_value_changed(self):
+        """固定値の中央値が変更されたときの処理"""
+        try:
+            if not self.current_variable or self.parent.value_combo.currentIndex() < 0:
+                return
+                
+            central_value = self.parent.fixed_value_widgets['central_value'].text().strip()
+            
+            # データを保存
+            value_index = self.parent.value_combo.currentIndex()
+            if 'values' in self.parent.parent.variable_values[self.current_variable]:
+                self.parent.parent.variable_values[self.current_variable]['values'][value_index].update({
+                    'fixed_value': central_value,
+                    'central_value': central_value
+                })
+                
+        except Exception as e:
+            print(f"【エラー】固定値中央値変更エラー: {str(e)}")
+            print(traceback.format_exc())
+
+    def on_fixed_value_description_changed(self):
+        """固定値の詳細説明が変更されたときの処理"""
+        try:
+            if not self.current_variable or self.parent.value_combo.currentIndex() < 0:
+                return
+                
+            description = self.parent.fixed_value_widgets['description'].toPlainText()
+            
+            # データを保存
+            value_index = self.parent.value_combo.currentIndex()
+            if 'values' in self.parent.parent.variable_values[self.current_variable]:
+                self.parent.parent.variable_values[self.current_variable]['values'][value_index]['description'] = description
+                
+        except Exception as e:
+            print(f"【エラー】固定値詳細説明変更エラー: {str(e)}")
+            print(traceback.format_exc())
+
+    def on_save_button_clicked(self):
+        """保存ボタンがクリックされたときの処理"""
+        try:
+            if not self.current_variable:
+                return
+                
+            # 現在の値を辞書に保存
+            self.parent.display_current_value()
+            print(f"【DEBUG】辞書に保存: {self.current_variable}")
+            print(f"【DEBUG】保存内容: {self.parent.parent.variable_values[self.current_variable]}")
+                
+        except Exception as e:
+            print(f"【エラー】保存ボタンクリックエラー: {str(e)}")
+            print(traceback.format_exc())
+
+    def on_restore_button_clicked(self):
+        """復元ボタンがクリックされたときの処理"""
+        try:
+            if not self.current_variable:
+                return
+                
+            # 辞書から値を復元
+            self.parent.display_current_value()
+            print(f"【DEBUG】辞書から復元: {self.current_variable}")
+            print(f"【DEBUG】復元内容: {self.parent.parent.variable_values[self.current_variable]}")
+                
+        except Exception as e:
+            print(f"【エラー】復元ボタンクリックエラー: {str(e)}")
             print(traceback.format_exc()) 
