@@ -37,9 +37,24 @@ class UncertaintyCalculationTab(BaseTab):
         self.setup_ui()
 
     def _get_unit(self, var_name):
-        """変数の単位を取得"""
+        """変数の単位を取得（校正点ごとの単位があればそれも参照）"""
         try:
-            return (self.parent.variable_values.get(var_name, {}).get('unit', '') if self.parent else '').strip()
+            if not self.parent:
+                return ''
+
+            var_info = self.parent.variable_values.get(var_name, {})
+            unit = var_info.get('unit', '').strip()
+            if unit:
+                return unit
+
+            # 校正点ごとに単位が保存されている場合は現在の校正点の単位を使用
+            value_index = getattr(self.value_handler, 'current_value_index', None)
+            if isinstance(value_index, int):
+                values = var_info.get('values', [])
+                if 0 <= value_index < len(values):
+                    return values[value_index].get('unit', '').strip()
+
+            return ''
         except Exception:
             return ''
 
