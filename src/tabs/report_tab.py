@@ -137,6 +137,8 @@ class ReportTab(BaseTab):
             print(traceback.format_exc())
             QMessageBox.warning(self, self.tr(SAVE_ERROR), self.tr(REPORT_SAVE_ERROR))
             
+
+
     def generate_report_html(self, equation):
         """レポートのHTMLを生成（変数名リスト＋詳細情報dictから情報を取得して表示、未設定は"-"で埋める）"""
         try:
@@ -207,11 +209,14 @@ class ReportTab(BaseTab):
                 """
             html += "</table>"
 
-            # 各変数の詳細
-            html += f'<div class="title">{self.tr(REPORT_VARIABLE_DETAILS)}</div>'
             point_names = getattr(self.parent, 'value_names', [])
+            calc_tab = getattr(self.parent, 'uncertainty_calculation_tab', None)
+
             for idx, point_name in enumerate(point_names):
-                html += f'<h4>{self.tr(REPORT_CALIBRATION_POINT)}: {point_name}</h4>'
+                html += f'<div class="title">{self.tr(REPORT_CALIBRATION_POINT)}: {point_name}</div>'
+
+                # 各変数の詳細
+                html += f'<h4>{self.tr(REPORT_VARIABLE_DETAILS)}</h4>'
                 for var_name in variable_names:
                     if var_name in self.parent.result_variables:
                         continue
@@ -242,17 +247,15 @@ class ReportTab(BaseTab):
                             html += f"<div>{self.tr(DETAIL_DESCRIPTION)}: {description}</div>"
                         else:
                             html += f"<div>{self.tr(DETAIL_DESCRIPTION)}: -</div>"
-                    except Exception as e:
+                    except Exception:
                         html += f"<div>-</div>"
 
-            # 不確かさのバジェット・計算結果（計算タブから取得）
-            html += f'<div class="title">{self.tr(REPORT_UNCERTAINTY_BUDGET)}</div>'
-            calc_tab = getattr(self.parent, 'uncertainty_calculation_tab', None)
-            if calc_tab:
-                for point_name in point_names:
-                    idx = calc_tab.value_combo.findText(point_name)
-                    if idx >= 0:
-                        calc_tab.value_combo.setCurrentIndex(idx)
+                # 不確かさのバジェット（計算タブから取得）
+                html += f'<h4>{self.tr(REPORT_UNCERTAINTY_BUDGET)}</h4>'
+                if calc_tab:
+                    value_idx = calc_tab.value_combo.findText(point_name)
+                    if value_idx >= 0:
+                        calc_tab.value_combo.setCurrentIndex(value_idx)
                         budget = []
                         for i in range(calc_tab.calibration_table.rowCount()):
                             budget.append({
@@ -293,7 +296,9 @@ class ReportTab(BaseTab):
                                 </tr>
                                 """
                             html += "</table>"
-                        html += f"<div class='title'>{self.tr(REPORT_CALCULATION_RESULT)} ({self.tr(REPORT_CALIBRATION_POINT)}: {point_name})</div>"
+
+                        # 計算結果
+                        html += f"<h4>{self.tr(REPORT_CALCULATION_RESULT)}</h4>"
                         html += f"<table>"
                         html += f"<tr><th>{self.tr(REPORT_ITEM)}</th><th>{self.tr(REPORT_VALUE)}</th></tr>"
                         html += f"<tr><td>{self.tr(REPORT_EQUATION)}</td><td>{self.equation_formatter.format_equation(equation)}</td></tr>"
