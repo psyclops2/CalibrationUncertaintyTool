@@ -429,17 +429,7 @@ class VariablesTab(BaseTab):
                 print(f"[DEBUG] display_current_value: 変数の辞書が存在しないため作成 - {current_var}")
                 # 完全に新しい辞書を作成（前の変数の値の影響を受けないように）
                 self.parent.variable_values[current_var] = {
-                    'values': [{
-                        'measurements': '',
-                        'degrees_of_freedom': 0,
-                        'central_value': '',
-                        'standard_uncertainty': '',
-                        'half_width': '',
-                        'fixed_value': '',
-                        'description': '',
-                        'calculation_formula': '',
-                        'divisor': ''
-                    }],
+                    'values': [create_empty_value_dict()],
                     'unit': '',
                     'type': 'A',
                     'definition': ''
@@ -453,22 +443,19 @@ class VariablesTab(BaseTab):
                 var_info['values'] = []
                 
             values = var_info['values']
-            
+
             # 値のリストが空の場合はデフォルト値を追加
             if not values:
                 print(f"[DEBUG] display_current_value: 値のリストが空のため初期化")
-                values.append({
-                    'measurements': '',
-                    'degrees_of_freedom': 0,
-                    'central_value': '',
-                    'standard_uncertainty': '',
-                    'half_width': '',
-                    'fixed_value': '',
-                    'description': '',
-                    'calculation_formula': '',
-                    'divisor': ''
-                })
-            
+                values.append(create_empty_value_dict())
+
+            # 校正点の数に合わせて値のリストを拡張
+            required_values = self.value_combo.count()
+            if len(values) < required_values:
+                print(f"[DEBUG] display_current_value: 値リストを校正点数に合わせて拡張 - 現在 {len(values)} -> 必要 {required_values}")
+                for _ in range(required_values - len(values)):
+                    values.append(create_empty_value_dict())
+
             # 現在のインデックスを取得（範囲外の場合は0にリセット）
             index = self.value_combo.currentIndex()
             if index < 0 or index >= len(values):
