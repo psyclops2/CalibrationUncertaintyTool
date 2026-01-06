@@ -8,7 +8,6 @@ from src.utils.equation_handler import EquationHandler
 from src.utils.value_handler import ValueHandler
 from src.utils.uncertainty_calculator import UncertaintyCalculator
 from src.utils.number_formatter import (
-    format_central_value,
     format_central_value_with_uncertainty,
     format_standard_uncertainty,
     format_expanded_uncertainty,
@@ -339,6 +338,7 @@ class UncertaintyCalculationTab(BaseTab):
                 
                 # 中央値
                 central_value = self.value_handler.get_central_value(var)
+                central_value_display = str(central_value)
                 if (
                     central_value is None
                     or (isinstance(central_value, str) and central_value.strip() == "")
@@ -366,9 +366,7 @@ class UncertaintyCalculationTab(BaseTab):
                     degrees_of_freedom_list.append(0)
                     continue
 
-                self.calibration_table.setItem(
-                    i, 1, QTableWidgetItem(format_central_value(central_value_float))
-                )
+                self.calibration_table.setItem(i, 1, QTableWidgetItem(central_value_display))
                 
                 # 標準不確かさ
                 standard_uncertainty = self.value_handler.get_standard_uncertainty(var)
