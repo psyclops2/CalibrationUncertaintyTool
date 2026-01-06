@@ -377,26 +377,37 @@ class VariablesTab(BaseTab):
             # 定義の設定
             definition = var_info.get('definition', '')
             self.definition_input.setText(definition)
-            
+
             # 不確かさ種類の設定
             uncertainty_type = var_info.get('type', 'A')
+            if getattr(self.handlers, 'current_variable_is_result', False):
+                uncertainty_type = 'result'
             if uncertainty_type == 'A':
                 self.type_a_radio.setChecked(True)
             elif uncertainty_type == 'B':
                 self.type_b_radio.setChecked(True)
-            else:  # fixed
+            elif uncertainty_type == 'fixed':
                 self.type_fixed_radio.setChecked(True)
-            
+
             # TypeBの場合、分布と除数の設定
             if uncertainty_type == 'B':
                 distribution = var_info.get('distribution', '正規分布')
                 self.type_b_widgets['distribution'].setCurrentText(distribution)
-                
-                # 分布に応じた除数を設定
-                divisor = get_distribution_divisor(distribution)
+
+                # 分布に応じた除数を設定（正規分布は保存済みの値を優先）
+                values = var_info.get('values', []) if isinstance(var_info.get('values', []), list) else []
+                value_index = self.value_combo.currentIndex()
+                divisor = ''
+                if 0 <= value_index < len(values):
+                    divisor = values[value_index].get('divisor', '')
+                if not divisor:
+                    divisor = var_info.get('divisor', '')
+                if not divisor:
+                    divisor = get_distribution_divisor(distribution)
+
                 self.type_b_widgets['divisor'].setText(divisor)
                 self.type_b_widgets['divisor'].setReadOnly(distribution != '正規分布')
-            
+
             # 不確かさ種類に応じたウィジェットの表示を更新
             self.handlers.update_widget_visibility(uncertainty_type)
                 
@@ -650,15 +661,27 @@ class VariablesTab(BaseTab):
             item = find_variable_item(self.variable_list, self.handlers.last_selected_variable)
             if item:
                 self.variable_list.setCurrentItem(item)
-            
+
             self.update_value_combo()
-            if (not isinstance(self.handlers.last_selected_value_index, int) or
-                self.handlers.last_selected_value_index < 0 or
-                self.handlers.last_selected_value_index >= self.value_combo.count()):
-                self.handlers.last_selected_value_index = 0
+            selected_variable = self.handlers.last_selected_variable
+            target_index = self.handlers.value_indices.get(
+                selected_variable,
+                self.handlers.last_selected_value_index
+            )
+            if (not isinstance(target_index, int) or
+                target_index < 0 or
+                target_index >= self.value_combo.count()):
+                target_index = 0
+
             if self.value_combo.count() > 0:
-                self.value_combo.setCurrentIndex(self.handlers.last_selected_value_index)
-            
+                self.value_combo.blockSignals(True)
+                self.handlers.last_selected_value_index = target_index
+                self.parent.current_value_index = target_index
+                if selected_variable:
+                    self.handlers.value_indices[selected_variable] = target_index
+                self.value_combo.setCurrentIndex(target_index)
+                self.value_combo.blockSignals(False)
+
             self.display_common_settings()
             self.display_current_value()
                 
