@@ -82,7 +82,8 @@ def create_empty_value_dict():
         'standard_uncertainty': '',
         'half_width': '',
         'fixed_value': '',
-        'description': ''
+        'description': '',
+        'divisor': ''
     }
 
 def find_variable_item(variable_list, variable_name):

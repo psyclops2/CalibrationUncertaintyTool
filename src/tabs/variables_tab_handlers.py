@@ -18,6 +18,75 @@ class VariablesTabHandlers:
         self.current_variable = None
         self.last_selected_variable = None
         self.last_selected_value_index = 0
+        # 変数ごとの選択インデックスを保持して、切り替え時に他のデータが表示されないようにする
+        self.value_indices = {}
+        self.current_variable_is_result = False
+
+    def update_widget_visibility(self, uncertainty_type):
+        """不確かさ種類や計算結果量に応じてウィジェットの表示と有効・無効を切り替える"""
+        is_result = self.current_variable_is_result
+
+        # 計算結果変数は種類選択を無効化する
+        for radio in [self.parent.type_a_radio, self.parent.type_b_radio, self.parent.type_fixed_radio]:
+            radio.setEnabled(not is_result)
+
+        if is_result:
+            # 結果変数では入力系をすべて非表示・無効にする
+            for widget in self.parent.type_a_widgets.values():
+                widget.setVisible(False)
+                widget.setEnabled(False)
+            for widget in self.parent.type_b_widgets.values():
+                widget.setVisible(False)
+                widget.setEnabled(False)
+            for widget in self.parent.fixed_value_widgets.values():
+                widget.setVisible(False)
+                widget.setEnabled(False)
+            self.parent.update_form_layout()
+            return
+
+        if uncertainty_type == 'A':
+            # TypeA用のウィジェットを表示・有効化
+            for widget in self.parent.type_a_widgets.values():
+                widget.setVisible(True)
+                widget.setEnabled(True)
+            # TypeB用のウィジェットを非表示・無効化
+            for widget in self.parent.type_b_widgets.values():
+                widget.setVisible(False)
+                widget.setEnabled(False)
+            # 固定値用のウィジェットを非表示・無効化
+            for widget in self.parent.fixed_value_widgets.values():
+                widget.setVisible(False)
+                widget.setEnabled(False)
+
+        elif uncertainty_type == 'B':
+            # TypeA用のウィジェットを非表示・無効化
+            for widget in self.parent.type_a_widgets.values():
+                widget.setVisible(False)
+                widget.setEnabled(False)
+            # TypeB用のウィジェットを表示・有効化
+            for widget in self.parent.type_b_widgets.values():
+                widget.setVisible(True)
+                widget.setEnabled(True)
+            # 固定値用のウィジェットを非表示・無効化
+            for widget in self.parent.fixed_value_widgets.values():
+                widget.setVisible(False)
+                widget.setEnabled(False)
+
+        else:  # fixed
+            # TypeA用のウィジェットを非表示・無効化
+            for widget in self.parent.type_a_widgets.values():
+                widget.setVisible(False)
+                widget.setEnabled(False)
+            # TypeB用のウィジェットを非表示・無効化
+            for widget in self.parent.type_b_widgets.values():
+                widget.setVisible(False)
+                widget.setEnabled(False)
+            # 固定値用のウィジェットを表示・有効化
+            for widget in self.parent.fixed_value_widgets.values():
+                widget.setVisible(True)
+                widget.setEnabled(True)
+
+        self.parent.update_form_layout()
 
     def on_value_selected(self, index):
         """値が選択された時の処理"""
@@ -25,9 +94,13 @@ class VariablesTabHandlers:
             return
 
         try:
+            if not self.current_variable:
+                return
+
             # 親クラスの現在の値インデックスを更新
             self.parent.parent.current_value_index = index
             self.last_selected_value_index = index  # 選択状態を保存
+            self.value_indices[self.current_variable] = index
             
             # 現在の値の情報を表示
             self.parent.display_current_value()
@@ -48,6 +121,7 @@ class VariablesTabHandlers:
             self.current_variable = var_name
             self.last_selected_variable = var_name  # 選択状態を保存
             is_result = var_name in self.parent.parent.result_variables
+            self.current_variable_is_result = is_result
             var_mode = "計算結果" if is_result else "入力量"
             self.parent.mode_display.setText(var_mode)
 
@@ -66,13 +140,22 @@ class VariablesTabHandlers:
             
             # 値の選択コンボボックスを更新（校正点設定タブの情報を参照）
             self.parent.update_value_combo()
-            
+
             # 現在選択されている値のインデックスを設定
-            if 0 <= self.parent.parent.current_value_index < self.parent.value_combo.count():
-                self.parent.value_combo.setCurrentIndex(self.parent.parent.current_value_index)
-            
+            target_index = self.value_indices.get(var_name, self.parent.parent.current_value_index)
+            if target_index < 0 or target_index >= self.parent.value_combo.count():
+                target_index = 0
+
+            self.parent.parent.current_value_index = target_index
+            self.last_selected_value_index = target_index
+            self.parent.value_combo.setCurrentIndex(target_index)
+
             # 値の選択コンボボックスのシグナルを再接続
             self.parent.value_combo.blockSignals(False)
+
+            # 計算結果変数はタイプ選択を無効化し、タイプを結果用に固定
+            if is_result:
+                self.parent.parent.variable_values[var_name]['type'] = 'result'
 
             # 共通の設定を表示
             self.parent.display_common_settings()
@@ -88,57 +171,25 @@ class VariablesTabHandlers:
         """不確かさ種類が変更されたときの処理"""
         if not checked:
             return
-            
+
         try:
+            if self.current_variable_is_result:
+                return
+
             if self.parent.type_a_radio.isChecked():
                 uncertainty_type = 'A'
-                # TypeA用のウィジェットを表示・有効化
-                for widget in self.parent.type_a_widgets.values():
-                    widget.setVisible(True)
-                    widget.setEnabled(True)
-                # TypeB用のウィジェットを非表示・無効化
-                for widget in self.parent.type_b_widgets.values():
-                    widget.setVisible(False)
-                    widget.setEnabled(False)
-                # 固定値用のウィジェットを非表示・無効化
-                for widget in self.parent.fixed_value_widgets.values():
-                    widget.setVisible(False)
-                    widget.setEnabled(False)
-                    
+
             elif self.parent.type_b_radio.isChecked():
                 uncertainty_type = 'B'
-                # TypeA用のウィジェットを非表示・無効化
-                for widget in self.parent.type_a_widgets.values():
-                    widget.setVisible(False)
-                    widget.setEnabled(False)
-                # TypeB用のウィジェットを表示・有効化
-                for widget in self.parent.type_b_widgets.values():
-                    widget.setVisible(True)
-                    widget.setEnabled(True)
-                # 固定値用のウィジェットを非表示・無効化
-                for widget in self.parent.fixed_value_widgets.values():
-                    widget.setVisible(False)
-                    widget.setEnabled(False)
-                    
+
             else:  # 固定値
                 uncertainty_type = 'fixed'
-                # TypeA用のウィジェットを非表示・無効化
-                for widget in self.parent.type_a_widgets.values():
-                    widget.setVisible(False)
-                    widget.setEnabled(False)
-                # TypeB用のウィジェットを非表示・無効化
-                for widget in self.parent.type_b_widgets.values():
-                    widget.setVisible(False)
-                    widget.setEnabled(False)
-                # 固定値用のウィジェットを表示・有効化
-                for widget in self.parent.fixed_value_widgets.values():
-                    widget.setVisible(True)
-                    widget.setEnabled(True)
-                    
+            self.update_widget_visibility(uncertainty_type)
+
             if self.current_variable:
                 # 量の不確かさ種類を更新
                 self.parent.parent.variable_values[self.current_variable]['type'] = uncertainty_type
-                
+
             # フォームレイアウトの更新
             self.parent.update_form_layout()
             
@@ -211,19 +262,28 @@ class VariablesTabHandlers:
         try:
             if not self.current_variable:
                 return
-                
+
             distribution = self.parent.type_b_widgets['distribution'].currentText()
-            
+
             # 分布の種類に応じて除数を設定
-            divisor = get_distribution_divisor(distribution)
-            
+            divisor = self.parent.type_b_widgets['divisor'].text().strip()
+            default_divisor = get_distribution_divisor(distribution)
+            if distribution != '正規分布' or not divisor:
+                divisor = default_divisor
+
             self.parent.type_b_widgets['divisor'].setText(divisor)
             self.parent.type_b_widgets['divisor'].setReadOnly(distribution != '正規分布')
-            
+
             # 量の分布と除数を更新
             self.parent.parent.variable_values[self.current_variable]['distribution'] = distribution
             self.parent.parent.variable_values[self.current_variable]['divisor'] = divisor
-            
+            value_index = self.parent.value_combo.currentIndex()
+            if 'values' in self.parent.parent.variable_values[self.current_variable]:
+                try:
+                    self.parent.parent.variable_values[self.current_variable]['values'][value_index]['divisor'] = divisor
+                except (IndexError, TypeError):
+                    pass
+
             # 半値幅が設定されている場合は標準不確かさを再計算
             half_width = self.parent.type_b_widgets['half_width'].text().strip()
             if half_width and divisor:
@@ -263,8 +323,9 @@ class VariablesTabHandlers:
                 value_index = self.parent.value_combo.currentIndex()
                 if 'values' in self.parent.parent.variable_values[self.current_variable]:
                     self.parent.parent.variable_values[self.current_variable]['values'][value_index]['half_width'] = half_width
+                    self.parent.parent.variable_values[self.current_variable]['values'][value_index]['divisor'] = divisor_str
                     self.parent.parent.variable_values[self.current_variable]['values'][value_index]['standard_uncertainty'] = standard_uncertainty
-                    
+
                 # 標準不確かさを表示（高精度で表示）
                 self.parent.type_b_widgets['standard_uncertainty'].setText(f"{standard_uncertainty:.15g}")
                 
@@ -284,11 +345,12 @@ class VariablesTabHandlers:
                 
             # 量の除数を更新
             self.parent.parent.variable_values[self.current_variable]['divisor'] = divisor
-            
+
             # 現在の値の半値幅が設定されている場合は標準不確かさを再計算
             value_index = self.parent.value_combo.currentIndex()
             if 'values' in self.parent.parent.variable_values[self.current_variable]:
                 value_info = self.parent.parent.variable_values[self.current_variable]['values'][value_index]
+                value_info['divisor'] = divisor
                 half_width = value_info.get('half_width', '')
                 
                 if half_width:
@@ -386,18 +448,10 @@ class VariablesTabHandlers:
             # 値の辞書を取得
             var_info = self.parent.parent.variable_values[self.current_variable]
             values = var_info.get('values', [])
-            
+
             # インデックスが範囲外の場合、新しい値を追加
             while len(values) <= index:
-                values.append({
-                    'measurements': '',
-                    'degrees_of_freedom': 0,
-                    'central_value': '',
-                    'standard_uncertainty': '',
-                    'half_width': '',
-                    'fixed_value': '',
-                    'description': ''
-                })
+                values.append(create_empty_value_dict())
                 
             # 詳細説明を保存
             values[index]['description'] = description
