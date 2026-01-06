@@ -532,6 +532,22 @@ Please restart the application to apply the changes.</translation>
         <translation>Item</translation>
     </message>
     <message>
+        <source>DETAIL_DESCRIPTION</source>
+        <translation>Detailed Description</translation>
+    </message>
+    <message>
+        <source>HALF_WIDTH</source>
+        <translation>Half-width</translation>
+    </message>
+    <message>
+        <source>DISTRIBUTION</source>
+        <translation>Distribution</translation>
+    </message>
+    <message>
+        <source>FIXED_VALUE</source>
+        <translation>Fixed Value</translation>
+    </message>
+    <message>
         <source>REPORT_CALIBRATION_POINT</source>
         <translation>Calibration Point</translation>
     </message>

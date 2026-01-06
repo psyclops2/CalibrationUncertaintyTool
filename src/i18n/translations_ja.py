@@ -173,6 +173,12 @@ translations = {
         REPORT_CONTRIBUTION_RATE: "寄与率(%)",
         REPORT_ITEM: "項目",
 
+        # Variable details
+        DETAIL_DESCRIPTION: "詳細説明",
+        HALF_WIDTH: "半値幅",
+        DISTRIBUTION: "分布",
+        FIXED_VALUE: "固定値",
+
         # HTML Calculation Result Items
         REPORT_CALIBRATION_POINT: "校正点",
         REPORT_EQUATION: "計算式",
