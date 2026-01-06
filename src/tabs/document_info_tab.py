@@ -134,7 +134,7 @@ class DocumentInfoTab(BaseTab):
     def _get_description_html(self):
         if not self.description_edit.toPlainText().strip():
             return ""
-        return self.description_edit.toHtml()
+        return self.description_edit.toPlainText()
 
     def _on_info_changed(self):
         if hasattr(self.parent, "document_info"):
