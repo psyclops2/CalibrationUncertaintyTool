@@ -331,7 +331,10 @@ class UncertaintyCalculationTab(BaseTab):
                 
                 # 中央値
                 central_value = self.value_handler.get_central_value(var)
-                if central_value == '' or central_value is None:
+                if (
+                    central_value is None
+                    or (isinstance(central_value, str) and central_value.strip() == "")
+                ):
                     self.calibration_table.setItem(i, 1, QTableWidgetItem('--'))
                     self.calibration_table.setItem(i, 2, QTableWidgetItem('--'))  # 標準不確かさ
                     self.calibration_table.setItem(i, 3, QTableWidgetItem('--'))  # 自由度
@@ -341,8 +344,23 @@ class UncertaintyCalculationTab(BaseTab):
                     contributions.append(0)
                     degrees_of_freedom_list.append(0)
                     continue
-                else:
-                    self.calibration_table.setItem(i, 1, QTableWidgetItem(format_number_str(float(central_value))))
+
+                try:
+                    central_value_float = float(central_value)
+                except (TypeError, ValueError):
+                    self.calibration_table.setItem(i, 1, QTableWidgetItem('--'))
+                    self.calibration_table.setItem(i, 2, QTableWidgetItem('--'))  # 標準不確かさ
+                    self.calibration_table.setItem(i, 3, QTableWidgetItem('--'))  # 自由度
+                    self.calibration_table.setItem(i, 4, QTableWidgetItem('--'))  # 分布
+                    self.calibration_table.setItem(i, 5, QTableWidgetItem('--'))  # 感度係数
+                    self.calibration_table.setItem(i, 6, QTableWidgetItem('--'))  # 寄与不確かさ
+                    contributions.append(0)
+                    degrees_of_freedom_list.append(0)
+                    continue
+
+                self.calibration_table.setItem(
+                    i, 1, QTableWidgetItem(format_number_str(central_value_float))
+                )
                 
                 # 標準不確かさ
                 standard_uncertainty = self.value_handler.get_standard_uncertainty(var)
