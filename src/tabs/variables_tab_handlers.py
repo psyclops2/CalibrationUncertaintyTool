@@ -727,33 +727,3 @@ class VariablesTabHandlers:
         except Exception as e:
             print(f"【エラー】固定値詳細説明変更エラー: {str(e)}")
             print(traceback.format_exc())
-
-    def on_save_button_clicked(self):
-        """保存ボタンがクリックされたときの処理"""
-        try:
-            if not self.current_variable:
-                return
-                
-            # 現在の値を辞書に保存
-            self.parent.display_current_value()
-            print(f"【DEBUG】辞書に保存: {self.current_variable}")
-            print(f"【DEBUG】保存内容: {self.parent.parent.variable_values[self.current_variable]}")
-                
-        except Exception as e:
-            print(f"【エラー】保存ボタンクリックエラー: {str(e)}")
-            print(traceback.format_exc())
-
-    def on_restore_button_clicked(self):
-        """復元ボタンがクリックされたときの処理"""
-        try:
-            if not self.current_variable:
-                return
-                
-            # 辞書から値を復元
-            self.parent.display_current_value()
-            print(f"【DEBUG】辞書から復元: {self.current_variable}")
-            print(f"【DEBUG】復元内容: {self.parent.parent.variable_values[self.current_variable]}")
-                
-        except Exception as e:
-            print(f"【エラー】復元ボタンクリックエラー: {str(e)}")
-            print(traceback.format_exc()) 
