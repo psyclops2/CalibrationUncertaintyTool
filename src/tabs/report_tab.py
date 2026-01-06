@@ -209,14 +209,12 @@ class ReportTab(BaseTab):
                         .title {{ font-size: 20px; font-weight: bold; margin-top: 20px; margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px;}}
                         table {{ width: 100%; border-collapse: collapse; margin-bottom: 20px; }}
                         th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-                        th {{ background-color: #f2f2f2; }}
-                        .equation {{ font-family: 'Times New Roman', serif; font-size: 16px; padding: 10px; border: 1px solid #ccc; background-color: #f9f9f9; margin-bottom: 20px; }}
+                        .equation {{ font-family: 'Times New Roman', serif; font-size: 16px; padding: 10px; border: 1px solid #ccc; margin-bottom: 20px; }}
                         .doc-table th {{ width: 180px; }}
                         .subtitle {{ font-size: 20px; font-weight: bold; margin-top: 10px; margin-bottom: 6px; }}
-                        .description-body {{ border: 1px solid #ddd; padding: 10px; background-color: #fafafa; }}
+                        .description-body {{ border: 1px solid #ddd; padding: 10px; }}
                         .revision-table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
                         .revision-table th, .revision-table td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-                        .revision-table th {{ background-color: #f2f2f2; }}
                     </style>
                 </head>
                 <body>
