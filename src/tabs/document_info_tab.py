@@ -1,7 +1,7 @@
 import csv
 import io
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QFormLayout, QLabel, QLineEdit, QTextEdit, QVBoxLayout
+from PySide6.QtWidgets import QFormLayout, QLabel, QLineEdit, QPlainTextEdit, QVBoxLayout
 
 from src.tabs.base_tab import BaseTab
 from src.utils.markdown_renderer import render_markdown_to_html
@@ -46,13 +46,13 @@ class DocumentInfoTab(BaseTab):
         layout.addLayout(form_layout)
 
         self.description_label = QLabel(self.tr(DESCRIPTION_LABEL))
-        self.description_edit = QTextEdit()
+        self.description_edit = QPlainTextEdit()
         layout.addWidget(self.description_label)
         layout.addWidget(self.description_edit)
 
         self.revision_label = QLabel(self.tr(REVISION_HISTORY))
         self.revision_description = QLabel(self.tr(REVISION_HISTORY_INSTRUCTION))
-        self.revision_edit = QTextEdit()
+        self.revision_edit = QPlainTextEdit()
         self.revision_edit.setPlaceholderText(self.tr(REVISION_HISTORY_PLACEHOLDER))
 
         layout.addWidget(self.revision_label)
@@ -127,11 +127,16 @@ class DocumentInfoTab(BaseTab):
         for row in reader:
             if not any(cell.strip() for cell in row):
                 continue
-            version, description, date = (row + ["", "", ""])[:3]
+            version, description, author, checker, approver, date = (
+                row + ["", "", "", "", "", ""]
+            )[:6]
             rows.append(
                 {
                     "version": version.strip(),
                     "description": description.strip(),
+                    "author": author.strip(),
+                    "checker": checker.strip(),
+                    "approver": approver.strip(),
                     "date": date.strip(),
                 }
             )
