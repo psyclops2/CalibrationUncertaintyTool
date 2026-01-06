@@ -29,8 +29,33 @@ class ReportTab(BaseTab):
         self.value_handler = ValueHandler(parent)
         self.uncertainty_calculator = UncertaintyCalculator(parent)
         self.equation_formatter = EquationFormatter(parent)
-        
+
         self.setup_ui()
+
+    def _get_unit(self, var_name):
+        try:
+            return (
+                self.parent.variable_values.get(var_name, {}).get('unit', '')
+                if self.parent else ''
+            ).strip()
+        except Exception:
+            return ''
+
+    @staticmethod
+    def _format_with_unit(value_text, unit):
+        """値に単位を付与して表示用文字列を返す（値や単位が空の場合はそのまま）"""
+        if not value_text or value_text in ['--', '-']:
+            return value_text
+
+        unit = unit.strip()
+        if unit and value_text.rstrip().endswith(unit):
+            return value_text
+
+        display_unit = unit if unit else ReportTab.UNIT_PLACEHOLDER
+        if value_text.rstrip().endswith(ReportTab.UNIT_PLACEHOLDER):
+            return value_text
+
+        return f"{value_text} {display_unit}"
 
     def retranslate_ui(self):
         """UIのテキストを現在の言語で更新"""
@@ -288,10 +313,18 @@ class ReportTab(BaseTab):
                         calc_tab.value_combo.setCurrentIndex(value_idx)
                         budget = []
                         for i in range(calc_tab.calibration_table.rowCount()):
+                            variable_name = calc_tab.calibration_table.item(i, 0).text() if calc_tab.calibration_table.item(i, 0) else '-'
+                            unit = self._get_unit(variable_name)
                             budget.append({
-                                'variable': calc_tab.calibration_table.item(i, 0).text() if calc_tab.calibration_table.item(i, 0) else '-',
-                                'central_value': calc_tab.calibration_table.item(i, 1).text() if calc_tab.calibration_table.item(i, 1) else '-',
-                                'standard_uncertainty': calc_tab.calibration_table.item(i, 2).text() if calc_tab.calibration_table.item(i, 2) else '-',
+                                'variable': variable_name,
+                                'central_value': self._format_with_unit(
+                                    calc_tab.calibration_table.item(i, 1).text() if calc_tab.calibration_table.item(i, 1) else '-',
+                                    unit,
+                                ),
+                                'standard_uncertainty': self._format_with_unit(
+                                    calc_tab.calibration_table.item(i, 2).text() if calc_tab.calibration_table.item(i, 2) else '-',
+                                    unit,
+                                ),
                                 'dof': calc_tab.calibration_table.item(i, 3).text() if calc_tab.calibration_table.item(i, 3) else '-',
                                 'distribution': calc_tab.calibration_table.item(i, 4).text() if calc_tab.calibration_table.item(i, 4) else '-',
                                 'sensitivity': calc_tab.calibration_table.item(i, 5).text() if calc_tab.calibration_table.item(i, 5) else '-',
