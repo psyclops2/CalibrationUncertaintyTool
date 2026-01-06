@@ -83,6 +83,7 @@ def create_empty_value_dict():
         'half_width': '',
         'fixed_value': '',
         'description': '',
+        'calculation_formula': '',
         'divisor': ''
     }
 
