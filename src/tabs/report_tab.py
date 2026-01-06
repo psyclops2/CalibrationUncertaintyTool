@@ -17,6 +17,8 @@ from src.utils.translation_keys import *
 from src.utils.equation_formatter import EquationFormatter
 
 class ReportTab(BaseTab):
+    UNIT_PLACEHOLDER = '-'
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent
@@ -224,7 +226,7 @@ class ReportTab(BaseTab):
 
             for var_name in variable_names:
                 var_data = get_variable_data(var_name)
-                unit = var_data.get('unit', '-')
+                unit = var_data.get('unit', '') or self.UNIT_PLACEHOLDER
                 definition = var_data.get('definition', '-')
                 uncertainty_type = self.get_uncertainty_type_display(var_data.get('type', ''), var_name)
                 html += f"""

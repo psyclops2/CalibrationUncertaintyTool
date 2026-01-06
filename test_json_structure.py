@@ -1,8 +1,13 @@
 import sys
 import json
-from PySide6.QtWidgets import QApplication
-from src.main_window import MainWindow
-from src.utils.language_manager import LanguageManager
+import pytest
+
+try:
+    from PySide6.QtWidgets import QApplication
+    from src.main_window import MainWindow
+    from src.utils.language_manager import LanguageManager
+except ImportError:
+    pytest.skip("PySide6 is not available", allow_module_level=True)
 
 # QApplicationを作成
 app = QApplication(sys.argv)
@@ -26,4 +31,4 @@ print("JSON structure:")
 print(json.dumps(save_data, indent=4, ensure_ascii=False))
 
 # 最初のキーを確認
-print("\nFirst key:", list(save_data.keys())[0]) 
+print("\nFirst key:", list(save_data.keys())[0])

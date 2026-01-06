@@ -217,6 +217,9 @@ class ModelEquationTab(BaseTab):
             # 変数リストを更新
             if hasattr(self.parent, 'variables'):
                 self.parent.variables = variables
+
+                # 変数値辞書に検出した変数を登録
+                self._ensure_variable_values_initialized()
                 
                 # 変数タブの強制更新
                 if hasattr(self.parent, 'variables_tab'):
@@ -225,24 +228,24 @@ class ModelEquationTab(BaseTab):
                         self.parent.result_variables
                     )
                     
-                # 変数リストを更新
-                self.update_variable_list()
-                
-                # 前回の方程式を更新
-                self.parent.last_equation = current_equation
-                
-                # 偏微分タブの更新
-                if hasattr(self.parent, 'partial_derivative_tab'):
-                    self.parent.partial_derivative_tab.update_equation_display()
-                
-                # レポートタブの更新（新規追加）
-                if hasattr(self.parent, 'report_tab'):
-                    self.parent.report_tab.update_report()
-                
-                # 不確かさ計算タブの更新（新規追加）
-                if hasattr(self.parent, 'uncertainty_calculation_tab'):
-                    self.parent.uncertainty_calculation_tab.update_result_combo()
-                    self.parent.uncertainty_calculation_tab.update_value_combo()
+            # 変数リストを更新
+            self.update_variable_list()
+
+            # 前回の方程式を更新
+            self.parent.last_equation = current_equation
+
+            # 偏微分タブの更新
+            if hasattr(self.parent, 'partial_derivative_tab'):
+                self.parent.partial_derivative_tab.update_equation_display()
+
+            # レポートタブの更新（新規追加）
+            if hasattr(self.parent, 'report_tab'):
+                self.parent.report_tab.update_report()
+
+            # 不確かさ計算タブの更新（新規追加）
+            if hasattr(self.parent, 'uncertainty_calculation_tab'):
+                self.parent.uncertainty_calculation_tab.update_result_combo()
+                self.parent.uncertainty_calculation_tab.update_value_combo()
                 
         except Exception as e:
             print(f"【エラー】方程式解析エラー: {str(e)}")
@@ -379,44 +382,7 @@ class ModelEquationTab(BaseTab):
                     
                     # 新しい変数のために変数値辞書を初期化
                     for var in added_vars:
-                        if var not in self.parent.variable_values:
-                            if var in result_vars:
-                                # 計算結果変数の初期化
-                                self.parent.variable_values[var] = {
-                                    'values': [{
-                                        'measurements': '',
-                                        'degrees_of_freedom': 0,
-                                        'central_value': '',
-                                        'standard_uncertainty': '',
-                                        'half_width': '',
-                                        'fixed_value': '',
-                                        'description': '',
-                                        'calculation_formula': '',
-                                        'divisor': ''
-                                    }],
-                                    'type': 'A',
-                                    'unit': '',
-                                    'definition': ''
-                                }
-
-                            else:
-                                # 入力変数の初期化
-                                self.parent.variable_values[var] = {
-                                    'values': [{
-                                        'measurements': '',
-                                        'degrees_of_freedom': 0,
-                                        'central_value': '',
-                                        'standard_uncertainty': '',
-                                        'half_width': '',
-                                        'fixed_value': '',
-                                        'description': '',
-                                        'calculation_formula': '',
-                                        'divisor': ''
-                                    }],
-                                    'type': 'A',
-                                    'unit': '',
-                                    'definition': ''
-                                }
+                        self.parent.ensure_variable_initialized(var, is_result=var in result_vars)
 
                     
                     # 削除される変数の値を削除
@@ -682,4 +648,17 @@ class ModelEquationTab(BaseTab):
         variables = result_vars + [v for v in input_vars if v not in result_vars]
         if hasattr(self.parent, 'variables'):
             self.parent.variables = variables
-        return variables 
+        self._ensure_variable_values_initialized()
+        return variables
+
+    def _ensure_variable_values_initialized(self):
+        """検出済みの変数をvariable_valuesに登録し、単位フィールドを持たせる"""
+        if not hasattr(self.parent, 'ensure_variable_initialized'):
+            return
+
+        for var in getattr(self.parent, 'result_variables', []):
+            self.parent.ensure_variable_initialized(var, is_result=True)
+
+        for var in getattr(self.parent, 'variables', []):
+            if var not in getattr(self.parent, 'result_variables', []):
+                self.parent.ensure_variable_initialized(var)

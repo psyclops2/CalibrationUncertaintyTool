@@ -19,6 +19,8 @@ from src.tabs.base_tab import BaseTab
 from src.utils.translation_keys import *
 
 class UncertaintyCalculationTab(BaseTab):
+    UNIT_PLACEHOLDER = '-'
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent
@@ -44,10 +46,12 @@ class UncertaintyCalculationTab(BaseTab):
     @staticmethod
     def _format_with_unit(value_text, unit):
         """値に単位を付与して表示用文字列を返す（値や単位が空の場合はそのまま）"""
+        if not value_text or value_text == '--':
+            return value_text
+
         unit = unit.strip()
-        if value_text and value_text != '--' and unit:
-            return f"{value_text} {unit}"
-        return value_text
+        display_unit = unit if unit else UncertaintyCalculationTab.UNIT_PLACEHOLDER
+        return f"{value_text} {display_unit}"
 
     def _set_table_item(self, row, column, display_value, edit_value=None):
         """表示用と編集用の値を分けてテーブルに設定"""

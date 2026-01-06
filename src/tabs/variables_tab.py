@@ -455,6 +455,11 @@ class VariablesTab(BaseTab):
             print(f"[DEBUG] display_current_value: 辞書から取得した値={value_info}")
             print(f"[DEBUG] display_current_value: 使用する値のインデックス={index}, 値の総数={len(values)}")
             
+            # 計算結果変数は値入力をスキップし、単位などの共通設定のみ扱う
+            if getattr(self.handlers, 'current_variable_is_result', False):
+                self.handlers.update_widget_visibility('result')
+                return
+
             # 不確かさ種類を取得（デフォルトはA）
             uncertainty_type = var_info.get('type', 'A')
             print(f"[DEBUG] display_current_value: 復元開始 - 変数={current_var}, type={uncertainty_type}, value_index={index}")
