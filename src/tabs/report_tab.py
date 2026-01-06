@@ -5,6 +5,7 @@ import traceback
 import sympy as sp
 import numpy as np
 import html as html_lib
+import textwrap
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QComboBox, 
                              QPushButton, QFileDialog, QTextEdit, QLabel, QMessageBox)
 from PySide6.QtCore import Qt, Signal, Slot
@@ -159,39 +160,39 @@ class ReportTab(BaseTab):
             description_display = description_html if description_html.strip() else "-"
             revision_rows = self.get_revision_rows(document_info)
 
-            html = f"""
-            <html>
-            <head>
-                <title>{self.tr(REPORT_TITLE_HTML)}</title>
-                <style>
-                    body {{ font-family: sans-serif; margin: 20px; }}
-                    .container {{ max-width: 800px; margin: auto; }}
-                    .title {{ font-size: 20px; font-weight: bold; margin-top: 20px; margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px;}}
-                    table {{ width: 100%; border-collapse: collapse; margin-bottom: 20px; }}
-                    th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-                    th {{ background-color: #f2f2f2; }}
-                    .equation {{ font-family: 'Times New Roman', serif; font-size: 16px; padding: 10px; border: 1px solid #ccc; background-color: #f9f9f9; margin-bottom: 20px; }}
-                    .doc-table th {{ width: 180px; }}
-                    .subtitle {{ font-size: 16px; font-weight: bold; margin-top: 10px; margin-bottom: 6px; }}
-                    .description-body {{ border: 1px solid #ddd; padding: 10px; background-color: #fafafa; }}
-                    .revision-table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
-                    .revision-table th, .revision-table td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-                    .revision-table th {{ background-color: #f2f2f2; }}
-                </style>
-            </head>
-            <body>
-            <div class="container">
-                <div class="title">{self.tr(REPORT_DOCUMENT_INFO)}</div>
-                <table class="doc-table">
-                    <tr><th>{self.tr(DOCUMENT_NUMBER)}</th><td>{doc_number or '-'}</td></tr>
-                    <tr><th>{self.tr(DOCUMENT_NAME)}</th><td>{doc_name or '-'}</td></tr>
-                    <tr><th>{self.tr(VERSION_INFO)}</th><td>{version_info or '-'}</td></tr>
-                </table>
-                <div class="subtitle">{self.tr(DESCRIPTION_LABEL)}</div>
-                <div class="description-body">{description_display}</div>
-                <div class="title">{self.tr(REPORT_MODEL_EQUATION)}</div>
-                <div class="equation">{self.equation_formatter.format_equation(equation)}</div>
-            """
+            html = textwrap.dedent(f"""
+                <html>
+                <head>
+                    <title>{self.tr(REPORT_TITLE_HTML)}</title>
+                    <style>
+                        body {{ font-family: sans-serif; margin: 20px; }}
+                        .container {{ max-width: 800px; margin: auto; }}
+                        .title {{ font-size: 20px; font-weight: bold; margin-top: 20px; margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px;}}
+                        table {{ width: 100%; border-collapse: collapse; margin-bottom: 20px; }}
+                        th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+                        th {{ background-color: #f2f2f2; }}
+                        .equation {{ font-family: 'Times New Roman', serif; font-size: 16px; padding: 10px; border: 1px solid #ccc; background-color: #f9f9f9; margin-bottom: 20px; }}
+                        .doc-table th {{ width: 180px; }}
+                        .subtitle {{ font-size: 20px; font-weight: bold; margin-top: 10px; margin-bottom: 6px; }}
+                        .description-body {{ border: 1px solid #ddd; padding: 10px; background-color: #fafafa; }}
+                        .revision-table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
+                        .revision-table th, .revision-table td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+                        .revision-table th {{ background-color: #f2f2f2; }}
+                    </style>
+                </head>
+                <body>
+                <div class="container">
+                    <div class="title">{self.tr(REPORT_DOCUMENT_INFO)}</div>
+                    <table class="doc-table">
+                        <tr><th>{self.tr(DOCUMENT_NUMBER)}</th><td>{doc_number or '-'}</td></tr>
+                        <tr><th>{self.tr(DOCUMENT_NAME)}</th><td>{doc_name or '-'}</td></tr>
+                        <tr><th>{self.tr(VERSION_INFO)}</th><td>{version_info or '-'}</td></tr>
+                    </table>
+                    <div class="subtitle">{self.tr(DESCRIPTION_LABEL)}</div>
+                    <div class="description-body">{description_display}</div>
+                    <div class="title">{self.tr(REPORT_MODEL_EQUATION)}</div>
+                    <div class="equation">{self.equation_formatter.format_equation(equation)}</div>
+                """).strip()
 
             # 変数一覧テーブル
             html += f"""
