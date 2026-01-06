@@ -125,12 +125,7 @@ class VariablesTabHandlers:
             self.parent.settings_group.setEnabled(True)
 
             # 量辞書の初期化
-            if var_name not in self.parent.parent.variable_values:
-                self.parent.parent.variable_values[var_name] = {
-                    'values': [],
-                    'unit': '',
-                    'type': 'A'
-                }
+            self.parent.parent.ensure_variable_initialized(var_name, is_result=is_result)
 
             # 値の選択コンボボックスのシグナルを一時的に切断
             self.parent.value_combo.blockSignals(True)

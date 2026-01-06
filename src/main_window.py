@@ -16,6 +16,7 @@ from src.dialogs.about_dialog import AboutDialog
 from src.utils.language_manager import LanguageManager
 
 from src.utils.translation_keys import *
+from src.utils.variable_utils import create_empty_value_dict
 
 class MainWindow(QMainWindow):
     def __init__(self, language_manager=None):
@@ -199,6 +200,13 @@ class MainWindow(QMainWindow):
                 self.variables_tab.restore_selection_state()  # 選択状態と詳細表示をリフレッシュ
             if hasattr(self, 'model_equation_tab'):
                 self.model_equation_tab.set_equation(self.last_equation)
+
+            # 結果変数を含め、すべての変数に必須フィールドを補完
+            for var in self.result_variables:
+                self.ensure_variable_initialized(var, is_result=True)
+            for var in self.variables:
+                if var not in self.result_variables:
+                    self.ensure_variable_initialized(var)
             # 不確かさ計算タブの計算・テーブル再構築
             if hasattr(self, 'uncertainty_calculation_tab'):
                 self.uncertainty_calculation_tab.update_result_combo()
@@ -294,19 +302,7 @@ class MainWindow(QMainWindow):
         """変数を追加"""
         if var_name not in self.variables:
             self.variables.append(var_name)
-            self.variable_values[var_name] = {
-                'values': [],
-                'unit': '',
-                'type': 'A',
-                'measurements': '',
-                'degrees_of_freedom': 0,
-                'central_value': '',
-                'standard_uncertainty': '',
-                'distribution': 'normal',
-                'divisor': '',
-                'half_width': '',
-                'fixed_value': ''
-            }
+            self.ensure_variable_initialized(var_name)
             self.variables_tab.update_variable_list(self.variables, [])
             
     def remove_variable(self, var_name):
@@ -316,6 +312,36 @@ class MainWindow(QMainWindow):
             if var_name in self.variable_values:
                 del self.variable_values[var_name]
             self.variables_tab.update_variable_list(self.variables, [])
+
+    def ensure_variable_initialized(self, var_name, is_result=False):
+        """変数用の辞書を初期化（単位を含む）"""
+        if var_name not in self.variable_values or not isinstance(self.variable_values[var_name], dict):
+            self.variable_values[var_name] = {}
+
+        var_info = self.variable_values[var_name]
+
+        # 基本フィールドの初期化
+        var_info.setdefault('unit', '')
+        var_info.setdefault('definition', '')
+        var_info.setdefault('nominal_value', '')
+
+        # 既存のタイプを尊重しつつ、結果変数であれば'result'を設定
+        if is_result:
+            var_info['type'] = 'result'
+        else:
+            var_info.setdefault('type', 'A')
+
+        # values リストを校正点数に合わせて初期化
+        values = var_info.get('values', [])
+        if not isinstance(values, list):
+            values = []
+        required_values = max(1, getattr(self, 'value_count', 1))
+        if len(values) < required_values:
+            values.extend(create_empty_value_dict() for _ in range(required_values - len(values)))
+        var_info['values'] = values
+
+        self.variable_values[var_name] = var_info
+        return var_info
             
     def detect_variables(self):
         """変数の検出と変数タブの更新"""
