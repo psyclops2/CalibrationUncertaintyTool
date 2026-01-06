@@ -48,18 +48,6 @@ class ConfigLoader:
                 'max_count': 10
             }
 
-    def get_rounding_settings(self) -> dict:
-        """丸め設定を取得"""
-        try:
-            return {
-                'decimal_places': int(self.config.get('Rounding', 'decimal_places'))
-            }
-        except configparser.NoSectionError:
-            print("【警告】Roundingセクションが見つかりません。デフォルト値を使用します。")
-            return {
-                'decimal_places': 6
-            }
-
     def get_defaults(self) -> dict:
         """デフォルト値を取得"""
         return {
