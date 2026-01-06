@@ -5,6 +5,7 @@ from PySide6.QtCore import Qt, QEvent, Slot
 import json
 import decimal
 
+from src.tabs.document_info_tab import DocumentInfoTab
 from src.tabs.model_equation_tab import ModelEquationTab
 from src.tabs.variables_tab import VariablesTab
 from src.tabs.uncertainty_calculation_tab import UncertaintyCalculationTab
@@ -36,6 +37,13 @@ class MainWindow(QMainWindow):
         self.value_count = 1
         self.current_value_index = 0
         self.value_names = [f"{self.tr(CALIBRATION_POINT_NAME)} {i+1}" for i in range(self.value_count)]
+        self.document_info = {
+            'document_number': '',
+            'document_name': '',
+            'version_info': '',
+            'description_html': '',
+            'revision_history': ''
+        }
         
         # UIの初期化
         self.setup_ui()
@@ -52,14 +60,16 @@ class MainWindow(QMainWindow):
         self.tab_widget = QTabWidget()
         
         # 各タブの作成
+        self.document_info_tab = DocumentInfoTab(self)
         self.model_equation_tab = ModelEquationTab(self)
         self.point_settings_tab = PointSettingsTab(self)
         self.variables_tab = VariablesTab(self)
         self.uncertainty_calculation_tab = UncertaintyCalculationTab(self)
         self.partial_derivative_tab = PartialDerivativeTab(self)
         self.report_tab = ReportTab(self)
-        
+
         # タブの追加
+        self.tab_widget.addTab(self.document_info_tab, self.tr(DOCUMENT_INFO_TAB))
         self.tab_widget.addTab(self.model_equation_tab, self.tr(TAB_EQUATION))
         self.tab_widget.addTab(self.point_settings_tab, self.tr(POINT_SETTINGS_TAB))
         self.tab_widget.addTab(self.variables_tab, self.tr(TAB_VARIABLES))
@@ -72,7 +82,8 @@ class MainWindow(QMainWindow):
         
         # Connect signals
         self.point_settings_tab.points_changed.connect(self.on_points_changed)
-        
+        self.document_info_tab.info_changed.connect(self.report_tab.update_report)
+
         layout.addWidget(self.tab_widget)
 
     @Slot()
@@ -98,7 +109,8 @@ class MainWindow(QMainWindow):
         self.system_locale_action.setText(self.tr(USE_SYSTEM_LOCALE))
         self.help_menu.setTitle(self.tr(MENU_HELP))
         self.about_action.setText(self.tr(ABOUT_APP))
-
+        self.tab_widget.setTabText(0, self.tr(DOCUMENT_INFO_TAB))
+        
     def create_menu_bar(self):
         """メニューバーの作成"""
         menubar = self.menuBar()
@@ -156,6 +168,7 @@ class MainWindow(QMainWindow):
             'value_count': self.value_count,
             'current_value_index': self.current_value_index,
             'value_names': self.value_names,
+            'document_info': self.document_info_tab.get_document_info() if hasattr(self, 'document_info_tab') else self.document_info,
             'last_selected_variable': last_selected_variable,
             'last_selected_value_index': last_selected_value_index
         }
@@ -170,6 +183,9 @@ class MainWindow(QMainWindow):
             self.value_count = data.get('value_count', 1)
             self.current_value_index = data.get('current_value_index', 0)
             self.value_names = data.get('value_names', [f"{self.tr(CALIBRATION_POINT_NAME)} {i+1}" for i in range(self.value_count)])
+            self.document_info = data.get('document_info', self.document_info)
+            if hasattr(self, 'document_info_tab'):
+                self.document_info_tab.set_document_info(self.document_info)
             # 変数タブの選択状態も復元（古いデータとの互換性あり）
             last_selected_variable = data.get('last_selected_variable', None)
             last_selected_value_index = data.get('last_selected_value_index', 0)
@@ -260,16 +276,16 @@ class MainWindow(QMainWindow):
             
     def on_tab_changed(self, index):
         """タブが切り替えられたときの処理"""
-        if index == 2:  # 不確かさ計算タブ
+        if index == 4:  # 不確かさ計算タブ
             self.uncertainty_calculation_tab.update_result_combo()
             self.uncertainty_calculation_tab.update_value_combo()
-        elif index == 3:  # レポートタブ
+        elif index == 5:  # レポートタブ
             if hasattr(self, 'report_tab'):
                 self.report_tab.update_variable_list(self.variables, self.result_variables)
                 self.report_tab.update_report()
-        elif index == 4:  # 偏微分タブ
+        elif index == 6:  # 偏微分タブ
             self.partial_derivative_tab.update_equation_display()
-        elif index == 1:  # 変数タブ（indexはタブ順に応じて調整）
+        elif index == 3:  # 変数タブ（indexはタブ順に応じて調整）
             if hasattr(self, 'variables_tab'):
                 self.variables_tab.restore_selection_state()
             
@@ -362,14 +378,18 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(self.tr(APP_TITLE))
         
         # タブのタイトル
-        self.tab_widget.setTabText(0, self.tr(TAB_EQUATION))
-        self.tab_widget.setTabText(1, self.tr(POINT_SETTINGS_TAB))
-        self.tab_widget.setTabText(2, self.tr(TAB_VARIABLES))
-        self.tab_widget.setTabText(3, self.tr(TAB_CALCULATION))
-        self.tab_widget.setTabText(4, self.tr(TAB_REPORT))
-        self.tab_widget.setTabText(5, self.tr(PARTIAL_DERIVATIVE))
-        
+        self.tab_widget.setTabText(0, self.tr(DOCUMENT_INFO_TAB))
+        self.tab_widget.setTabText(1, self.tr(TAB_EQUATION))
+        self.tab_widget.setTabText(2, self.tr(POINT_SETTINGS_TAB))
+        self.tab_widget.setTabText(3, self.tr(TAB_VARIABLES))
+        self.tab_widget.setTabText(4, self.tr(TAB_CALCULATION))
+        self.tab_widget.setTabText(5, self.tr(TAB_REPORT))
+        self.tab_widget.setTabText(6, self.tr(PARTIAL_DERIVATIVE))
+
         # 各タブのUIテキストを更新
+        if hasattr(self, 'document_info_tab') and hasattr(self.document_info_tab, 'retranslate_ui'):
+            self.document_info_tab.retranslate_ui()
+
         if hasattr(self, 'model_equation_tab') and hasattr(self.model_equation_tab, 'retranslate_ui'):
             self.model_equation_tab.retranslate_ui()
             
@@ -394,16 +414,16 @@ class MainWindow(QMainWindow):
     def select_model_equation_tab(self):
         """モデル式タブを選択"""
 
-        self.tab_widget.setCurrentIndex(0)
+        self.tab_widget.setCurrentIndex(1)
         
     def select_variables_tab(self):
         """変数管理タブを選択"""
 
-        self.tab_widget.setCurrentIndex(2)
+        self.tab_widget.setCurrentIndex(3)
         
     def select_report_tab(self):
         """レポートタブを選択"""
 
-        self.tab_widget.setCurrentIndex(4)
+        self.tab_widget.setCurrentIndex(5)
 
     # ... existing code ... 

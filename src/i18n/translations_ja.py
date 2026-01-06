@@ -43,6 +43,7 @@ translations = {
         TAB_REPORT: "レポート",
         PARTIAL_DERIVATIVE: "偏微分",
         POINT_SETTINGS_TAB: "校正点設定",
+        DOCUMENT_INFO_TAB: "文書情報",
 
         # 一般的なボタン
         BUTTON_SAVE: "保存",
@@ -68,6 +69,15 @@ translations = {
         VARIABLE_ORDER_UPDATE_FAILED: "変数の並び順の更新に失敗しました。",
         VARIABLE_ORDER_SAVE_FAILED: "変数の並び順の保存に失敗しました。",
         VARIABLE_ORDER_LOAD_FAILED: "変数の並び順の読み込みに失敗しました。",
+    },
+    "DocumentInfoTab": {
+        DOCUMENT_NUMBER: "文書番号",
+        DOCUMENT_NAME: "文書名",
+        VERSION_INFO: "バージョン情報",
+        DESCRIPTION_LABEL: "説明文 (HTML可)",
+        REVISION_HISTORY: "改訂履歴",
+        REVISION_HISTORY_PLACEHOLDER: "v1,説明,2024-01-01",
+        REVISION_HISTORY_INSTRUCTION: "各行を「ver,説明,改定日」の形式で入力してください。",
     },
     "VariablesTab": {
         CALIBRATION_POINT_SETTINGS: "校正点設定",
@@ -147,6 +157,7 @@ translations = {
 
         # HTML Report Title
         REPORT_TITLE_HTML: "校正不確かさ計算レポート",
+        REPORT_DOCUMENT_INFO: "文書情報",
 
         # HTML Section Titles
         REPORT_MODEL_EQUATION: "数式モデル",
@@ -155,6 +166,7 @@ translations = {
         REPORT_MEASUREMENT_VALUES: "測定値",
         REPORT_UNCERTAINTY_BUDGET: "不確かさのバジェット",
         REPORT_CALCULATION_RESULT: "計算結果",
+        REPORT_REVISION_HISTORY: "改訂履歴",
 
         # HTML Table Headers
         REPORT_QUANTITY: "量",
@@ -172,6 +184,13 @@ translations = {
         REPORT_CONTRIBUTION: "寄与(不確かさ)",
         REPORT_CONTRIBUTION_RATE: "寄与率(%)",
         REPORT_ITEM: "項目",
+        DOCUMENT_NUMBER: "文書番号",
+        DOCUMENT_NAME: "文書名",
+        VERSION_INFO: "バージョン情報",
+        DESCRIPTION_LABEL: "説明",
+        REVISION_VERSION: "版",
+        REVISION_DESCRIPTION: "説明",
+        REVISION_DATE: "改定日",
 
         # Variable details
         DETAIL_DESCRIPTION: "詳細説明",

@@ -1,7 +1,10 @@
+import csv
+import io
 import os
 import traceback
 import sympy as sp
 import numpy as np
+import html as html_lib
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QComboBox, 
                              QPushButton, QFileDialog, QTextEdit, QLabel, QMessageBox)
 from PySide6.QtCore import Qt, Signal, Slot
@@ -145,6 +148,17 @@ class ReportTab(BaseTab):
             if not result_var or not equation:
                 return ""
 
+            document_info = getattr(self.parent, 'document_info', {}) or {}
+            if hasattr(self.parent, 'document_info_tab'):
+                document_info = self.parent.document_info_tab.get_document_info()
+
+            doc_number = html_lib.escape(document_info.get('document_number', ''))
+            doc_name = html_lib.escape(document_info.get('document_name', ''))
+            version_info = html_lib.escape(document_info.get('version_info', ''))
+            description_html = document_info.get('description_html', '') or ""
+            description_display = description_html if description_html.strip() else "-"
+            revision_rows = self.get_revision_rows(document_info)
+
             html = f"""
             <html>
             <head>
@@ -157,10 +171,24 @@ class ReportTab(BaseTab):
                     th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
                     th {{ background-color: #f2f2f2; }}
                     .equation {{ font-family: 'Times New Roman', serif; font-size: 16px; padding: 10px; border: 1px solid #ccc; background-color: #f9f9f9; margin-bottom: 20px; }}
+                    .doc-table th {{ width: 180px; }}
+                    .subtitle {{ font-size: 16px; font-weight: bold; margin-top: 10px; margin-bottom: 6px; }}
+                    .description-body {{ border: 1px solid #ddd; padding: 10px; background-color: #fafafa; }}
+                    .revision-table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
+                    .revision-table th, .revision-table td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+                    .revision-table th {{ background-color: #f2f2f2; }}
                 </style>
             </head>
             <body>
             <div class="container">
+                <div class="title">{self.tr(REPORT_DOCUMENT_INFO)}</div>
+                <table class="doc-table">
+                    <tr><th>{self.tr(DOCUMENT_NUMBER)}</th><td>{doc_number or '-'}</td></tr>
+                    <tr><th>{self.tr(DOCUMENT_NAME)}</th><td>{doc_name or '-'}</td></tr>
+                    <tr><th>{self.tr(VERSION_INFO)}</th><td>{version_info or '-'}</td></tr>
+                </table>
+                <div class="subtitle">{self.tr(DESCRIPTION_LABEL)}</div>
+                <div class="description-body">{description_display}</div>
                 <div class="title">{self.tr(REPORT_MODEL_EQUATION)}</div>
                 <div class="equation">{self.equation_formatter.format_equation(equation)}</div>
             """
@@ -308,6 +336,16 @@ class ReportTab(BaseTab):
                         html += f"<tr><td>{self.tr(REPORT_EXPANDED_UNCERTAINTY)}</td><td>{calc_tab.expanded_uncertainty_label.text()}</td></tr>"
                         html += f"</table>"
 
+            html += f'<div class="title">{self.tr(REPORT_REVISION_HISTORY)}</div>'
+            html += "<table class=\"revision-table\">"
+            html += f"<tr><th>{self.tr(REVISION_VERSION)}</th><th>{self.tr(REVISION_DESCRIPTION)}</th><th>{self.tr(REVISION_DATE)}</th></tr>"
+            if revision_rows:
+                for row in revision_rows:
+                    html += f"<tr><td>{html_lib.escape(row.get('version', '') or '-')}</td><td>{html_lib.escape(row.get('description', '') or '-')}</td><td>{html_lib.escape(row.get('date', '') or '-')}</td></tr>"
+            else:
+                html += "<tr><td colspan=\"3\">-</td></tr>"
+            html += "</table>"
+
             html += """
             </div>
             </body>
@@ -319,6 +357,28 @@ class ReportTab(BaseTab):
             print(f"【エラー】HTML生成エラー: {str(e)}")
             print(traceback.format_exc())
             return self.tr(HTML_GENERATION_ERROR)
+
+    def get_revision_rows(self, document_info):
+        """改訂履歴の入力内容をパースしてリストで返却"""
+        if hasattr(self.parent, 'document_info_tab'):
+            return self.parent.document_info_tab.parse_revision_history()
+        if isinstance(document_info, dict):
+            return self.parse_revision_history_text(document_info.get('revision_history', ''))
+        return []
+
+    def parse_revision_history_text(self, text):
+        rows = []
+        reader = csv.reader(io.StringIO(text or ""))
+        for row in reader:
+            if not any(cell.strip() for cell in row):
+                continue
+            version, description, date = (row + ["", "", ""])[:3]
+            rows.append({
+                'version': version.strip(),
+                'description': description.strip(),
+                'date': date.strip()
+            })
+        return rows
 
     def update_report(self):
         """レポートを更新するための外部インターフェース"""

@@ -39,6 +39,7 @@ translations = {
         TAB_REPORT: "Report",
         PARTIAL_DERIVATIVE: "Partial Derivative",
         POINT_SETTINGS_TAB: "Point Settings",
+        DOCUMENT_INFO_TAB: "Document Info",
 
         # General buttons
         BUTTON_SAVE: "Save",
@@ -64,6 +65,15 @@ translations = {
         VARIABLE_ORDER_UPDATE_FAILED: "Failed to update variable order.",
         VARIABLE_ORDER_SAVE_FAILED: "Failed to save variable order.",
         VARIABLE_ORDER_LOAD_FAILED: "Failed to load variable order.",
+    },
+    "DocumentInfoTab": {
+        DOCUMENT_NUMBER: "Document Number",
+        DOCUMENT_NAME: "Document Name",
+        VERSION_INFO: "Version Info",
+        DESCRIPTION_LABEL: "Description (HTML allowed)",
+        REVISION_HISTORY: "Revision History",
+        REVISION_HISTORY_PLACEHOLDER: "v1,Description,2024-01-01",
+        REVISION_HISTORY_INSTRUCTION: "Enter each line as 'ver,description,date'.",
     },
     "VariablesTab": {
         CALIBRATION_POINT_SETTINGS: "Calibration Point Settings",
@@ -142,6 +152,7 @@ translations = {
 
         # HTML Report Title
         REPORT_TITLE_HTML: "Calibration Uncertainty Calculation Report",
+        REPORT_DOCUMENT_INFO: "Document Information",
 
         # HTML Section Titles
         REPORT_MODEL_EQUATION: "Model Equation",
@@ -150,6 +161,7 @@ translations = {
         REPORT_MEASUREMENT_VALUES: "Measurement Values",
         REPORT_UNCERTAINTY_BUDGET: "Uncertainty Budget",
         REPORT_CALCULATION_RESULT: "Calculation Result",
+        REPORT_REVISION_HISTORY: "Revision History",
 
         # HTML Table Headers
         REPORT_QUANTITY: "Quantity",
@@ -167,6 +179,13 @@ translations = {
         REPORT_CONTRIBUTION: "Contribution (Uncertainty)",
         REPORT_CONTRIBUTION_RATE: "Contribution Rate (%)",
         REPORT_ITEM: "Item",
+        DOCUMENT_NUMBER: "Document Number",
+        DOCUMENT_NAME: "Document Name",
+        VERSION_INFO: "Version Info",
+        DESCRIPTION_LABEL: "Description",
+        REVISION_VERSION: "Version",
+        REVISION_DESCRIPTION: "Description",
+        REVISION_DATE: "Revised Date",
 
         # Variable details
         DETAIL_DESCRIPTION: "Detailed Description",
