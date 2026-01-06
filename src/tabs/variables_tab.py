@@ -281,20 +281,6 @@ class VariablesTab(BaseTab):
         self.detail_description_label_fixed = QLabel(self.tr(DETAIL_DESCRIPTION) + ":")
         settings_layout.addRow(self.detail_description_label_fixed, self.fixed_value_widgets['description'])
         
-        # 保存・復元ボタンを追加
-        button_layout = QHBoxLayout()
-        
-        self.save_button = QPushButton("辞書に保存")
-        self.save_button.clicked.connect(self.handlers.on_save_button_clicked)
-        button_layout.addWidget(self.save_button)
-        
-        self.restore_button = QPushButton("辞書から復元")
-        self.restore_button.clicked.connect(self.handlers.on_restore_button_clicked)
-        button_layout.addWidget(self.restore_button)
-        
-        button_layout.addStretch()
-        settings_layout.addRow("", button_layout)
-        
         self.settings_group.setLayout(settings_layout)
         self.settings_group.setEnabled(False)
         right_layout.addWidget(self.settings_group)
