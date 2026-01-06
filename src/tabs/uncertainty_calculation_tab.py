@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                              QComboBox, QTableWidget, QTableWidgetItem, QHeaderView,
-                             QGroupBox, QFormLayout, QDoubleSpinBox, QMessageBox)
+                             QGroupBox, QFormLayout, QDoubleSpinBox, QMessageBox,
+                             QAbstractItemView)
 from PySide6.QtCore import Qt, Signal, Slot
 import traceback
 
@@ -75,12 +76,12 @@ class UncertaintyCalculationTab(BaseTab):
         display_unit = unit if unit else UncertaintyCalculationTab.UNIT_PLACEHOLDER
         return f"{value_text} {display_unit}"
 
-    def _set_table_item(self, row, column, display_value, edit_value=None):
-        """表示用と編集用の値を分けてテーブルに設定"""
-        item = QTableWidgetItem()
-        item.setData(Qt.DisplayRole, display_value)
-        if edit_value is not None:
-            item.setData(Qt.EditRole, edit_value)
+    def _set_display_only_item(self, row, column, value_text, unit):
+        """表示専用セルを設定する共通関数（単位付与を一元化）"""
+        display_text = "--" if value_text in [None, ""] else str(value_text)
+        display_text = self._format_with_unit(display_text, unit)
+        item = QTableWidgetItem(display_text)
+        item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
         self.calibration_table.setItem(row, column, item)
 
     def retranslate_ui(self):
@@ -265,8 +266,8 @@ class UncertaintyCalculationTab(BaseTab):
         
         self.setLayout(main_layout)
         
-        # Connect the itemChanged signal
-        self.calibration_table.itemChanged.connect(self.on_table_item_changed)
+        # テーブルを表示専用に設定
+        self.calibration_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
         
     def update_result_combo(self):
@@ -394,17 +395,16 @@ class UncertaintyCalculationTab(BaseTab):
                 
                 # 中央値
                 central_value = self.value_handler.get_central_value(var)
-                central_value_display = str(central_value)
                 if (
                     central_value is None
                     or (isinstance(central_value, str) and central_value.strip() == "")
                 ):
-                    self.calibration_table.setItem(i, 1, QTableWidgetItem('--'))
-                    self.calibration_table.setItem(i, 2, QTableWidgetItem('--'))  # 標準不確かさ
+                    self._set_display_only_item(i, 1, "--", unit)
+                    self._set_display_only_item(i, 2, "--", unit)  # 標準不確かさ
                     self.calibration_table.setItem(i, 3, QTableWidgetItem('--'))  # 自由度
                     self.calibration_table.setItem(i, 4, QTableWidgetItem('--'))  # 分布
                     self.calibration_table.setItem(i, 5, QTableWidgetItem('--'))  # 感度係数
-                    self.calibration_table.setItem(i, 6, QTableWidgetItem('--'))  # 寄与不確かさ
+                    self._set_display_only_item(i, 6, "--", unit)  # 寄与不確かさ
                     contributions.append(0)
                     degrees_of_freedom_list.append(0)
                     continue
@@ -412,24 +412,22 @@ class UncertaintyCalculationTab(BaseTab):
                 try:
                     central_value_float = float(central_value)
                 except (TypeError, ValueError):
-                    self.calibration_table.setItem(i, 1, QTableWidgetItem('--'))
-                    self.calibration_table.setItem(i, 2, QTableWidgetItem('--'))  # 標準不確かさ
+                    self._set_display_only_item(i, 1, "--", unit)
+                    self._set_display_only_item(i, 2, "--", unit)  # 標準不確かさ
                     self.calibration_table.setItem(i, 3, QTableWidgetItem('--'))  # 自由度
                     self.calibration_table.setItem(i, 4, QTableWidgetItem('--'))  # 分布
                     self.calibration_table.setItem(i, 5, QTableWidgetItem('--'))  # 感度係数
-                    self.calibration_table.setItem(i, 6, QTableWidgetItem('--'))  # 寄与不確かさ
+                    self._set_display_only_item(i, 6, "--", unit)  # 寄与不確かさ
                     contributions.append(0)
                     degrees_of_freedom_list.append(0)
                     continue
 
-                central_value_display = self._format_with_unit(central_value_display, unit)
-                self._set_table_item(i, 1, central_value_display, str(central_value))
+                self._set_display_only_item(i, 1, str(central_value), unit)
 
                 # 標準不確かさ
                 standard_uncertainty = self.value_handler.get_standard_uncertainty(var)
                 standard_uncertainty_display = format_standard_uncertainty(standard_uncertainty)
-                standard_uncertainty_display = self._format_with_unit(standard_uncertainty_display, unit)
-                self._set_table_item(i, 2, standard_uncertainty_display, str(standard_uncertainty))
+                self._set_display_only_item(i, 2, standard_uncertainty_display, unit)
                 
                 # 自由度
                 degrees_of_freedom = self.value_handler.get_degrees_of_freedom(var)
@@ -449,14 +447,13 @@ class UncertaintyCalculationTab(BaseTab):
                     if standard_uncertainty and sensitivity:
                         contribution = float(standard_uncertainty) * float(sensitivity)
                         contribution_display = format_standard_uncertainty(contribution)
-                        contribution_display = self._format_with_unit(contribution_display, unit)
-                        self.calibration_table.setItem(i, 6, QTableWidgetItem(contribution_display))
+                        self._set_display_only_item(i, 6, contribution_display, unit)
                         contributions.append(contribution)
                     else:
-                        self.calibration_table.setItem(i, 6, QTableWidgetItem(""))
+                        self._set_display_only_item(i, 6, "--", unit)
                         contributions.append(0)
                 except (ValueError, TypeError) as e:
-                    self.calibration_table.setItem(i, 6, QTableWidgetItem(""))
+                    self._set_display_only_item(i, 6, "--", unit)
                     contributions.append(0)
             
             # 合成標準不確かさの計算
