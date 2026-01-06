@@ -131,15 +131,19 @@ class UncertaintyCalculationTab(BaseTab):
             try:
                 # Block signals to prevent recursion
                 self.calibration_table.blockSignals(True)
-                
+
+                # Prefer the EditRole (raw value) to avoid including display units
+                edit_value = item.data(Qt.EditRole)
+                value_to_save = str(edit_value) if edit_value is not None else item.text()
+
                 if item.column() == 1:  # Central value
-                    value_handler.update_variable_value(var, 'central_value', item.text())
+                    value_handler.update_variable_value(var, 'central_value', value_to_save)
                 elif item.column() == 2:  # Standard uncertainty
-                    value_handler.update_variable_value(var, 'standard_uncertainty', item.text())
+                    value_handler.update_variable_value(var, 'standard_uncertainty', value_to_save)
                 elif item.column() == 3:  # Degrees of freedom
-                    value_handler.update_variable_value(var, 'degrees_of_freedom', item.text())
+                    value_handler.update_variable_value(var, 'degrees_of_freedom', value_to_save)
                 elif item.column() == 4:  # Distribution
-                    value_handler.update_variable_value(var, 'distribution', item.text())
+                    value_handler.update_variable_value(var, 'distribution', value_to_save)
                 
                 # Recalculate to update everything
                 result_var = self.result_combo.currentText()
