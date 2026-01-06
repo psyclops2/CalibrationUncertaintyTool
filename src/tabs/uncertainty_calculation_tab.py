@@ -9,6 +9,7 @@ from src.utils.value_handler import ValueHandler
 from src.utils.uncertainty_calculator import UncertaintyCalculator
 from src.utils.number_formatter import (
     format_central_value,
+    format_central_value_with_uncertainty,
     format_standard_uncertainty,
     format_expanded_uncertainty,
     format_contribution_rate,
@@ -412,7 +413,7 @@ class UncertaintyCalculationTab(BaseTab):
                 # 中央値の計算
                 result_central_value = self.equation_handler.calculate_result_central_value(right_side, variables, self.value_handler)
                 try:
-                    self.central_value_label.setText(format_central_value(float(result_central_value)))
+                    result_central_value = float(result_central_value)
                 except (ValueError, TypeError):
                     self.central_value_label.setText('--')
                     self.standard_uncertainty_label.setText('--')
@@ -437,6 +438,11 @@ class UncertaintyCalculationTab(BaseTab):
                 # 拡張不確かさの計算
                 expanded_uncertainty = coverage_factor * result_standard_uncertainty
                 self.expanded_uncertainty_label.setText(format_expanded_uncertainty(expanded_uncertainty))
+
+                # 拡張不確かさの桁に合わせて中央値を更新
+                self.central_value_label.setText(
+                    format_central_value_with_uncertainty(result_central_value, expanded_uncertainty)
+                )
 
                 # --- ここで計算結果をMainWindowに保存 ---
                 result_var = self.result_combo.currentText()

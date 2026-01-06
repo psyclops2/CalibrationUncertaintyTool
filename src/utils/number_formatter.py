@@ -100,16 +100,20 @@ def _round_with_five_percent_rule(value: Decimal, significant_digits: int) -> De
     return candidate if value >= 0 else -candidate
 
 
+def _round_expanded_uncertainty(value: Decimal, digits: int, mode: str) -> Decimal:
+    """拡張不確かさを設定に従って丸める"""
+    if mode == 'round_up':
+        return _round_to_significant_digits(value, digits, ROUND_UP)
+    return _round_with_five_percent_rule(value, digits)
+
+
 def format_expanded_uncertainty(value) -> str:
     """拡張不確かさを有効数字設定と丸めモードで丸めて指数表記に変換"""
     try:
         digits, mode = _get_uncertainty_settings()
 
         dec_value = _to_decimal(value)
-        if mode == 'round_up':
-            rounded = _round_to_significant_digits(dec_value, digits, ROUND_UP)
-        else:
-            rounded = _round_with_five_percent_rule(dec_value, digits)
+        rounded = _round_expanded_uncertainty(dec_value, digits, mode)
 
         return _format_with_exponent(rounded, digits)
     except Exception as e:
@@ -131,6 +135,25 @@ def format_coverage_factor(value) -> str:
         print(f"【エラー】包含係数の文字列変換エラー: {str(e)}")
         print(traceback.format_exc())
         return "0"
+
+
+def format_central_value_with_uncertainty(value, expanded_uncertainty) -> str:
+    """拡張不確かさの桁に合わせて中央値を表示"""
+    try:
+        digits, mode = _get_uncertainty_settings()
+        rounded_uncertainty = _round_expanded_uncertainty(_to_decimal(expanded_uncertainty), digits, mode)
+
+        if rounded_uncertainty == 0:
+            return format_central_value(value)
+
+        quantize_exp = Decimal(f"1e{rounded_uncertainty.adjusted() - digits + 1}")
+        decimals = max(-quantize_exp.as_tuple().exponent, 0)
+        rounded_value = _to_decimal(value).quantize(quantize_exp, rounding=ROUND_HALF_UP)
+        return f"{rounded_value:.{decimals}f}"
+    except Exception as e:
+        print(f"【エラー】不確かさに合わせた中央値の文字列変換エラー: {str(e)}")
+        print(traceback.format_exc())
+        return format_central_value(value)
 
 
 def format_number_str(value):
