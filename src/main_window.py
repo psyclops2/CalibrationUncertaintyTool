@@ -41,6 +41,7 @@ class MainWindow(QMainWindow):
             'document_number': '',
             'document_name': '',
             'version_info': '',
+            'description_markdown': '',
             'description_html': '',
             'revision_history': ''
         }

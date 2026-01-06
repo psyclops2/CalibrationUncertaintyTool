@@ -4,6 +4,7 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QFormLayout, QLabel, QLineEdit, QTextEdit, QVBoxLayout
 
 from src.tabs.base_tab import BaseTab
+from src.utils.markdown_renderer import render_markdown_to_html
 from src.utils.translation_keys import (
     DESCRIPTION_LABEL,
     DOCUMENT_NAME,
@@ -86,6 +87,7 @@ class DocumentInfoTab(BaseTab):
             "document_number": self.document_number_edit.text(),
             "document_name": self.document_name_edit.text(),
             "version_info": self.version_edit.text(),
+            "description_markdown": self.description_edit.toPlainText(),
             "description_html": self._get_description_html(),
             "revision_history": self.revision_edit.toPlainText(),
         }
@@ -100,7 +102,11 @@ class DocumentInfoTab(BaseTab):
         self.document_number_edit.setText(info.get("document_number", ""))
         self.document_name_edit.setText(info.get("document_name", ""))
         self.version_edit.setText(info.get("version_info", ""))
-        self.description_edit.setHtml(info.get("description_html", ""))
+        description_markdown = info.get("description_markdown")
+        if description_markdown is not None:
+            self.description_edit.setPlainText(description_markdown)
+        else:
+            self.description_edit.setPlainText(info.get("description_html", ""))
         self.revision_edit.setPlainText(info.get("revision_history", ""))
 
         self.document_number_edit.blockSignals(False)
@@ -132,9 +138,7 @@ class DocumentInfoTab(BaseTab):
         return rows
 
     def _get_description_html(self):
-        if not self.description_edit.toPlainText().strip():
-            return ""
-        return self.description_edit.toPlainText()
+        return render_markdown_to_html(self.description_edit.toPlainText())
 
     def _on_info_changed(self):
         if hasattr(self.parent, "document_info"):
