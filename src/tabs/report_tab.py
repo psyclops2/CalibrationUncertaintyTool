@@ -175,10 +175,25 @@ class ReportTab(BaseTab):
                     <th>{self.tr(REPORT_UNCERTAINTY_TYPE)}</th>
                 </tr>
             """
-            variables = self.parent.variables
+            variables = getattr(self.parent, 'variables', [])
+            # variables はリストまたは辞書を想定するが、どちらでも安全に扱えるよう正規化
+            if isinstance(variables, dict):
+                variable_names = list(variables.keys())
+            elif isinstance(variables, (list, tuple)):
+                variable_names = list(variables)
+            else:
+                variable_names = []
+
             variable_values = getattr(self.parent, 'variable_values', {})
-            for var_name in variables:
-                var_data = variable_values.get(var_name, {})
+            if not isinstance(variable_values, dict):
+                variable_values = {}
+
+            def get_variable_data(name):
+                data = variable_values.get(name, {})
+                return data if isinstance(data, dict) else {}
+
+            for var_name in variable_names:
+                var_data = get_variable_data(var_name)
                 unit = var_data.get('unit', '-')
                 definition = var_data.get('definition', '-')
                 uncertainty_type = self.get_uncertainty_type_display(var_data.get('type', ''), var_name)
@@ -197,14 +212,16 @@ class ReportTab(BaseTab):
             point_names = getattr(self.parent, 'value_names', [])
             for idx, point_name in enumerate(point_names):
                 html += f'<h4>{self.tr(REPORT_CALIBRATION_POINT)}: {point_name}</h4>'
-                for var_name in variables:
+                for var_name in variable_names:
                     if var_name in self.parent.result_variables:
                         continue
                     try:
-                        var_data = variable_values.get(var_name, {})
+                        var_data = get_variable_data(var_name)
                         html += f"<h5>{var_name}</h5>"
                         uncertainty_type = var_data.get('type', '')
                         values_list = var_data.get('values', [])
+                        if not isinstance(values_list, list):
+                            values_list = []
                         value_item = values_list[idx] if idx < len(values_list) else None
                         if uncertainty_type == 'A':
                             if value_item:
