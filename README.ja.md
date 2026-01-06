@@ -40,6 +40,35 @@ pip install -r requirements.txt
 python src/main.py
 ```
 
+## 設定ファイル（config.ini）
+
+アプリの設定はリポジトリ直下の [`config.ini`](./config.ini) に保存されています。主な項目は次のとおりです。
+
+* **[Calculation]**
+  * `precision`: 計算結果に使用する小数精度。
+* **[Uncertainty]**
+  * `type_a`, `type_b`, `type_fixed`: 不確かさの分類名（UIに表示されるラベル）。
+  * `fixed_value_uncertainty`: 固定値タイプ選択時に適用する標準不確かさ。
+* **[Defaults]**
+  * `value_count`: 各量に初期作成される値（校正点）の個数。
+  * `current_value_index`: 量の編集時に最初に選択される値のインデックス。
+* **[CalibrationPoints]**
+  * `min_count`, `max_count`: UI 上で設定できる校正点数の最小値と最大値。
+* **[UncertaintyRounding]**
+  * `significant_digits`: 不確かさ値の表示に用いる有効数字。
+  * `rounding_mode`: 丸め方法（`round_up` または `5_percent`）。
+* **[Language]**
+  * `current`: UI の言語（`ja` または `en`）。
+  * `use_system_locale`: 設定言語よりシステムロケールを優先するかどうか。
+* **[Messages]**
+  * `equation_change`: モデル式変更時に変数更新が必要な場合のメッセージテンプレート。
+* **[Distribution]**
+  * `normal_distribution`, `rectangular_distribution`, `triangular_distribution`, `u_distribution`: 各分布で区間値から標準不確かさへ変換する際の除数。
+* **[TValues]**
+  * 自由度に応じた包含係数のルックアップ（無限大は `infinity` を使用）。
+* **[Version]**
+  * `version`: UI やレポートで表示するバージョン文字列。
+
 ## プロジェクト構造
 ```
 src/

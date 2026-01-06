@@ -47,6 +47,35 @@ pip install -r requirements.txt
 python src/main.py
 ```
 
+## Configuration (config.ini)
+
+Application settings are stored in [`config.ini`](./config.ini). Key options include:
+
+* **[Calculation]**
+  * `precision`: Decimal precision used for calculation results.
+* **[Uncertainty]**
+  * `type_a`, `type_b`, `type_fixed`: Labels shown for uncertainty categories.
+  * `fixed_value_uncertainty`: Standard uncertainty applied when a fixed value type is selected.
+* **[Defaults]**
+  * `value_count`: Default number of values (calibration points) created per quantity.
+  * `current_value_index`: Initially selected value index when editing quantities.
+* **[CalibrationPoints]**
+  * `min_count`, `max_count`: Minimum and maximum number of calibration points the UI allows.
+* **[UncertaintyRounding]**
+  * `significant_digits`: Significant digits shown for uncertainty values.
+  * `rounding_mode`: Rounding strategy (`round_up` or `5_percent`).
+* **[Language]**
+  * `current`: UI language (`ja` or `en`).
+  * `use_system_locale`: Whether to prefer the system locale over the configured language.
+* **[Messages]**
+  * `equation_change`: Message template displayed when the model equation requires variable updates.
+* **[Distribution]**
+  * `normal_distribution`, `rectangular_distribution`, `triangular_distribution`, `u_distribution`: Divisors used to convert interval values into standard uncertainties for each distribution type.
+* **[TValues]**
+  * A lookup table for coverage factors based on degrees of freedom (use `infinity` for infinite degrees of freedom).
+* **[Version]**
+  * `version`: Application version string shown in the UI and reports.
+
 ## Project Structure
 
 ```
