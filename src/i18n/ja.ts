@@ -536,6 +536,22 @@
         <translation>項目</translation>
     </message>
     <message>
+        <source>DETAIL_DESCRIPTION</source>
+        <translation>詳細説明</translation>
+    </message>
+    <message>
+        <source>HALF_WIDTH</source>
+        <translation>半値幅</translation>
+    </message>
+    <message>
+        <source>DISTRIBUTION</source>
+        <translation>分布</translation>
+    </message>
+    <message>
+        <source>FIXED_VALUE</source>
+        <translation>固定値</translation>
+    </message>
+    <message>
         <source>REPORT_CALIBRATION_POINT</source>
         <translation>校正点</translation>
     </message>

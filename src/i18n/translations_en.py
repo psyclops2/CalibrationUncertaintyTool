@@ -168,6 +168,12 @@ translations = {
         REPORT_CONTRIBUTION_RATE: "Contribution Rate (%)",
         REPORT_ITEM: "Item",
 
+        # Variable details
+        DETAIL_DESCRIPTION: "Detailed Description",
+        HALF_WIDTH: "Half-width",
+        DISTRIBUTION: "Distribution",
+        FIXED_VALUE: "Fixed Value",
+
         # HTML Calculation Result Items
         REPORT_CALIBRATION_POINT: "Calibration Point",
         REPORT_EQUATION: "Calculation Formula",
