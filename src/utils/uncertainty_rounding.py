@@ -107,9 +107,10 @@ def format_uncertainty(value: Decimal, mode: str = None) -> str:
             abs_value *= 1000
             exponent -= 3
             
-        # 設定された桁数で丸める
-        config = ConfigLoader()
-        decimal_places = config.get_rounding_settings()['decimal_places']
+        # 設定された有効数字に合わせて表示桁数を決定
+        settings = get_uncertainty_rounding_settings()
+        significant_digits = max(settings['significant_digits'], 1)
+        decimal_places = max(significant_digits - 1, 0)
         format_str = f"{{:.{decimal_places}f}}"
         
         # 負の数の場合、符号を戻す

@@ -8,7 +8,6 @@ from PySide6.QtCore import Qt, Signal, Slot
 from src.utils.equation_handler import EquationHandler
 from src.utils.value_handler import ValueHandler
 from src.utils.uncertainty_calculator import UncertaintyCalculator
-from src.utils.number_formatter import format_number_str
 from src.tabs.base_tab import BaseTab
 from src.utils.translation_keys import *
 from src.utils.equation_formatter import EquationFormatter

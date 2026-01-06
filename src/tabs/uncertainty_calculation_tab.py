@@ -7,7 +7,16 @@ import traceback
 from src.utils.equation_handler import EquationHandler
 from src.utils.value_handler import ValueHandler
 from src.utils.uncertainty_calculator import UncertaintyCalculator
-from src.utils.number_formatter import format_number_str
+from src.utils.number_formatter import (
+    format_central_value,
+    format_standard_uncertainty,
+    format_expanded_uncertainty,
+    format_expanded_uncertainty_with_quantum,
+    format_central_value_with_quantum,
+    format_contribution_rate,
+    format_coverage_factor,
+    format_number_str,
+)
 from src.tabs.base_tab import BaseTab
 from src.utils.translation_keys import *
 
@@ -359,12 +368,12 @@ class UncertaintyCalculationTab(BaseTab):
                     continue
 
                 self.calibration_table.setItem(
-                    i, 1, QTableWidgetItem(format_number_str(central_value_float))
+                    i, 1, QTableWidgetItem(format_central_value(central_value_float))
                 )
                 
                 # 標準不確かさ
                 standard_uncertainty = self.value_handler.get_standard_uncertainty(var)
-                self.calibration_table.setItem(i, 2, QTableWidgetItem(format_number_str(standard_uncertainty)))
+                self.calibration_table.setItem(i, 2, QTableWidgetItem(format_standard_uncertainty(standard_uncertainty)))
                 
                 # 自由度
                 degrees_of_freedom = self.value_handler.get_degrees_of_freedom(var)
@@ -383,7 +392,7 @@ class UncertaintyCalculationTab(BaseTab):
                 try:
                     if standard_uncertainty and sensitivity:
                         contribution = float(standard_uncertainty) * float(sensitivity)
-                        self.calibration_table.setItem(i, 6, QTableWidgetItem(format_number_str(contribution)))
+                        self.calibration_table.setItem(i, 6, QTableWidgetItem(format_standard_uncertainty(contribution)))
                         contributions.append(contribution)
                     else:
                         self.calibration_table.setItem(i, 6, QTableWidgetItem(""))
@@ -398,40 +407,45 @@ class UncertaintyCalculationTab(BaseTab):
             # 寄与率の計算と表示
             contribution_rates = self.uncertainty_calculator.calculate_contribution_rates(contributions)
             for i, rate in enumerate(contribution_rates):
-                self.calibration_table.setItem(i, 7, QTableWidgetItem(f"{rate:.2f}%"))
+                self.calibration_table.setItem(i, 7, QTableWidgetItem(format_contribution_rate(rate)))
             
-            # 計算結果を表示
-            try:
-                # 中央値の計算
-                result_central_value = self.equation_handler.calculate_result_central_value(right_side, variables, self.value_handler)
+                # 計算結果を表示
                 try:
-                    self.central_value_label.setText(format_number_str(float(result_central_value)))
-                except (ValueError, TypeError):
-                    self.central_value_label.setText('--')
-                    self.standard_uncertainty_label.setText('--')
-                    self.effective_degrees_of_freedom_label.setText('--')
-                    self.coverage_factor_label.setText('--')
-                    self.expanded_uncertainty_label.setText('--')
-                    return
-                
-                # 合成標準不確かさの表示
-                self.standard_uncertainty_label.setText(format_number_str(result_standard_uncertainty))
-                
-                # 有効自由度の計算
-                effective_df = self.uncertainty_calculator.calculate_effective_degrees_of_freedom(
-                    result_standard_uncertainty, contributions, degrees_of_freedom_list
-                )
-                self.effective_degrees_of_freedom_label.setText(format_number_str(float(effective_df)))
-                
-                # 包含係数の計算
-                coverage_factor = self.uncertainty_calculator.get_coverage_factor(effective_df)
-                self.coverage_factor_label.setText(format_number_str(float(coverage_factor)))
-                
-                # 拡張不確かさの計算
-                expanded_uncertainty = coverage_factor * result_standard_uncertainty
-                self.expanded_uncertainty_label.setText(format_number_str(expanded_uncertainty))
+                    # 中央値の計算
+                    result_central_value = self.equation_handler.calculate_result_central_value(right_side, variables, self.value_handler)
 
-                # --- ここで計算結果をMainWindowに保存 ---
+                    # 合成標準不確かさの表示
+                    self.standard_uncertainty_label.setText(format_standard_uncertainty(result_standard_uncertainty))
+
+                    # 有効自由度の計算
+                    effective_df = self.uncertainty_calculator.calculate_effective_degrees_of_freedom(
+                        result_standard_uncertainty, contributions, degrees_of_freedom_list
+                    )
+                    self.effective_degrees_of_freedom_label.setText(format_number_str(float(effective_df)))
+
+                    # 包含係数の計算
+                    coverage_factor = self.uncertainty_calculator.get_coverage_factor(effective_df)
+                    self.coverage_factor_label.setText(format_coverage_factor(float(coverage_factor)))
+
+                    # 拡張不確かさの計算
+                    expanded_uncertainty = coverage_factor * result_standard_uncertainty
+                    expanded_uncertainty_str, quantum = format_expanded_uncertainty_with_quantum(expanded_uncertainty)
+                    self.expanded_uncertainty_label.setText(expanded_uncertainty_str)
+
+                    # 校正値は拡張不確かさの丸め桁に合わせる
+                    try:
+                        self.central_value_label.setText(
+                            format_central_value_with_quantum(float(result_central_value), quantum)
+                        )
+                    except (ValueError, TypeError):
+                        self.central_value_label.setText('--')
+                        self.standard_uncertainty_label.setText('--')
+                        self.effective_degrees_of_freedom_label.setText('--')
+                        self.coverage_factor_label.setText('--')
+                        self.expanded_uncertainty_label.setText('--')
+                        return
+
+                    # --- ここで計算結果をMainWindowに保存 ---
                 result_var = self.result_combo.currentText()
                 point_name = self.value_combo.currentText()
                 # バジェット情報を作成
