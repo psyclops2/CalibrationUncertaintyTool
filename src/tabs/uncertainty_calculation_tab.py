@@ -331,7 +331,7 @@ class UncertaintyCalculationTab(BaseTab):
         # If we're already updating, skip to prevent recursion
         if self._updating_table:
             return
-            
+
         try:
             # Set updating flag
             self._updating_table = True
@@ -340,6 +340,7 @@ class UncertaintyCalculationTab(BaseTab):
             left_side, right_side = equation.split('=', 1)
             left_side = left_side.strip()
             right_side = right_side.strip()
+            result_var = left_side
             
             # 変数を抽出
             variables = self.equation_handler.get_variables_from_equation(right_side)
@@ -519,4 +520,4 @@ class UncertaintyCalculationTab(BaseTab):
             print(traceback.format_exc())
         finally:
             # Always reset the updating flag
-            self._updating_table = False 
+            self._updating_table = False
