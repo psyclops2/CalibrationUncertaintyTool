@@ -339,12 +339,26 @@ class ReportTab(BaseTab):
 
             html += f'<div class="title">{self.tr(REPORT_REVISION_HISTORY)}</div>'
             html += "<table class=\"revision-table\">"
-            html += f"<tr><th>{self.tr(REVISION_VERSION)}</th><th>{self.tr(REVISION_DESCRIPTION)}</th><th>{self.tr(REVISION_DATE)}</th></tr>"
+            html += "<tr>"
+            html += f"<th>{self.tr(REVISION_VERSION)}</th>"
+            html += f"<th>{self.tr(REVISION_DESCRIPTION)}</th>"
+            html += f"<th>{self.tr(REVISION_AUTHOR)}</th>"
+            html += f"<th>{self.tr(REVISION_CHECKER)}</th>"
+            html += f"<th>{self.tr(REVISION_APPROVER)}</th>"
+            html += f"<th>{self.tr(REVISION_DATE)}</th>"
+            html += "</tr>"
             if revision_rows:
                 for row in revision_rows:
-                    html += f"<tr><td>{html_lib.escape(row.get('version', '') or '-')}</td><td>{html_lib.escape(row.get('description', '') or '-')}</td><td>{html_lib.escape(row.get('date', '') or '-')}</td></tr>"
+                    html += "<tr>"
+                    html += f"<td>{html_lib.escape(row.get('version', '') or '-')}</td>"
+                    html += f"<td>{html_lib.escape(row.get('description', '') or '-')}</td>"
+                    html += f"<td>{html_lib.escape(row.get('author', '') or '-')}</td>"
+                    html += f"<td>{html_lib.escape(row.get('checker', '') or '-')}</td>"
+                    html += f"<td>{html_lib.escape(row.get('approver', '') or '-')}</td>"
+                    html += f"<td>{html_lib.escape(row.get('date', '') or '-')}</td>"
+                    html += "</tr>"
             else:
-                html += "<tr><td colspan=\"3\">-</td></tr>"
+                html += "<tr><td colspan=\"6\">-</td></tr>"
             html += "</table>"
 
             html += """
@@ -373,10 +387,15 @@ class ReportTab(BaseTab):
         for row in reader:
             if not any(cell.strip() for cell in row):
                 continue
-            version, description, date = (row + ["", "", ""])[:3]
+            version, description, author, checker, approver, date = (
+                row + ["", "", "", "", "", ""]
+            )[:6]
             rows.append({
                 'version': version.strip(),
                 'description': description.strip(),
+                'author': author.strip(),
+                'checker': checker.strip(),
+                'approver': approver.strip(),
                 'date': date.strip()
             })
         return rows

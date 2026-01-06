@@ -74,10 +74,10 @@ translations = {
         DOCUMENT_NUMBER: "文書番号",
         DOCUMENT_NAME: "文書名",
         VERSION_INFO: "バージョン情報",
-        DESCRIPTION_LABEL: "説明文 (HTML可)",
+        DESCRIPTION_LABEL: "説明文 (Markdownのみ)",
         REVISION_HISTORY: "改訂履歴",
-        REVISION_HISTORY_PLACEHOLDER: "v1,説明,2024-01-01",
-        REVISION_HISTORY_INSTRUCTION: "各行を「ver,説明,改定日」の形式で入力してください。",
+        REVISION_HISTORY_PLACEHOLDER: "v1,説明文,作成者,照査者,承認者,2024-01-01",
+        REVISION_HISTORY_INSTRUCTION: "各行を「ver,説明文,作成者,照査者,承認者,改定日」の形式で入力してください。",
     },
     "VariablesTab": {
         CALIBRATION_POINT_SETTINGS: "校正点設定",
@@ -190,6 +190,9 @@ translations = {
         DESCRIPTION_LABEL: "説明",
         REVISION_VERSION: "版",
         REVISION_DESCRIPTION: "説明",
+        REVISION_AUTHOR: "作成者",
+        REVISION_CHECKER: "照査者",
+        REVISION_APPROVER: "承認者",
         REVISION_DATE: "改定日",
 
         # Variable details

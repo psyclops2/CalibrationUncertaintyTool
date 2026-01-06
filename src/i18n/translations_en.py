@@ -70,10 +70,10 @@ translations = {
         DOCUMENT_NUMBER: "Document Number",
         DOCUMENT_NAME: "Document Name",
         VERSION_INFO: "Version Info",
-        DESCRIPTION_LABEL: "Description (HTML allowed)",
+        DESCRIPTION_LABEL: "Description (Markdown only)",
         REVISION_HISTORY: "Revision History",
-        REVISION_HISTORY_PLACEHOLDER: "v1,Description,2024-01-01",
-        REVISION_HISTORY_INSTRUCTION: "Enter each line as 'ver,description,date'.",
+        REVISION_HISTORY_PLACEHOLDER: "v1,Description,Author,Reviewer,Approver,2024-01-01",
+        REVISION_HISTORY_INSTRUCTION: "Enter each line as 'ver,description,author,reviewer,approver,date'.",
     },
     "VariablesTab": {
         CALIBRATION_POINT_SETTINGS: "Calibration Point Settings",
@@ -185,6 +185,9 @@ translations = {
         DESCRIPTION_LABEL: "Description",
         REVISION_VERSION: "Version",
         REVISION_DESCRIPTION: "Description",
+        REVISION_AUTHOR: "Author",
+        REVISION_CHECKER: "Reviewer",
+        REVISION_APPROVER: "Approver",
         REVISION_DATE: "Revised Date",
 
         # Variable details
