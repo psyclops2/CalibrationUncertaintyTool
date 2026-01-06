@@ -46,10 +46,17 @@ class UncertaintyCalculationTab(BaseTab):
     @staticmethod
     def _format_with_unit(value_text, unit):
         """値に単位を付与して表示用文字列を返す（値や単位が空の場合はそのまま）"""
-        if not value_text or value_text == '--':
+        if not value_text or value_text in ['--', '-']:
             return value_text
 
         unit = unit.strip()
+
+        # すでに同じ単位やプレースホルダーが付いている場合は重ね付けしない
+        if unit and value_text.rstrip().endswith(unit):
+            return value_text
+        if value_text.rstrip().endswith(UncertaintyCalculationTab.UNIT_PLACEHOLDER):
+            return value_text
+
         display_unit = unit if unit else UncertaintyCalculationTab.UNIT_PLACEHOLDER
         return f"{value_text} {display_unit}"
 
