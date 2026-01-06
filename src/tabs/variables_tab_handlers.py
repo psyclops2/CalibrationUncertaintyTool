@@ -18,8 +18,6 @@ class VariablesTabHandlers:
         self.current_variable = None
         self.last_selected_variable = None
         self.last_selected_value_index = 0
-        # 変数ごとの選択インデックスを保持して、切り替え時に他のデータが表示されないようにする
-        self.value_indices = {}
         self.current_variable_is_result = False
 
     def update_widget_visibility(self, uncertainty_type):
@@ -100,8 +98,7 @@ class VariablesTabHandlers:
             # 親クラスの現在の値インデックスを更新
             self.parent.parent.current_value_index = index
             self.last_selected_value_index = index  # 選択状態を保存
-            self.value_indices[self.current_variable] = index
-            
+
             # 現在の値の情報を表示
             self.parent.display_current_value()
 
@@ -142,7 +139,7 @@ class VariablesTabHandlers:
             self.parent.update_value_combo()
 
             # 現在選択されている値のインデックスを設定
-            target_index = self.value_indices.get(var_name, self.parent.parent.current_value_index)
+            target_index = self.parent.parent.current_value_index
             if target_index < 0 or target_index >= self.parent.value_combo.count():
                 target_index = 0
 

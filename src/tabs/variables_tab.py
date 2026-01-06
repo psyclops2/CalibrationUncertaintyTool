@@ -650,11 +650,7 @@ class VariablesTab(BaseTab):
                 self.variable_list.setCurrentItem(item)
 
             self.update_value_combo()
-            selected_variable = self.handlers.last_selected_variable
-            target_index = self.handlers.value_indices.get(
-                selected_variable,
-                self.handlers.last_selected_value_index
-            )
+            target_index = self.parent.current_value_index
             if (not isinstance(target_index, int) or
                 target_index < 0 or
                 target_index >= self.value_combo.count()):
@@ -664,8 +660,6 @@ class VariablesTab(BaseTab):
                 self.value_combo.blockSignals(True)
                 self.handlers.last_selected_value_index = target_index
                 self.parent.current_value_index = target_index
-                if selected_variable:
-                    self.handlers.value_indices[selected_variable] = target_index
                 self.value_combo.setCurrentIndex(target_index)
                 self.value_combo.blockSignals(False)
 
