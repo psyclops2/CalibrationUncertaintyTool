@@ -464,20 +464,17 @@ class VariablesTab(BaseTab):
             uncertainty_type = var_info.get('type', 'A')
             print(f"[DEBUG] display_current_value: 復元開始 - 変数={current_var}, type={uncertainty_type}, value_index={index}")
             
-            # 型の整合性を確保
-            if 'degrees_of_freedom' in value_info:
-                if value_info['degrees_of_freedom'] == '':
-                    value_info['degrees_of_freedom'] = 0
-                try:
-                    value_info['degrees_of_freedom'] = int(float(value_info['degrees_of_freedom']))
-                except (ValueError, TypeError):
-                    value_info['degrees_of_freedom'] = 0
-            
             # 値をセット（ウィジェットの表示/非表示は既に設定済み）
             if uncertainty_type == 'A':
                 # 辞書から値を取得（読み取り専用）
                 measurements = value_info.get('measurements', '')
                 degrees_of_freedom = value_info.get('degrees_of_freedom', 0)
+                if degrees_of_freedom == '':
+                    degrees_of_freedom = 0
+                try:
+                    degrees_of_freedom = int(float(degrees_of_freedom))
+                except (ValueError, TypeError):
+                    degrees_of_freedom = 0
                 central_value = value_info.get('central_value', '')
                 standard_uncertainty = value_info.get('standard_uncertainty', '')
                 description = value_info.get('description', '')
@@ -513,6 +510,9 @@ class VariablesTab(BaseTab):
                 if not divisor:
                     distribution = var_info.get('distribution', '正規分布')
                     divisor = get_distribution_divisor(distribution)
+                if degrees_of_freedom == '' or degrees_of_freedom == 0:
+                    degrees_of_freedom = 'inf'
+                    value_info['degrees_of_freedom'] = degrees_of_freedom
                 
                 # ウィジェットに値を設定
                 if isinstance(central_value, (int, float)) or (isinstance(central_value, str) and central_value.replace('.', '', 1).isdigit()):

@@ -5,6 +5,25 @@ from .config_loader import ConfigLoader
 class UncertaintyCalculator:
     def __init__(self, main_window):
         self.main_window = main_window
+        self._inf_replacement = 1e100
+
+    def _normalize_degrees_of_freedom(self, df):
+        """自由度を数値として正規化（infは大きな値に置換）"""
+        if df is None:
+            return None
+        if isinstance(df, str):
+            df_str = df.strip().lower()
+            if df_str in {"inf", "infinity", "∞"}:
+                return self._inf_replacement
+            if df_str == "":
+                return None
+        try:
+            df_value = float(df)
+        except (TypeError, ValueError):
+            return None
+        if df_value == float('inf'):
+            return self._inf_replacement
+        return df_value
 
     def calculate_combined_uncertainty(self, contributions):
         """合成標準不確かさを計算"""
@@ -20,26 +39,23 @@ class UncertaintyCalculator:
         """有効自由度を計算（Welch-Satterthwaiteの式）"""
         try:
             if result_standard_uncertainty <= 0:
-                return float('inf')
+                return self._inf_replacement
 
             denominator = 0
             for contribution, df in zip(contributions, degrees_of_freedom_list):
-                if contribution > 0 and df and df != '':
-                    try:
-                        df_value = float(df)
-                        if df_value > 0:
-                            denominator += (contribution ** 4) / df_value
-                    except (ValueError, TypeError):
-                        continue
+                if contribution > 0:
+                    df_value = self._normalize_degrees_of_freedom(df)
+                    if df_value and df_value > 0:
+                        denominator += (contribution ** 4) / df_value
 
             if denominator > 0:
                 return (result_standard_uncertainty ** 4) / denominator
-            return float('inf')
+            return self._inf_replacement
 
         except Exception as e:
             print(f"【エラー】有効自由度計算エラー: {str(e)}")
             print(traceback.format_exc())
-            return float('inf')
+            return self._inf_replacement
 
     def get_coverage_factor(self, effective_df):
         """包含係数を取得"""
