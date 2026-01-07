@@ -255,16 +255,18 @@ class VariablesTabHandlers:
             if not self.current_variable:
                 return
 
-            distribution = self.parent.type_b_widgets['distribution'].currentText()
+            distribution = self.parent.type_b_widgets['distribution'].currentData()
+            if not distribution:
+                distribution = 'Normal Distribution'
 
             # 分布の種類に応じて除数を設定
             divisor = self.parent.type_b_widgets['divisor'].text().strip()
             default_divisor = get_distribution_divisor(distribution)
-            if distribution != '正規分布' or not divisor:
+            if distribution != 'Normal Distribution' or not divisor:
                 divisor = default_divisor
 
             self.parent.type_b_widgets['divisor'].setText(divisor)
-            self.parent.type_b_widgets['divisor'].setReadOnly(distribution != '正規分布')
+            self.parent.type_b_widgets['divisor'].setReadOnly(distribution != 'Normal Distribution')
 
             degrees_of_freedom = self.parent.type_b_widgets['degrees_of_freedom'].text().strip()
             if degrees_of_freedom in {'', '0', '0.0'}:
@@ -312,8 +314,10 @@ class VariablesTabHandlers:
             divisor_str = self.parent.type_b_widgets['divisor'].text().strip()
             
             # 分布に応じた除数を設定
-            distribution = self.parent.type_b_widgets['distribution'].currentText()
-            if distribution != '正規分布':
+            distribution = self.parent.type_b_widgets['distribution'].currentData()
+            if not distribution:
+                distribution = 'Normal Distribution'
+            if distribution != 'Normal Distribution':
                 divisor_str = get_distribution_divisor(distribution)
                 self.parent.type_b_widgets['divisor'].setText(divisor_str)
             

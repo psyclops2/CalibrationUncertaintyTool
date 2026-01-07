@@ -67,10 +67,10 @@ def get_distribution_divisor(distribution):
     config = ConfigLoader()
     divisors = config.get_distribution_divisors()
     return {
-        '正規分布': '',  # ユーザー入力
-        '矩形分布': divisors['rectangular'],  # √3
-        '三角分布': divisors['triangular'],  # √6
-        'U分布': divisors['u']   # √2
+        'Normal Distribution': '',  # ユーザー入力
+        'Rectangular Distribution': divisors['rectangular'],  # √3
+        'Triangular Distribution': divisors['triangular'],  # √6
+        'U-shaped Distribution': divisors['u']   # √2
     }.get(distribution, '')
 
 def create_empty_value_dict():
