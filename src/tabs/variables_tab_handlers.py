@@ -282,10 +282,12 @@ class VariablesTabHandlers:
                 half_width, standard_uncertainty = calculate_type_b_uncertainty(half_width, divisor)
                 if standard_uncertainty is not None:
                     self.parent.type_b_widgets['standard_uncertainty'].setText(f"{standard_uncertainty:.15g}")
-                    
-                    # すべての値の標準不確かさを更新
-                    for value_info in self.parent.parent.variable_values[self.current_variable]['values']:
-                        value_info['standard_uncertainty'] = standard_uncertainty
+                    if 'values' in self.parent.parent.variable_values[self.current_variable]:
+                        try:
+                            value_info = self.parent.parent.variable_values[self.current_variable]['values'][value_index]
+                            value_info['standard_uncertainty'] = standard_uncertainty
+                        except (IndexError, TypeError):
+                            pass
             
         except Exception as e:
             print(f"【エラー】分布変更エラー: {str(e)}")
