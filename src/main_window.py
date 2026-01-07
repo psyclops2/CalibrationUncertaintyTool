@@ -228,7 +228,7 @@ class MainWindow(QMainWindow):
             print(f"【エラー】データ読み込みエラー: {str(e)}")
             print(traceback.format_exc())
             QMessageBox.critical(self, self.tr(MESSAGE_ERROR), f"データの読み込みに失敗しました:\n{str(e)}")
-            
+
     def save_file(self):
         """ファイルを保存"""
         try:

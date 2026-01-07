@@ -435,8 +435,14 @@ class UncertaintyCalculationTab(BaseTab):
                 degrees_of_freedom_list.append(degrees_of_freedom)
                 
                 # 分布
-                distribution = self.value_handler.get_distribution(var)
-                self.calibration_table.setItem(i, 4, QTableWidgetItem(distribution))
+                distribution_key = self.value_handler.get_distribution(var)
+                if distribution_key:
+                    distribution_label = self.tr(distribution_key)
+                else:
+                    distribution_label = '--'
+                distribution_item = QTableWidgetItem(distribution_label)
+                distribution_item.setData(Qt.UserRole, distribution_key)
+                self.calibration_table.setItem(i, 4, distribution_item)
                 
                 # 感度係数
                 sensitivity = self.equation_handler.calculate_sensitivity(right_side, var, variables, self.value_handler)
@@ -509,12 +515,16 @@ class UncertaintyCalculationTab(BaseTab):
                 # バジェット情報を作成
                 budget = []
                 for i, var in enumerate(ordered_variables):
+                    distribution_item = self.calibration_table.item(i, 4)
+                    distribution_key = ''
+                    if distribution_item:
+                        distribution_key = distribution_item.data(Qt.UserRole) or ''
                     budget.append({
                         'variable': var,
                         'central_value': self.calibration_table.item(i, 1).text() if self.calibration_table.item(i, 1) else '',
                         'standard_uncertainty': self.calibration_table.item(i, 2).text() if self.calibration_table.item(i, 2) else '',
                         'dof': self.calibration_table.item(i, 3).text() if self.calibration_table.item(i, 3) else '',
-                        'distribution': self.calibration_table.item(i, 4).text() if self.calibration_table.item(i, 4) else '',
+                        'distribution': distribution_key,
                         'sensitivity': self.calibration_table.item(i, 5).text() if self.calibration_table.item(i, 5) else '',
                         'contribution': self.calibration_table.item(i, 6).text() if self.calibration_table.item(i, 6) else '',
                         'contribution_rate': float(self.calibration_table.item(i, 7).text().replace('%','')) if self.calibration_table.item(i, 7) and self.calibration_table.item(i, 7).text().replace('%','').replace('.','',1).isdigit() else 0.0

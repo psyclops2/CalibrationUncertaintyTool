@@ -2,6 +2,12 @@ from PySide6.QtCore import Qt
 import traceback
 from decimal import Decimal, getcontext
 from .config_loader import ConfigLoader
+from .translation_keys import (
+    NORMAL_DISTRIBUTION,
+    RECTANGULAR_DISTRIBUTION,
+    TRIANGULAR_DISTRIBUTION,
+    U_DISTRIBUTION,
+)
 
 def calculate_type_a_uncertainty(measurements_str):
     """TypeA不確かさの計算を行う"""
@@ -67,10 +73,10 @@ def get_distribution_divisor(distribution):
     config = ConfigLoader()
     divisors = config.get_distribution_divisors()
     return {
-        '正規分布': '',  # ユーザー入力
-        '矩形分布': divisors['rectangular'],  # √3
-        '三角分布': divisors['triangular'],  # √6
-        'U分布': divisors['u']   # √2
+        NORMAL_DISTRIBUTION: '',  # ユーザー入力
+        RECTANGULAR_DISTRIBUTION: divisors['rectangular'],  # √3
+        TRIANGULAR_DISTRIBUTION: divisors['triangular'],  # √6
+        U_DISTRIBUTION: divisors['u'],   # √2
     }.get(distribution, '')
 
 def create_empty_value_dict():

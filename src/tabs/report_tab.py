@@ -18,6 +18,12 @@ from src.utils.equation_formatter import EquationFormatter
 
 class ReportTab(BaseTab):
     UNIT_PLACEHOLDER = '-'
+    DISTRIBUTION_KEYS = {
+        NORMAL_DISTRIBUTION,
+        RECTANGULAR_DISTRIBUTION,
+        TRIANGULAR_DISTRIBUTION,
+        U_DISTRIBUTION,
+    }
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -68,6 +74,14 @@ class ReportTab(BaseTab):
             return value_text
 
         return f"{value_text} {display_unit}"
+
+    def _format_distribution_label(self, distribution_key):
+        """分布の翻訳キーを表示用ラベルに変換"""
+        if not distribution_key:
+            return '-'
+        if distribution_key in self.DISTRIBUTION_KEYS:
+            return self.tr(distribution_key)
+        return distribution_key
 
     def retranslate_ui(self):
         """UIのテキストを現在の言語で更新"""
@@ -303,7 +317,8 @@ class ReportTab(BaseTab):
                         elif uncertainty_type == 'B':
                             half_width = var_data.get('half_width', '-')
                             distribution = var_data.get('distribution', '-')
-                            html += f"<div>{self.tr(HALF_WIDTH)}: {half_width}, {self.tr(DISTRIBUTION)}: {distribution}</div>"
+                            distribution_label = self._format_distribution_label(distribution)
+                            html += f"<div>{self.tr(HALF_WIDTH)}: {half_width}, {self.tr(DISTRIBUTION)}: {distribution_label}</div>"
                             description = value_item.get('description', '-') if value_item else '-'
                             html += f"<div>{self.tr(DETAIL_DESCRIPTION)}: {description}</div>"
                         elif uncertainty_type == 'fixed':
@@ -326,6 +341,10 @@ class ReportTab(BaseTab):
                         for i in range(calc_tab.calibration_table.rowCount()):
                             variable_name = calc_tab.calibration_table.item(i, 0).text() if calc_tab.calibration_table.item(i, 0) else '-'
                             unit = self._get_unit(variable_name)
+                            distribution_item = calc_tab.calibration_table.item(i, 4)
+                            distribution_key = ''
+                            if distribution_item:
+                                distribution_key = distribution_item.data(Qt.UserRole) or distribution_item.text()
                             budget.append({
                                 'variable': variable_name,
                                 'central_value': self._format_with_unit(
@@ -337,7 +356,7 @@ class ReportTab(BaseTab):
                                     unit,
                                 ),
                                 'dof': calc_tab.calibration_table.item(i, 3).text() if calc_tab.calibration_table.item(i, 3) else '-',
-                                'distribution': calc_tab.calibration_table.item(i, 4).text() if calc_tab.calibration_table.item(i, 4) else '-',
+                                'distribution': self._format_distribution_label(distribution_key),
                                 'sensitivity': calc_tab.calibration_table.item(i, 5).text() if calc_tab.calibration_table.item(i, 5) else '-',
                                 'contribution': calc_tab.calibration_table.item(i, 6).text() if calc_tab.calibration_table.item(i, 6) else '-',
                                 'contribution_rate': calc_tab.calibration_table.item(i, 7).text() if calc_tab.calibration_table.item(i, 7) else '-'
