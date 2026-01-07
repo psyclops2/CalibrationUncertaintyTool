@@ -1,5 +1,6 @@
 import sympy as sp
 import traceback
+from .equation_normalizer import normalize_equation_text
 
 class EquationHandler:
     def __init__(self, main_window):
@@ -104,6 +105,7 @@ class EquationHandler:
         """式から変数を抽出"""
         try:
             import re
+            equation = normalize_equation_text(equation)
             # 正規表現で変数を抽出（ギリシャ文字対応）
             variables = re.findall(r'[a-zA-Zα-ωΑ-Ω][a-zA-Z0-9_α-ωΑ-Ω]*', equation)
             # 重複を除去
@@ -123,7 +125,7 @@ class EquationHandler:
                 symbols[var] = sp.Symbol(var)
             
             # 式を解析（^を**に変換）
-            expr_str = equation.replace('^', '**')
+            expr_str = normalize_equation_text(equation).replace('^', '**')
             expr = sp.sympify(expr_str, locals=symbols)
             
             # 偏微分を計算
@@ -154,7 +156,7 @@ class EquationHandler:
                 symbols[var] = sp.Symbol(var)
             
             # 式を解析（^を**に変換）
-            expr_str = equation.replace('^', '**')
+            expr_str = normalize_equation_text(equation).replace('^', '**')
             expr = sp.sympify(expr_str, locals=symbols)
             
             # 各変数に中央値を代入
