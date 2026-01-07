@@ -266,13 +266,21 @@ class VariablesTabHandlers:
             self.parent.type_b_widgets['divisor'].setText(divisor)
             self.parent.type_b_widgets['divisor'].setReadOnly(distribution != '正規分布')
 
+            degrees_of_freedom = self.parent.type_b_widgets['degrees_of_freedom'].text().strip()
+            if degrees_of_freedom in {'', '0', '0.0'}:
+                degrees_of_freedom = 'inf'
+                self.parent.type_b_widgets['degrees_of_freedom'].setText(degrees_of_freedom)
+
             # 量の分布と除数を更新
             self.parent.parent.variable_values[self.current_variable]['distribution'] = distribution
             self.parent.parent.variable_values[self.current_variable]['divisor'] = divisor
             value_index = self.parent.value_combo.currentIndex()
             if 'values' in self.parent.parent.variable_values[self.current_variable]:
                 try:
-                    self.parent.parent.variable_values[self.current_variable]['values'][value_index]['divisor'] = divisor
+                    value_info = self.parent.parent.variable_values[self.current_variable]['values'][value_index]
+                    value_info['divisor'] = divisor
+                    if degrees_of_freedom:
+                        value_info['degrees_of_freedom'] = degrees_of_freedom
                 except (IndexError, TypeError):
                     pass
 
