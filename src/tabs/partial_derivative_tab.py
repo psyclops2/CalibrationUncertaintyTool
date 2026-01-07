@@ -7,6 +7,7 @@ import traceback
 import re
 from src.tabs.base_tab import BaseTab
 from src.utils.translation_keys import *
+from src.utils.equation_normalizer import normalize_equation_text
 
 class PartialDerivativeTab(BaseTab):
     """偏微分タブ"""
@@ -92,9 +93,11 @@ class PartialDerivativeTab(BaseTab):
             if not equation:
                 self.partial_diff_area.clear()
                 return
+
+            equation_for_calc = normalize_equation_text(equation)
                 
             # 方程式を分割
-            equations = [eq.strip() for eq in equation.split(',')]
+            equations = [eq.strip() for eq in equation_for_calc.split(',')]
             derivative_parts = []
             
             # 計算結果変数を取得
@@ -123,7 +126,7 @@ class PartialDerivativeTab(BaseTab):
                 # 結果変数の式を解析
                 left_side, right_side = target_eq.split('=', 1)
                 left_side = left_side.strip()
-                right_side = right_side.strip()
+                right_side = normalize_equation_text(right_side.strip())
                 
                 # 変数をSymbolとして定義
                 symbols = {}
