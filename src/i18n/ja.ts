@@ -260,19 +260,19 @@
     </message>
     <message>
         <source>NORMAL_DISTRIBUTION</source>
-        <translation>正規分布</translation>
+        <translation>Normal Distribution</translation>
     </message>
     <message>
         <source>RECTANGULAR_DISTRIBUTION</source>
-        <translation>矩形分布</translation>
+        <translation>Rectangular Distribution</translation>
     </message>
     <message>
         <source>TRIANGULAR_DISTRIBUTION</source>
-        <translation>三角分布</translation>
+        <translation>Triangular Distribution</translation>
     </message>
     <message>
         <source>U_DISTRIBUTION</source>
-        <translation>U字型分布</translation>
+        <translation>U-shaped Distribution</translation>
     </message>
     <message>
         <source>DIVISOR</source>
