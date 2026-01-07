@@ -60,15 +60,16 @@ class VariablesTab(BaseTab):
         
         # TypeB用ウィジェット
         # 分布コンボボックスの項目を更新
-        current_index = self.type_b_widgets['distribution'].currentIndex()
+        current_distribution = self.type_b_widgets['distribution'].currentData()
         self.type_b_widgets['distribution'].clear()
-        self.type_b_widgets['distribution'].addItems([
-            self.tr(NORMAL_DISTRIBUTION),
-            self.tr(RECTANGULAR_DISTRIBUTION),
-            self.tr(TRIANGULAR_DISTRIBUTION),
-            self.tr(U_DISTRIBUTION)
-        ])
-        self.type_b_widgets['distribution'].setCurrentIndex(current_index)
+        for code, label in self.get_distribution_options():
+            self.type_b_widgets['distribution'].addItem(label, code)
+        if current_distribution:
+            index = self.type_b_widgets['distribution'].findData(current_distribution)
+            if index >= 0:
+                self.type_b_widgets['distribution'].setCurrentIndex(index)
+        if self.type_b_widgets['distribution'].currentIndex() < 0:
+            self.type_b_widgets['distribution'].setCurrentIndex(0)
         
         self.distribution_label.setText(self.tr(DISTRIBUTION) + ":")
         self.divisor_label.setText(self.tr(DIVISOR) + ":")
@@ -206,12 +207,8 @@ class VariablesTab(BaseTab):
         self.type_b_widgets = {}
         
         self.type_b_widgets['distribution'] = QComboBox()
-        self.type_b_widgets['distribution'].addItems([
-            self.tr(NORMAL_DISTRIBUTION),
-            self.tr(RECTANGULAR_DISTRIBUTION),
-            self.tr(TRIANGULAR_DISTRIBUTION),
-            self.tr(U_DISTRIBUTION)
-        ])
+        for code, label in self.get_distribution_options():
+            self.type_b_widgets['distribution'].addItem(label, code)
         self.type_b_widgets['distribution'].currentIndexChanged.connect(self.handlers.on_distribution_changed)
         self.distribution_label = QLabel(self.tr(DISTRIBUTION) + ":")
         settings_layout.addRow(self.distribution_label, self.type_b_widgets['distribution'])
@@ -377,8 +374,12 @@ class VariablesTab(BaseTab):
 
             # TypeBの場合、分布と除数の設定
             if uncertainty_type == 'B':
-                distribution = var_info.get('distribution', '正規分布')
-                self.type_b_widgets['distribution'].setCurrentText(distribution)
+                distribution = var_info.get('distribution', 'Normal Distribution')
+                index = self.type_b_widgets['distribution'].findData(distribution)
+                if index >= 0:
+                    self.type_b_widgets['distribution'].setCurrentIndex(index)
+                else:
+                    self.type_b_widgets['distribution'].setCurrentIndex(0)
 
                 # 分布に応じた除数を設定（正規分布は保存済みの値を優先）
                 values = var_info.get('values', []) if isinstance(var_info.get('values', []), list) else []
@@ -392,7 +393,7 @@ class VariablesTab(BaseTab):
                     divisor = get_distribution_divisor(distribution)
 
                 self.type_b_widgets['divisor'].setText(divisor)
-                self.type_b_widgets['divisor'].setReadOnly(distribution != '正規分布')
+                self.type_b_widgets['divisor'].setReadOnly(distribution != 'Normal Distribution')
 
             # 不確かさ種類に応じたウィジェットの表示を更新
             self.handlers.update_widget_visibility(uncertainty_type)
@@ -508,7 +509,7 @@ class VariablesTab(BaseTab):
                 if not divisor:
                     divisor = var_info.get('divisor', '')
                 if not divisor:
-                    distribution = var_info.get('distribution', '正規分布')
+                    distribution = var_info.get('distribution', 'Normal Distribution')
                     divisor = get_distribution_divisor(distribution)
                 if degrees_of_freedom == '' or degrees_of_freedom == 0:
                     degrees_of_freedom = 'inf'
@@ -624,6 +625,15 @@ class VariablesTab(BaseTab):
         except Exception as e:
             print(f"【エラー】フォームレイアウト更新エラー: {str(e)}")
             print(traceback.format_exc())
+
+    def get_distribution_options(self):
+        """分布コンボボックスの選択肢を取得"""
+        return [
+            ("Normal Distribution", self.tr(NORMAL_DISTRIBUTION)),
+            ("Rectangular Distribution", self.tr(RECTANGULAR_DISTRIBUTION)),
+            ("Triangular Distribution", self.tr(TRIANGULAR_DISTRIBUTION)),
+            ("U-shaped Distribution", self.tr(U_DISTRIBUTION)),
+        ]
 
     def showEvent(self, event):
         """タブが表示されたときのイベントハンドラ"""
