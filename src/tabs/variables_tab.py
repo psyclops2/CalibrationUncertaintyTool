@@ -508,6 +508,11 @@ class VariablesTab(BaseTab):
                 description = value_info.get('description', '')
                 calculation_formula = value_info.get('calculation_formula', '')
                 divisor = value_info.get('divisor', '')
+                if not divisor:
+                    divisor = var_info.get('divisor', '')
+                if not divisor:
+                    distribution = var_info.get('distribution', '正規分布')
+                    divisor = get_distribution_divisor(distribution)
                 
                 # ウィジェットに値を設定
                 if isinstance(central_value, (int, float)) or (isinstance(central_value, str) and central_value.replace('.', '', 1).isdigit()):
