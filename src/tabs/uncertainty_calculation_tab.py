@@ -18,6 +18,7 @@ from src.utils.number_formatter import (
 )
 from src.tabs.base_tab import BaseTab
 from src.utils.translation_keys import *
+from src.utils.variable_utils import get_distribution_translation_key
 
 class UncertaintyCalculationTab(BaseTab):
     UNIT_PLACEHOLDER = '-'
@@ -144,7 +145,8 @@ class UncertaintyCalculationTab(BaseTab):
                 elif item.column() == 3:  # Degrees of freedom
                     value_handler.update_variable_value(var, 'degrees_of_freedom', value_to_save)
                 elif item.column() == 4:  # Distribution
-                    value_handler.update_variable_value(var, 'distribution', value_to_save)
+                    distribution_key = get_distribution_translation_key(value_to_save)
+                    value_handler.update_variable_value(var, 'distribution', distribution_key or value_to_save)
                 
                 # Recalculate to update everything
                 result_var = self.result_combo.currentText()
@@ -436,7 +438,9 @@ class UncertaintyCalculationTab(BaseTab):
                 
                 # 分布
                 distribution = self.value_handler.get_distribution(var)
-                self.calibration_table.setItem(i, 4, QTableWidgetItem(distribution))
+                distribution_key = get_distribution_translation_key(distribution)
+                distribution_label = self.tr(distribution_key) if distribution_key else distribution
+                self.calibration_table.setItem(i, 4, QTableWidgetItem(distribution_label))
                 
                 # 感度係数
                 sensitivity = self.equation_handler.calculate_sensitivity(right_side, var, variables, self.value_handler)
@@ -509,12 +513,14 @@ class UncertaintyCalculationTab(BaseTab):
                 # バジェット情報を作成
                 budget = []
                 for i, var in enumerate(ordered_variables):
+                    distribution = self.value_handler.get_distribution(var)
+                    distribution_key = get_distribution_translation_key(distribution)
                     budget.append({
                         'variable': var,
                         'central_value': self.calibration_table.item(i, 1).text() if self.calibration_table.item(i, 1) else '',
                         'standard_uncertainty': self.calibration_table.item(i, 2).text() if self.calibration_table.item(i, 2) else '',
                         'dof': self.calibration_table.item(i, 3).text() if self.calibration_table.item(i, 3) else '',
-                        'distribution': self.calibration_table.item(i, 4).text() if self.calibration_table.item(i, 4) else '',
+                        'distribution': distribution_key or distribution,
                         'sensitivity': self.calibration_table.item(i, 5).text() if self.calibration_table.item(i, 5) else '',
                         'contribution': self.calibration_table.item(i, 6).text() if self.calibration_table.item(i, 6) else '',
                         'contribution_rate': float(self.calibration_table.item(i, 7).text().replace('%','')) if self.calibration_table.item(i, 7) and self.calibration_table.item(i, 7).text().replace('%','').replace('.','',1).isdigit() else 0.0

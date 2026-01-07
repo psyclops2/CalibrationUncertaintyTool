@@ -12,6 +12,7 @@ from ..utils.variable_utils import (
     calculate_type_a_uncertainty,
     calculate_type_b_uncertainty,
     get_distribution_divisor,
+    get_distribution_translation_key,
     create_empty_value_dict,
     find_variable_item
 )
@@ -374,8 +375,11 @@ class VariablesTab(BaseTab):
 
             # TypeBの場合、分布と除数の設定
             if uncertainty_type == 'B':
-                distribution = var_info.get('distribution', 'Normal Distribution')
-                index = self.type_b_widgets['distribution'].findData(distribution)
+                distribution = var_info.get('distribution', NORMAL_DISTRIBUTION)
+                distribution_key = get_distribution_translation_key(distribution) or NORMAL_DISTRIBUTION
+                if distribution != distribution_key:
+                    var_info['distribution'] = distribution_key
+                index = self.type_b_widgets['distribution'].findData(distribution_key)
                 if index >= 0:
                     self.type_b_widgets['distribution'].setCurrentIndex(index)
                 else:
@@ -390,10 +394,10 @@ class VariablesTab(BaseTab):
                 if not divisor:
                     divisor = var_info.get('divisor', '')
                 if not divisor:
-                    divisor = get_distribution_divisor(distribution)
+                    divisor = get_distribution_divisor(distribution_key)
 
                 self.type_b_widgets['divisor'].setText(divisor)
-                self.type_b_widgets['divisor'].setReadOnly(distribution != 'Normal Distribution')
+                self.type_b_widgets['divisor'].setReadOnly(distribution_key != NORMAL_DISTRIBUTION)
 
             # 不確かさ種類に応じたウィジェットの表示を更新
             self.handlers.update_widget_visibility(uncertainty_type)
@@ -509,8 +513,9 @@ class VariablesTab(BaseTab):
                 if not divisor:
                     divisor = var_info.get('divisor', '')
                 if not divisor:
-                    distribution = var_info.get('distribution', 'Normal Distribution')
-                    divisor = get_distribution_divisor(distribution)
+                    distribution = var_info.get('distribution', NORMAL_DISTRIBUTION)
+                    distribution_key = get_distribution_translation_key(distribution) or NORMAL_DISTRIBUTION
+                    divisor = get_distribution_divisor(distribution_key)
                 if degrees_of_freedom == '' or degrees_of_freedom == 0:
                     degrees_of_freedom = 'inf'
                     value_info['degrees_of_freedom'] = degrees_of_freedom
@@ -629,10 +634,10 @@ class VariablesTab(BaseTab):
     def get_distribution_options(self):
         """分布コンボボックスの選択肢を取得"""
         return [
-            ("Normal Distribution", self.tr(NORMAL_DISTRIBUTION)),
-            ("Rectangular Distribution", self.tr(RECTANGULAR_DISTRIBUTION)),
-            ("Triangular Distribution", self.tr(TRIANGULAR_DISTRIBUTION)),
-            ("U-shaped Distribution", self.tr(U_DISTRIBUTION)),
+            (NORMAL_DISTRIBUTION, self.tr(NORMAL_DISTRIBUTION)),
+            (RECTANGULAR_DISTRIBUTION, self.tr(RECTANGULAR_DISTRIBUTION)),
+            (TRIANGULAR_DISTRIBUTION, self.tr(TRIANGULAR_DISTRIBUTION)),
+            (U_DISTRIBUTION, self.tr(U_DISTRIBUTION)),
         ]
 
     def showEvent(self, event):
