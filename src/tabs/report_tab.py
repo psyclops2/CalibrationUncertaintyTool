@@ -14,6 +14,7 @@ from src.utils.value_handler import ValueHandler
 from src.utils.uncertainty_calculator import UncertaintyCalculator
 from src.tabs.base_tab import BaseTab
 from src.utils.translation_keys import *
+from src.utils.variable_utils import get_distribution_translation_key
 from src.utils.equation_formatter import EquationFormatter
 
 class ReportTab(BaseTab):
@@ -303,7 +304,9 @@ class ReportTab(BaseTab):
                         elif uncertainty_type == 'B':
                             half_width = var_data.get('half_width', '-')
                             distribution = var_data.get('distribution', '-')
-                            html += f"<div>{self.tr(HALF_WIDTH)}: {half_width}, {self.tr(DISTRIBUTION)}: {distribution}</div>"
+                            distribution_key = get_distribution_translation_key(distribution)
+                            distribution_label = self.tr(distribution_key) if distribution_key else distribution
+                            html += f"<div>{self.tr(HALF_WIDTH)}: {half_width}, {self.tr(DISTRIBUTION)}: {distribution_label}</div>"
                             description = value_item.get('description', '-') if value_item else '-'
                             html += f"<div>{self.tr(DETAIL_DESCRIPTION)}: {description}</div>"
                         elif uncertainty_type == 'fixed':
@@ -337,7 +340,11 @@ class ReportTab(BaseTab):
                                     unit,
                                 ),
                                 'dof': calc_tab.calibration_table.item(i, 3).text() if calc_tab.calibration_table.item(i, 3) else '-',
-                                'distribution': calc_tab.calibration_table.item(i, 4).text() if calc_tab.calibration_table.item(i, 4) else '-',
+                                'distribution': (
+                                    self.tr(get_distribution_translation_key(calc_tab.calibration_table.item(i, 4).text()))
+                                    if calc_tab.calibration_table.item(i, 4)
+                                    else '-'
+                                ) or (calc_tab.calibration_table.item(i, 4).text() if calc_tab.calibration_table.item(i, 4) else '-'),
                                 'sensitivity': calc_tab.calibration_table.item(i, 5).text() if calc_tab.calibration_table.item(i, 5) else '-',
                                 'contribution': calc_tab.calibration_table.item(i, 6).text() if calc_tab.calibration_table.item(i, 6) else '-',
                                 'contribution_rate': calc_tab.calibration_table.item(i, 7).text() if calc_tab.calibration_table.item(i, 7) else '-'

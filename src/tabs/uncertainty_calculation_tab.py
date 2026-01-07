@@ -18,6 +18,7 @@ from src.utils.number_formatter import (
 )
 from src.tabs.base_tab import BaseTab
 from src.utils.translation_keys import *
+from src.utils.variable_utils import get_distribution_translation_key
 
 class UncertaintyCalculationTab(BaseTab):
     UNIT_PLACEHOLDER = '-'
@@ -514,7 +515,11 @@ class UncertaintyCalculationTab(BaseTab):
                         'central_value': self.calibration_table.item(i, 1).text() if self.calibration_table.item(i, 1) else '',
                         'standard_uncertainty': self.calibration_table.item(i, 2).text() if self.calibration_table.item(i, 2) else '',
                         'dof': self.calibration_table.item(i, 3).text() if self.calibration_table.item(i, 3) else '',
-                        'distribution': self.calibration_table.item(i, 4).text() if self.calibration_table.item(i, 4) else '',
+                        'distribution': (
+                            get_distribution_translation_key(self.calibration_table.item(i, 4).text())
+                            if self.calibration_table.item(i, 4)
+                            else ''
+                        ) or (self.calibration_table.item(i, 4).text() if self.calibration_table.item(i, 4) else ''),
                         'sensitivity': self.calibration_table.item(i, 5).text() if self.calibration_table.item(i, 5) else '',
                         'contribution': self.calibration_table.item(i, 6).text() if self.calibration_table.item(i, 6) else '',
                         'contribution_rate': float(self.calibration_table.item(i, 7).text().replace('%','')) if self.calibration_table.item(i, 7) and self.calibration_table.item(i, 7).text().replace('%','').replace('.','',1).isdigit() else 0.0
