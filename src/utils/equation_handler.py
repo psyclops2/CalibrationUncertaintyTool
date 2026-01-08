@@ -1,6 +1,8 @@
 import sympy as sp
 import traceback
+from decimal import Decimal, InvalidOperation
 from .equation_normalizer import normalize_equation_text
+from .config_loader import ConfigLoader
 
 class EquationHandler:
     def __init__(self, main_window):
@@ -101,6 +103,18 @@ class EquationHandler:
             print(traceback.format_exc())
             return None
 
+    def _to_sympy_number(self, value):
+        """入力値をDecimal経由でSymPy数値へ変換する"""
+        if value == '':
+            return None
+        try:
+            decimal_value = Decimal(value)
+        except (InvalidOperation, TypeError, ValueError):
+            return None
+
+        precision = ConfigLoader().get_precision()
+        return sp.Float(str(decimal_value), precision)
+
     def get_variables_from_equation(self, equation):
         """式から変数を抽出"""
         try:
@@ -134,11 +148,12 @@ class EquationHandler:
             # 各変数に中央値を代入
             for var in variables:
                 central_value = value_handler.get_central_value(var)
-                if central_value:
-                    try:
-                        derivative = derivative.subs(symbols[var], float(central_value))
-                    except (ValueError, TypeError):
-                        return ''
+                if central_value == '':
+                    continue
+                sympy_value = self._to_sympy_number(central_value)
+                if sympy_value is None:
+                    return ''
+                derivative = derivative.subs(symbols[var], sympy_value)
             
             return derivative
             
@@ -162,13 +177,14 @@ class EquationHandler:
             # 各変数に中央値を代入
             for var in variables:
                 central_value = value_handler.get_central_value(var)
-                if central_value:
-                    try:
-                        expr = expr.subs(symbols[var], float(central_value))
-                    except (ValueError, TypeError):
-                        return ''
+                if central_value == '':
+                    continue
+                sympy_value = self._to_sympy_number(central_value)
+                if sympy_value is None:
+                    return ''
+                expr = expr.subs(symbols[var], sympy_value)
             try:
-                return float(expr)
+                return expr.evalf()
             except (TypeError, ValueError):
                 return ''
         except Exception as e:
