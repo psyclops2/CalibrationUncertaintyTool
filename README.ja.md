@@ -46,9 +46,6 @@ python src/main.py
 
 * **[Calculation]**
   * `precision`: 計算結果に使用する小数精度。
-* **[Uncertainty]**
-  * `type_a`, `type_b`, `type_fixed`: 不確かさの分類名（UIに表示されるラベル）。
-  * `fixed_value_uncertainty`: 固定値タイプ選択時に適用する標準不確かさ。
 * **[Defaults]**
   * `value_count`: 各量に初期作成される値（校正点）の個数。
   * `current_value_index`: 量の編集時に最初に選択される値のインデックス。

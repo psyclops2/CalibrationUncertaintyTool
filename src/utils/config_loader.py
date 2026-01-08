@@ -22,18 +22,6 @@ class ConfigLoader:
             print("【警告】Calculationセクションが見つかりません。デフォルト値を使用します。")
             return 28
 
-    def get_uncertainty_types(self) -> dict:
-        """不確度の種類を取得"""
-        return {
-            'type_a': self.config.get('Uncertainty', 'type_a'),
-            'type_b': self.config.get('Uncertainty', 'type_b'),
-            'type_fixed': self.config.get('Uncertainty', 'type_fixed')
-        }
-
-    def get_fixed_value_uncertainty(self) -> float:
-        """固定値の標準不確度を取得"""
-        return float(self.config.get('Uncertainty', 'fixed_value_uncertainty'))
-
     def get_calibration_point_limits(self) -> dict:
         """校正点の制限値を取得"""
         try:
