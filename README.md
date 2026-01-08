@@ -186,6 +186,8 @@ Reference k values (approximate, from t-distribution):
 | ------ | ----- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
 | k      | 12.71 | 4.30 | 3.18 | 2.78 | 2.57 | 2.45 | 2.36 | 2.31 | 2.26 | 2.23 | 2.09 | 2.01 | 1.96 |
 
+For operational use, when ν\_eff is 10 or higher, the coverage factor is treated as 2.
+
 ## Usage
 
 1. **Model Equation Input Tab**
@@ -197,25 +199,38 @@ Reference k values (approximate, from t-distribution):
    * Multiple equations can be input, separated by commas (`,`). Newlines after commas are acceptable.
    * You can drag-and-drop quantities in the list to reorder the budget sheet display.
 
-2. **Quantity Settings**
+2. **Point Settings**
+
+   * Set the name for each calibration point and add or remove calibration points as needed.
+
+3. **Quantity Settings**
 
    * Input values for each quantity.
    * Adjust the number of calibration points; each quantity can have multiple values.
    * Specify the uncertainty type, unit, and description for each quantity.
 
-3. **Calculation Execution**
+4. **Partial Derivative**
+
+   * Review the partial derivatives calculated from the model equation for each variable.
+
+5. **Calculation Execution**
 
    * The "Uncertainty Calculation" tab creates a budget sheet for a selected calibration point.
 
-4. **Report**
+6. **Document Information**
+
+   * The "Document Info" tab lets you record document metadata for reports, including document number, document name, version, and a description (Markdown supported).
+   * Enter revision history as CSV rows (version, description, author, checker, approver, date) to include in generated reports.
+
+7. **Report**
 
    * The "Report" function generates a batch budget for all calibration points of a selected result quantity.
    * Export results as HTML files.
 
 ## Notes
 
-* Numerical display uses internal rounding to 9 significant digits and exponent multiples of 3.
-* Internal calculations use full `float` precision without rounding.
+* Numeric display is rounded based on the `UncertaintyRounding` settings in `config.ini` and formatted with exponents in multiples of 3.
+* Calculations use `Decimal` with the precision configured under `[Calculation]` in `config.ini`.
 * Ensure model equations are structured to avoid correlations between quantities, as correlated uncertainty (covariance terms) is not yet supported.
 
 ## License
