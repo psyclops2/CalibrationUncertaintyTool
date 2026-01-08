@@ -200,6 +200,10 @@ translations = {
         HALF_WIDTH: "半値幅",
         DISTRIBUTION: "分布",
         FIXED_VALUE: "固定値",
+        NORMAL_DISTRIBUTION: "Normal Distribution",
+        RECTANGULAR_DISTRIBUTION: "Rectangular Distribution",
+        TRIANGULAR_DISTRIBUTION: "Triangular Distribution",
+        U_DISTRIBUTION: "U-shaped Distribution",
 
         # HTML Calculation Result Items
         REPORT_CALIBRATION_POINT: "校正点",
