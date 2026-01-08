@@ -8,6 +8,7 @@ from ..utils.variable_utils import (
     create_empty_value_dict,
     find_variable_item
 )
+from ..utils.translation_keys import NORMAL_DISTRIBUTION
 from ..utils.calculation_utils import evaluate_formula
 
 class VariablesTabHandlers:
@@ -257,16 +258,28 @@ class VariablesTabHandlers:
 
             distribution = self.parent.type_b_widgets['distribution'].currentData()
             if not distribution:
-                distribution = 'Normal Distribution'
+                distribution = NORMAL_DISTRIBUTION
 
             # 分布の種類に応じて除数を設定
-            divisor = self.parent.type_b_widgets['divisor'].text().strip()
             default_divisor = get_distribution_divisor(distribution)
-            if distribution != 'Normal Distribution' or not divisor:
+            divisor = ''
+            value_index = self.parent.value_combo.currentIndex()
+            if self.current_variable:
+                var_info = self.parent.parent.variable_values.get(self.current_variable, {})
+                if isinstance(var_info, dict):
+                    values = var_info.get('values', [])
+                    if isinstance(values, list) and 0 <= value_index < len(values):
+                        divisor = values[value_index].get('divisor', '') or ''
+                    if not divisor:
+                        divisor = var_info.get('divisor', '') or ''
+
+            if distribution == NORMAL_DISTRIBUTION:
+                divisor = divisor or ''
+            else:
                 divisor = default_divisor
 
             self.parent.type_b_widgets['divisor'].setText(divisor)
-            self.parent.type_b_widgets['divisor'].setReadOnly(distribution != 'Normal Distribution')
+            self.parent.type_b_widgets['divisor'].setReadOnly(distribution != NORMAL_DISTRIBUTION)
 
             degrees_of_freedom = self.parent.type_b_widgets['degrees_of_freedom'].text().strip()
             if degrees_of_freedom in {'', '0', '0.0'}:
@@ -276,7 +289,6 @@ class VariablesTabHandlers:
             # 量の分布と除数を更新
             self.parent.parent.variable_values[self.current_variable]['distribution'] = distribution
             self.parent.parent.variable_values[self.current_variable]['divisor'] = divisor
-            value_index = self.parent.value_combo.currentIndex()
             if 'values' in self.parent.parent.variable_values[self.current_variable]:
                 try:
                     value_info = self.parent.parent.variable_values[self.current_variable]['values'][value_index]
@@ -316,8 +328,8 @@ class VariablesTabHandlers:
             # 分布に応じた除数を設定
             distribution = self.parent.type_b_widgets['distribution'].currentData()
             if not distribution:
-                distribution = 'Normal Distribution'
-            if distribution != 'Normal Distribution':
+                distribution = NORMAL_DISTRIBUTION
+            if distribution != NORMAL_DISTRIBUTION:
                 divisor_str = get_distribution_divisor(distribution)
                 self.parent.type_b_widgets['divisor'].setText(divisor_str)
             

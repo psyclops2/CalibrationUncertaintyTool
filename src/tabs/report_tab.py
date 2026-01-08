@@ -341,10 +341,10 @@ class ReportTab(BaseTab):
                                 ),
                                 'dof': calc_tab.calibration_table.item(i, 3).text() if calc_tab.calibration_table.item(i, 3) else '-',
                                 'distribution': (
-                                    self.tr(get_distribution_translation_key(calc_tab.calibration_table.item(i, 4).text()))
-                                    if calc_tab.calibration_table.item(i, 4)
+                                    self.tr(get_distribution_translation_key(self.value_handler.get_distribution(variable_name)))
+                                    if variable_name
                                     else '-'
-                                ) or (calc_tab.calibration_table.item(i, 4).text() if calc_tab.calibration_table.item(i, 4) else '-'),
+                                ) or '-',
                                 'sensitivity': calc_tab.calibration_table.item(i, 5).text() if calc_tab.calibration_table.item(i, 5) else '-',
                                 'contribution': calc_tab.calibration_table.item(i, 6).text() if calc_tab.calibration_table.item(i, 6) else '-',
                                 'contribution_rate': calc_tab.calibration_table.item(i, 7).text() if calc_tab.calibration_table.item(i, 7) else '-'

@@ -12,6 +12,7 @@ from ..utils.variable_utils import (
     calculate_type_a_uncertainty,
     calculate_type_b_uncertainty,
     get_distribution_divisor,
+    get_distribution_translation_key,
     create_empty_value_dict,
     find_variable_item
 )
@@ -374,12 +375,17 @@ class VariablesTab(BaseTab):
 
             # TypeBの場合、分布と除数の設定
             if uncertainty_type == 'B':
-                distribution = var_info.get('distribution', 'Normal Distribution')
+                distribution = get_distribution_translation_key(
+                    var_info.get('distribution', NORMAL_DISTRIBUTION)
+                ) or NORMAL_DISTRIBUTION
+                var_info['distribution'] = distribution
+                self.type_b_widgets['distribution'].blockSignals(True)
                 index = self.type_b_widgets['distribution'].findData(distribution)
                 if index >= 0:
                     self.type_b_widgets['distribution'].setCurrentIndex(index)
                 else:
                     self.type_b_widgets['distribution'].setCurrentIndex(0)
+                self.type_b_widgets['distribution'].blockSignals(False)
 
                 # 分布に応じた除数を設定（正規分布は保存済みの値を優先）
                 values = var_info.get('values', []) if isinstance(var_info.get('values', []), list) else []
@@ -393,7 +399,7 @@ class VariablesTab(BaseTab):
                     divisor = get_distribution_divisor(distribution)
 
                 self.type_b_widgets['divisor'].setText(divisor)
-                self.type_b_widgets['divisor'].setReadOnly(distribution != 'Normal Distribution')
+                self.type_b_widgets['divisor'].setReadOnly(distribution != NORMAL_DISTRIBUTION)
 
             # 不確かさ種類に応じたウィジェットの表示を更新
             self.handlers.update_widget_visibility(uncertainty_type)
@@ -509,7 +515,10 @@ class VariablesTab(BaseTab):
                 if not divisor:
                     divisor = var_info.get('divisor', '')
                 if not divisor:
-                    distribution = var_info.get('distribution', 'Normal Distribution')
+                    distribution = get_distribution_translation_key(
+                        var_info.get('distribution', NORMAL_DISTRIBUTION)
+                    ) or NORMAL_DISTRIBUTION
+                    var_info['distribution'] = distribution
                     divisor = get_distribution_divisor(distribution)
                 if degrees_of_freedom == '' or degrees_of_freedom == 0:
                     degrees_of_freedom = 'inf'
@@ -532,6 +541,11 @@ class VariablesTab(BaseTab):
                 self.type_b_widgets['description'].setText(str(description))
                 self.type_b_widgets['calculation_formula'].setText(str(calculation_formula))
                 self.type_b_widgets['divisor'].setText(str(divisor))
+                distribution = get_distribution_translation_key(
+                    var_info.get('distribution', NORMAL_DISTRIBUTION)
+                ) or NORMAL_DISTRIBUTION
+                var_info['distribution'] = distribution
+                self.type_b_widgets['divisor'].setReadOnly(distribution != NORMAL_DISTRIBUTION)
                 
                 print(f"[DEBUG] TypeB復元: central_value='{central_value}', half_width='{half_width}', degrees_of_freedom='{degrees_of_freedom}', description='{description}', divisor='{divisor}'")
                 
@@ -629,10 +643,10 @@ class VariablesTab(BaseTab):
     def get_distribution_options(self):
         """分布コンボボックスの選択肢を取得"""
         return [
-            ("Normal Distribution", self.tr(NORMAL_DISTRIBUTION)),
-            ("Rectangular Distribution", self.tr(RECTANGULAR_DISTRIBUTION)),
-            ("Triangular Distribution", self.tr(TRIANGULAR_DISTRIBUTION)),
-            ("U-shaped Distribution", self.tr(U_DISTRIBUTION)),
+            (NORMAL_DISTRIBUTION, self.tr(NORMAL_DISTRIBUTION)),
+            (RECTANGULAR_DISTRIBUTION, self.tr(RECTANGULAR_DISTRIBUTION)),
+            (TRIANGULAR_DISTRIBUTION, self.tr(TRIANGULAR_DISTRIBUTION)),
+            (U_DISTRIBUTION, self.tr(U_DISTRIBUTION)),
         ]
 
     def showEvent(self, event):
