@@ -72,12 +72,19 @@ def get_distribution_divisor(distribution):
     """分布の種類に応じた除数を取得"""
     config = ConfigLoader()
     divisors = config.get_distribution_divisors()
+    distribution_key = get_distribution_translation_key(distribution)
+    if not distribution_key:
+        distribution_key = distribution
     return {
-        'Normal Distribution': '',  # ユーザー入力
-        'Rectangular Distribution': divisors['rectangular'],  # √3
-        'Triangular Distribution': divisors['triangular'],  # √6
-        'U-shaped Distribution': divisors['u']   # √2
-    }.get(distribution, '')
+        NORMAL_DISTRIBUTION: '',  # ユーザー入力
+        RECTANGULAR_DISTRIBUTION: divisors['rectangular'],  # √3
+        TRIANGULAR_DISTRIBUTION: divisors['triangular'],  # √6
+        U_DISTRIBUTION: divisors['u'],   # √2
+        'Normal Distribution': '',
+        'Rectangular Distribution': divisors['rectangular'],
+        'Triangular Distribution': divisors['triangular'],
+        'U-shaped Distribution': divisors['u']
+    }.get(distribution_key, '')
 
 def get_distribution_translation_key(distribution):
     """分布ラベル/コードから翻訳キーを取得"""

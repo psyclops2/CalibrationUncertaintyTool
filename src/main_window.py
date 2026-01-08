@@ -16,7 +16,7 @@ from src.dialogs.about_dialog import AboutDialog
 from src.utils.language_manager import LanguageManager
 
 from src.utils.translation_keys import *
-from src.utils.variable_utils import create_empty_value_dict
+from src.utils.variable_utils import create_empty_value_dict, get_distribution_translation_key
 
 class MainWindow(QMainWindow):
     def __init__(self, language_manager=None):
@@ -207,6 +207,15 @@ class MainWindow(QMainWindow):
             for var in self.variables:
                 if var not in self.result_variables:
                     self.ensure_variable_initialized(var)
+            # 分布データを翻訳キーに正規化
+            for var_name, var_data in self.variable_values.items():
+                if not isinstance(var_data, dict):
+                    continue
+                distribution = var_data.get('distribution')
+                if distribution:
+                    normalized = get_distribution_translation_key(distribution)
+                    if normalized:
+                        var_data['distribution'] = normalized
             # 不確かさ計算タブの計算・テーブル再構築
             if hasattr(self, 'uncertainty_calculation_tab'):
                 self.uncertainty_calculation_tab.update_result_combo()

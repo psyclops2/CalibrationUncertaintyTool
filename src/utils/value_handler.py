@@ -1,4 +1,5 @@
 import traceback
+from .variable_utils import get_distribution_translation_key
 
 class ValueHandler:
     def __init__(self, main_window, current_value_index=0):
@@ -104,7 +105,7 @@ class ValueHandler:
                 var_data = self.main_window.variable_values[var]
                 if var_data.get('type') == 'B':
                     distribution = var_data.get('distribution', '')
-                    return distribution
+                    return get_distribution_translation_key(distribution) or distribution
                 else:
                     return ''
             return ''
@@ -132,6 +133,8 @@ class ValueHandler:
                 
             # Update the value
             if self.current_value_index >= 0:
+                if field == 'distribution':
+                    value = get_distribution_translation_key(value) or value
                 var_data['values'][self.current_value_index][field] = value
                 return True
                 
