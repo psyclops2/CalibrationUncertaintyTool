@@ -195,6 +195,10 @@ translations = {
         HALF_WIDTH: "Half-width",
         DISTRIBUTION: "Distribution",
         FIXED_VALUE: "Fixed Value",
+        NORMAL_DISTRIBUTION: "Normal Distribution",
+        RECTANGULAR_DISTRIBUTION: "Rectangular Distribution",
+        TRIANGULAR_DISTRIBUTION: "Triangular Distribution",
+        U_DISTRIBUTION: "U-shaped Distribution",
 
         # HTML Calculation Result Items
         REPORT_CALIBRATION_POINT: "Calibration Point",
