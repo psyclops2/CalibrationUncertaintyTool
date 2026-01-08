@@ -53,9 +53,6 @@ Application settings are stored in [`config.ini`](./config.ini). Key options inc
 
 * **[Calculation]**
   * `precision`: Decimal precision used for calculation results.
-* **[Uncertainty]**
-  * `type_a`, `type_b`, `type_fixed`: Labels shown for uncertainty categories.
-  * `fixed_value_uncertainty`: Standard uncertainty applied when a fixed value type is selected.
 * **[Defaults]**
   * `value_count`: Default number of values (calibration points) created per quantity.
   * `current_value_index`: Initially selected value index when editing quantities.
