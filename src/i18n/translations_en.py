@@ -142,6 +142,7 @@ translations = {
     "ReportTab": {
         # UI elements
         GENERATE_REPORT: "Generate Report",
+        RESULT_VARIABLE: "Result Variable",
         SAVE_REPORT: "Save Report",
         
         # save_report dialog
