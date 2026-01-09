@@ -208,31 +208,12 @@ class ModelEquationTab(BaseTab):
         # 前回の方程式と同じ場合は何もしない
         if current_equation == self.parent.last_equation:
             return
-            
-        # 方程式を解析して変数を抽出
+
         try:
-            # 方程式を解析
-            variables = self.parse_equation(current_equation)
-            
-            # 変数リストを更新
-            if hasattr(self.parent, 'variables'):
-                self.parent.variables = variables
-
-                # 変数値辞書に検出した変数を登録
-                self._ensure_variable_values_initialized()
-                
-                # 変数タブの強制更新
-                if hasattr(self.parent, 'variables_tab'):
-                    self.parent.variables_tab.update_variable_list(
-                        self.parent.variables, 
-                        self.parent.result_variables
-                    )
-                    
-            # 変数リストを更新
-            self.update_variable_list()
-
-            # 前回の方程式を更新
-            self.parent.last_equation = current_equation
+            applied = self.check_equation_changes(current_equation)
+            if not applied:
+                self.update_html_display(self.parent.last_equation)
+                return
 
             # 偏微分タブの更新
             if hasattr(self.parent, 'partial_derivative_tab'):
@@ -253,7 +234,7 @@ class ModelEquationTab(BaseTab):
             self.equation_status.setText(f"エラー: {str(e)}")
         
         # HTML表示を必ず更新
-        self.update_html_display(current_equation)
+        self.update_html_display(self.parent.last_equation)
         
     def on_equation_focus_lost(self, event):
         """方程式入力エリアからフォーカスが外れたときの処理（公開メソッド）"""
@@ -324,8 +305,8 @@ class ModelEquationTab(BaseTab):
 
 
             
-            # 変数の変更がある場合は確認ダイアログを表示
-            if added_vars or removed_vars:
+            # 変数の削除がある場合は確認ダイアログを表示
+            if removed_vars:
 
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Question)
@@ -412,10 +393,45 @@ class ModelEquationTab(BaseTab):
 
                     
                 else:
-
                     # キャンセルの場合は元の方程式に戻す
                     self.equation_input.setText(self.parent.last_equation)
+                    return False
             else:
+                if added_vars:
+                    # 現在の変数の並び順を取得
+                    current_order = self.parent.variables.copy()
+                    
+                    # 追加される変数を現在の並び順の最後に追加
+                    for var in added_vars:
+                        if var not in current_order:
+                            current_order.append(var)
+                    
+                    # 変更を適用
+                    input_vars = [var for var in current_order if var in new_vars]
+                    result_var_list = [var for var in current_order if var in result_vars]
+                    
+                    # 計算結果変数を先に、入力変数を後に
+                    self.parent.variables = result_var_list + input_vars
+                    self.parent.result_variables = result_var_list
+                    
+                    # 新しい変数のために変数値辞書を初期化
+                    for var in added_vars:
+                        self.parent.ensure_variable_initialized(var, is_result=var in result_vars)
+                    
+                    # 親オブジェクトの変数検出メソッドを呼び出す
+                    if hasattr(self.parent, 'detect_variables'):
+                        self.parent.detect_variables()
+                    
+                    # 変数タブの強制更新
+                    if hasattr(self.parent, 'variables_tab'):
+                        self.parent.variables_tab.update_variable_list(
+                            self.parent.variables, 
+                            self.parent.result_variables
+                        )
+                    
+                    # 変数リストを更新
+                    self.update_variable_list()
+                
                 # 変数の変更がない場合も方程式を保存
                 self.parent.last_equation = equation
 
@@ -423,11 +439,13 @@ class ModelEquationTab(BaseTab):
             print(f"\n{'#'*80}")
             print(f"#" + " " * 30 + "方程式変更チェック完了" + " " * 30 + "#")
             print(f"{'#'*80}\n")
+            return True
             
         except Exception as e:
             print(f"【エラー】方程式変更チェックエラー: {str(e)}")
             print(traceback.format_exc())
             self.parent.log_error(f"方程式の変更チェックエラー: {str(e)}", "方程式チェックエラー")
+            return False
             
     def resolve_equation(self, target_var, equations):
         """
