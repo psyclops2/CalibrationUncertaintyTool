@@ -13,6 +13,8 @@ from src.tabs.base_tab import BaseTab
 from src.utils.translation_keys import *
 from src.utils.equation_handler import EquationHandler
 
+ZERO_WIDTH_PATTERN = re.compile(r'[\u200B\u200C\u200D\uFEFF]')
+
 class DraggableListWidget(QListWidget):
     order_changed = Signal(list)  # 並び順が変更されたときに発火するシグナル
     
@@ -259,7 +261,7 @@ class ModelEquationTab(BaseTab):
             for eq in equations:
                 if '=' not in eq:
                     continue
-                left_side = eq.split('=', 1)[0].strip()
+                left_side = self._normalize_variable_name(eq.split('=', 1)[0])
                 result_vars.add(left_side)
                 print(f"  - 左辺から検出: {left_side}")
             
@@ -272,6 +274,7 @@ class ModelEquationTab(BaseTab):
                     continue
                     
                 left_side, right_side = eq.split('=', 1)
+                left_side = self._normalize_variable_name(left_side)
                 right_side = right_side.strip()
                 print(f"  方程式解析: {left_side} = {right_side}")
                 
@@ -289,9 +292,12 @@ class ModelEquationTab(BaseTab):
                         try:
                             float(term)  # 数値かどうかをチェック
                         except ValueError:
-                            if term not in result_vars:
-                                new_vars.add(term)
-                                print(f"    → 入力変数として追加: {term}")
+                            normalized_term = self._normalize_variable_name(term)
+                            if not normalized_term:
+                                continue
+                            if normalized_term not in result_vars:
+                                new_vars.add(normalized_term)
+                                print(f"    → 入力変数として追加: {normalized_term}")
             
 
 
@@ -299,8 +305,9 @@ class ModelEquationTab(BaseTab):
             
             # 変数の追加・削除を検出
             all_vars = new_vars | result_vars
-            added_vars = all_vars - set(self.parent.variables)
-            removed_vars = set(self.parent.variables) - all_vars
+            current_vars = {self._normalize_variable_name(var) for var in self.parent.variables}
+            added_vars = all_vars - current_vars
+            removed_vars = current_vars - all_vars
             
 
 
@@ -341,13 +348,15 @@ class ModelEquationTab(BaseTab):
                     current_order = self.parent.variables.copy()
                     
                     # 削除される変数を現在の並び順から削除
-                    for var in removed_vars:
-                        if var in current_order:
-                            current_order.remove(var)
+                    current_order = [
+                        var for var in current_order
+                        if self._normalize_variable_name(var) not in removed_vars
+                    ]
                     
                     # 追加される変数を現在の並び順の最後に追加
+                    existing_normalized = {self._normalize_variable_name(var) for var in current_order}
                     for var in added_vars:
-                        if var not in current_order:
+                        if var not in existing_normalized:
                             current_order.append(var)
                     
                     # 変更を適用
@@ -367,8 +376,8 @@ class ModelEquationTab(BaseTab):
 
                     
                     # 削除される変数の値を削除
-                    for var in removed_vars:
-                        if var in self.parent.variable_values:
+                    for var in list(self.parent.variable_values):
+                        if self._normalize_variable_name(var) in removed_vars:
                             del self.parent.variable_values[var]
 
                     
@@ -402,8 +411,9 @@ class ModelEquationTab(BaseTab):
                     current_order = self.parent.variables.copy()
                     
                     # 追加される変数を現在の並び順の最後に追加
+                    existing_normalized = {self._normalize_variable_name(var) for var in current_order}
                     for var in added_vars:
-                        if var not in current_order:
+                        if var not in existing_normalized:
                             current_order.append(var)
                     
                     # 変更を適用
@@ -569,7 +579,7 @@ class ModelEquationTab(BaseTab):
             for eq in equations:
                 if '=' not in eq:
                     continue
-                left_side = eq.split('=', 1)[0].strip()
+                left_side = self._normalize_variable_name(eq.split('=', 1)[0])
                 result_variables.add(left_side)
             
 
@@ -580,7 +590,7 @@ class ModelEquationTab(BaseTab):
                     continue
                     
                 left_side, right_side = eq.split('=', 1)
-                left_side = left_side.strip()
+                left_side = self._normalize_variable_name(left_side)
                 right_side = right_side.strip()
 
                 
@@ -590,8 +600,9 @@ class ModelEquationTab(BaseTab):
                 
                 # 計算結果変数でない変数のみを追加
                 for var in detected_vars:
-                    if var not in result_variables:
-                        self.variables.append(var)
+                    normalized_var = self._normalize_variable_name(var)
+                    if normalized_var and normalized_var not in result_variables:
+                        self.variables.append(normalized_var)
             
             # 重複を除去
             self.variables = list(dict.fromkeys(self.variables))
@@ -600,6 +611,10 @@ class ModelEquationTab(BaseTab):
         except Exception as e:
 
             raise 
+
+    def _normalize_variable_name(self, name):
+        """不可視文字を除去して変数名を正規化"""
+        return ZERO_WIDTH_PATTERN.sub('', name).strip()
 
     def set_equation(self, equation):
         """方程式を設定する"""
