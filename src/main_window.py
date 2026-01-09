@@ -1,4 +1,5 @@
 import traceback
+import copy
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTabWidget, QMessageBox, QFileDialog, QMenuBar, QMenu
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt, QEvent, Slot
@@ -95,6 +96,10 @@ class MainWindow(QMainWindow):
         The `value_names` list in MainWindow is updated by the tab.
         This method propagates the changes to other tabs.
         """
+        self.value_count = max(1, len(self.value_names))
+        if self.current_value_index >= self.value_count:
+            self.current_value_index = self.value_count - 1
+        self.sync_variable_values_with_points()
         self.variables_tab.update_value_combo()
         self.uncertainty_calculation_tab.update_value_combo()
         self.report_tab.update_report()
@@ -162,11 +167,27 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'variables_tab') and hasattr(self.variables_tab, 'handlers'):
             last_selected_variable = self.variables_tab.handlers.last_selected_variable
             last_selected_value_index = self.variables_tab.handlers.last_selected_value_index
+        save_variable_values = {}
+        ordered_variables = list(dict.fromkeys(self.result_variables + self.variables))
+        for var_name in ordered_variables:
+            var_info = self.variable_values.get(var_name)
+            if not isinstance(var_info, dict):
+                continue
+            cleaned_info = copy.deepcopy(var_info)
+            values = cleaned_info.get('values', [])
+            if not isinstance(values, list):
+                values = []
+            if len(values) < self.value_count:
+                values.extend(create_empty_value_dict() for _ in range(self.value_count - len(values)))
+            else:
+                values = values[:self.value_count]
+            cleaned_info['values'] = values
+            save_variable_values[var_name] = cleaned_info
         return {
             'last_equation': self.last_equation,
             'variables': self.variables,
             'result_variables': self.result_variables,
-            'variable_values': self.variable_values,
+            'variable_values': save_variable_values,
             'value_count': self.value_count,
             'current_value_index': self.current_value_index,
             'value_names': self.value_names,
@@ -185,9 +206,14 @@ class MainWindow(QMainWindow):
             self.value_count = data.get('value_count', 1)
             self.current_value_index = data.get('current_value_index', 0)
             self.value_names = data.get('value_names', [f"{self.tr(CALIBRATION_POINT_NAME)} {i+1}" for i in range(self.value_count)])
+            self.value_count = max(1, len(self.value_names))
+            if self.current_value_index >= self.value_count:
+                self.current_value_index = self.value_count - 1
             self.document_info = data.get('document_info', self.document_info)
             if hasattr(self, 'document_info_tab'):
                 self.document_info_tab.set_document_info(self.document_info)
+            self.prune_variable_values()
+            self.sync_variable_values_with_points()
             # 変数タブの選択状態も復元（古いデータとの互換性あり）
             last_selected_variable = data.get('last_selected_variable', None)
             last_selected_value_index = data.get('last_selected_value_index', 0)
@@ -351,10 +377,33 @@ class MainWindow(QMainWindow):
 
         self.variable_values[var_name] = var_info
         return var_info
+
+    def sync_variable_values_with_points(self):
+        """校正点数に合わせて変数の値リストを整合させる"""
+        required_values = max(1, getattr(self, 'value_count', 1))
+        for var_name, var_info in self.variable_values.items():
+            if not isinstance(var_info, dict):
+                continue
+            values = var_info.get('values', [])
+            if not isinstance(values, list):
+                values = []
+            if len(values) < required_values:
+                values.extend(create_empty_value_dict() for _ in range(required_values - len(values)))
+            elif len(values) > required_values:
+                values = values[:required_values]
+            var_info['values'] = values
+
+    def prune_variable_values(self):
+        """現在の変数リストにない値データを削除する"""
+        active_variables = set(self.variables) | set(self.result_variables)
+        stale_keys = [key for key in self.variable_values.keys() if key not in active_variables]
+        for key in stale_keys:
+            del self.variable_values[key]
             
     def detect_variables(self):
         """変数の検出と変数タブの更新"""
         try:
+            self.prune_variable_values()
             if hasattr(self, 'variables_tab'):
                 self.variables_tab.update_variable_list(
                     self.variables,
