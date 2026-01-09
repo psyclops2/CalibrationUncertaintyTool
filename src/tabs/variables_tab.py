@@ -635,7 +635,18 @@ class VariablesTab(BaseTab):
                             else:
                                 label_widget.setVisible(True)
                                 field_widget.setVisible(True)
-                            
+                            elif label_widget:
+                                field_layout = field_item.layout()
+                                if field_layout:
+                                    any_visible = False
+                                    for j in range(field_layout.count()):
+                                        sub_item = field_layout.itemAt(j)
+                                        sub_widget = sub_item.widget() if sub_item else None
+                                        if sub_widget and sub_widget.isVisible():
+                                            any_visible = True
+                                            break
+                                    label_widget.setVisible(any_visible)
+        
         except Exception as e:
             print(f"【エラー】フォームレイアウト更新エラー: {str(e)}")
             print(traceback.format_exc())
