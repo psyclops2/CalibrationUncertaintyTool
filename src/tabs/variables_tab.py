@@ -707,7 +707,8 @@ class VariablesTab(BaseTab):
                             else:
                                 label_widget.setVisible(True)
                                 field_widget.setVisible(True)
-                            elif label_widget:
+
+                            if label_widget and field_item:
                                 field_layout = field_item.layout()
                                 if field_layout:
                                     any_visible = False
