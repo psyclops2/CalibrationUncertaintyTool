@@ -314,6 +314,11 @@ class ReportTab(BaseTab):
                             html += f"<div>{self.tr(FIXED_VALUE)}: {fixed_value}</div>"
                             description = value_item.get('description', '-') if value_item else '-'
                             html += f"<div>{self.tr(DETAIL_DESCRIPTION)}: {description}</div>"
+                        elif uncertainty_type == 'regression':
+                            regression_model = value_item.get('regression_model', '-') if value_item else '-'
+                            regression_x = value_item.get('regression_x', '-') if value_item else '-'
+                            html += f"<div>{self.tr(REGRESSION_MODEL)}: {regression_model}</div>"
+                            html += f"<div>{self.tr(REGRESSION_X_VALUE)}: {regression_x}</div>"
                         else:
                             html += f"<div>{self.tr(DETAIL_DESCRIPTION)}: -</div>"
                     except Exception:
@@ -479,7 +484,8 @@ class ReportTab(BaseTab):
         type_map = {
             'A': self.tr(TYPE_A_DISPLAY),
             'B': self.tr(TYPE_B_DISPLAY),
-            'fixed': self.tr(FIXED_VALUE_DISPLAY)
+            'fixed': self.tr(FIXED_VALUE_DISPLAY),
+            'regression': self.tr(REGRESSION_VALUE_DISPLAY)
         }
         return type_map.get(type_code, self.tr(UNKNOWN_TYPE))
 

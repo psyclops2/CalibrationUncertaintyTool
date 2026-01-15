@@ -38,6 +38,7 @@ translations = {
         
         # タブ名 (MainWindowで設定)
         TAB_EQUATION: "モデル式",
+        TAB_REGRESSION: "回帰モデル",
         TAB_VARIABLES: "変数管理",
         TAB_CALCULATION: "不確かさ計算",
         TAB_REPORT: "レポート",
@@ -51,6 +52,9 @@ translations = {
 
         # メッセージ
         MESSAGE_SUCCESS: "成功",
+        MESSAGE_WARNING: "警告",
+        MESSAGE_INFO: "情報",
+        MESSAGE_CONFIRM: "確認",
         FILE_LOADED: "ファイルを読み込みました。",
         FILE_SAVED: "ファイルを保存しました。",
         FILE_LOAD_ERROR: "ファイルの読み込みに失敗しました。",
@@ -108,10 +112,33 @@ translations = {
         HALF_WIDTH: "半値幅",
         CALCULATION_FORMULA: "計算式",
         CALCULATE: "計算",
+        USE_REGRESSION: "回帰モデルから取得",
+        REGRESSION_MODEL: "回帰モデル",
+        REGRESSION_X_VALUE: "回帰モデルのx",
         BUTTON_ADD: "追加",
         BUTTON_EDIT: "編集",
         BUTTON_DELETE: "削除",
         LABEL_UNIT: "単位",
+    },
+    "RegressionTab": {
+        REGRESSION_TAB: "回帰モデル",
+        REGRESSION_LIST: "回帰モデル一覧",
+        REGRESSION_DETAILS: "回帰モデル詳細",
+        REGRESSION_NAME: "回帰モデル名",
+        REGRESSION_DESCRIPTION: "説明",
+        REGRESSION_MODE: "モード",
+        REGRESSION_X_UNIT: "X単位",
+        REGRESSION_Y_UNIT: "Y単位",
+        REGRESSION_USE_WEIGHTS: "重み付け",
+        REGRESSION_INVERT: "反転",
+        REGRESSION_DATA: "データ",
+        REGRESSION_ADD_MODEL: "回帰モデル追加",
+        REGRESSION_REMOVE_MODEL: "回帰モデル削除",
+        REGRESSION_ADD_ROW: "行追加",
+        REGRESSION_REMOVE_ROW: "行削除",
+        REGRESSION_NAME_REQUIRED: "回帰モデル名を入力してください。",
+        REGRESSION_NAME_DUPLICATE: "同名の回帰モデルが既に存在します。",
+        REGRESSION_REMOVE_CONFIRM: "回帰モデル「{name}」を削除しますか？",
     },
     "PointSettingsTab": {
         POINT_SETTINGS_TAB_INFO: "各校正点の名称を設定します。校正点の追加・削除も可能です。",
@@ -204,6 +231,8 @@ translations = {
         HALF_WIDTH: "半値幅",
         DISTRIBUTION: "分布",
         FIXED_VALUE: "固定値",
+        REGRESSION_MODEL: "回帰モデル",
+        REGRESSION_X_VALUE: "回帰モデルのx",
         NORMAL_DISTRIBUTION: "正規分布",
         RECTANGULAR_DISTRIBUTION: "矩形分布",
         TRIANGULAR_DISTRIBUTION: "三角分布",
@@ -222,6 +251,7 @@ translations = {
         TYPE_A_DISPLAY: "タイプA",
         TYPE_B_DISPLAY: "タイプB",
         FIXED_VALUE_DISPLAY: "固定値",
+        REGRESSION_VALUE_DISPLAY: "回帰モデル",
         UNKNOWN_TYPE: "不明",
 
         # Error messages

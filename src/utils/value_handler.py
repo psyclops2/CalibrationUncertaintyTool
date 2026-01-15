@@ -1,10 +1,59 @@
 import traceback
 from .variable_utils import get_distribution_translation_key
+from .calculation_utils import evaluate_formula
+from .regression_utils import calculate_linear_regression_prediction
 
 class ValueHandler:
     def __init__(self, main_window, current_value_index=0):
         self.main_window = main_window
         self.current_value_index = current_value_index
+
+    def _parse_regression_x(self, x_input):
+        try:
+            if x_input is None:
+                return None
+            if isinstance(x_input, (int, float)):
+                return float(x_input)
+            x_str = str(x_input).strip()
+            if x_str == "":
+                return None
+            try:
+                return float(x_str)
+            except ValueError:
+                value = evaluate_formula(x_str)
+                if value is None:
+                    return None
+                return float(value)
+        except Exception:
+            return None
+
+    def _get_regression_result(self, var):
+        try:
+            if var not in self.main_window.variable_values:
+                return None, None, None
+            var_data = self.main_window.variable_values[var]
+            if not (var_data.get('type') == 'regression' or var_data.get('use_regression')):
+                return None, None, None
+            values = var_data.get('values', [])
+            if not isinstance(values, list):
+                return None, None, None
+            if self.current_value_index < 0 or self.current_value_index >= len(values):
+                return None, None, None
+            value_data = values[self.current_value_index]
+            model_name = value_data.get('regression_model', '')
+            if not model_name:
+                return None, None, None
+            regression_model = getattr(self.main_window, 'regressions', {}).get(model_name)
+            if not isinstance(regression_model, dict):
+                return None, None, None
+            x_value = self._parse_regression_x(value_data.get('regression_x', ''))
+            if x_value is None:
+                return None, None, None
+            return calculate_linear_regression_prediction(regression_model, x_value)
+        except Exception as e:
+            print(f"【エラー】回帰値取得エラー: {str(e)}")
+            print(traceback.format_exc())
+            return None, None, None
 
     def get_central_value(self, var):
         """変数の中央値を取得"""
@@ -21,7 +70,12 @@ class ValueHandler:
                 value_data = var_data['values'][self.current_value_index]
 
                 
-                if var_data.get('type') == 'A':
+                if var_data.get('type') == 'regression' or var_data.get('use_regression'):
+                    value, _, _ = self._get_regression_result(var)
+                    if value is None:
+                        value = ''
+
+                elif var_data.get('type') == 'A':
                     value = value_data.get('central_value', '')
 
                 elif var_data.get('type') == 'B':
@@ -54,7 +108,12 @@ class ValueHandler:
                 value_data = var_data['values'][self.current_value_index]
 
                 
-                if var_data.get('type') == 'A':
+                if var_data.get('type') == 'regression' or var_data.get('use_regression'):
+                    _, value, _ = self._get_regression_result(var)
+                    if value is None:
+                        value = ''
+
+                elif var_data.get('type') == 'A':
                     value = value_data.get('standard_uncertainty', '')
 
                 elif var_data.get('type') == 'B':
@@ -87,7 +146,12 @@ class ValueHandler:
                 value_data = var_data['values'][self.current_value_index]
 
                 
-                degrees_of_freedom = value_data.get('degrees_of_freedom', '')
+                if var_data.get('type') == 'regression' or var_data.get('use_regression'):
+                    _, _, degrees_of_freedom = self._get_regression_result(var)
+                    if degrees_of_freedom is None:
+                        degrees_of_freedom = ''
+                else:
+                    degrees_of_freedom = value_data.get('degrees_of_freedom', '')
 
                 return degrees_of_freedom
 
@@ -103,6 +167,8 @@ class ValueHandler:
         try:
             if var in self.main_window.variable_values:
                 var_data = self.main_window.variable_values[var]
+                if var_data.get('type') == 'regression' or var_data.get('use_regression'):
+                    return get_distribution_translation_key('Normal Distribution')
                 if var_data.get('type') == 'B':
                     distribution = var_data.get('distribution', '')
                     return get_distribution_translation_key(distribution) or distribution

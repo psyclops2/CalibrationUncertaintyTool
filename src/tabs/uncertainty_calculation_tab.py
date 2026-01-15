@@ -390,6 +390,8 @@ class UncertaintyCalculationTab(BaseTab):
             for i, var in enumerate(ordered_variables):
 
                 unit = self._get_unit(var)
+                var_info = self.parent.variable_values.get(var, {}) if self.parent else {}
+                is_regression = bool(var_info.get('use_regression')) or var_info.get('type') == 'regression'
 
                 # 変数名
                 self.calibration_table.setItem(i, 0, QTableWidgetItem(var))
@@ -432,13 +434,19 @@ class UncertaintyCalculationTab(BaseTab):
                 
                 # 自由度
                 degrees_of_freedom = self.value_handler.get_degrees_of_freedom(var)
-                self.calibration_table.setItem(i, 3, QTableWidgetItem(str(degrees_of_freedom)))
+                df_item = QTableWidgetItem(str(degrees_of_freedom))
+                if is_regression:
+                    df_item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+                self.calibration_table.setItem(i, 3, df_item)
                 degrees_of_freedom_list.append(degrees_of_freedom)
                 
                 # 分布
                 distribution_key = get_distribution_translation_key(self.value_handler.get_distribution(var))
                 distribution_label = self.tr(distribution_key) if distribution_key else '--'
-                self.calibration_table.setItem(i, 4, QTableWidgetItem(distribution_label))
+                distribution_item = QTableWidgetItem(distribution_label)
+                if is_regression:
+                    distribution_item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+                self.calibration_table.setItem(i, 4, distribution_item)
                 
                 # 感度係数
                 sensitivity = self.equation_handler.calculate_sensitivity(right_side, var, variables, self.value_handler)
