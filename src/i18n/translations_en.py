@@ -34,6 +34,7 @@ translations = {
         
         # Tab names (set in MainWindow)
         TAB_EQUATION: "Model Equation",
+        TAB_REGRESSION: "Regression",
         TAB_VARIABLES: "Variable Management",
         TAB_CALCULATION: "Uncertainty Calculation",
         TAB_REPORT: "Report",
@@ -47,6 +48,9 @@ translations = {
 
         # Messages
         MESSAGE_SUCCESS: "Success",
+        MESSAGE_WARNING: "Warning",
+        MESSAGE_INFO: "Information",
+        MESSAGE_CONFIRM: "Confirm",
         FILE_LOADED: "File loaded successfully.",
         FILE_SAVED: "File saved successfully.",
         FILE_LOAD_ERROR: "Failed to load file.",
@@ -104,10 +108,33 @@ translations = {
         HALF_WIDTH: "Half-width",
         CALCULATION_FORMULA: "Calculation Formula",
         CALCULATE: "Calculate",
+        USE_REGRESSION: "Use regression model",
+        REGRESSION_MODEL: "Regression model",
+        REGRESSION_X_VALUE: "Regression x",
         BUTTON_ADD: "Add",
         BUTTON_EDIT: "Edit",
         BUTTON_DELETE: "Delete",
         LABEL_UNIT: "Unit",
+    },
+    "RegressionTab": {
+        REGRESSION_TAB: "Regression",
+        REGRESSION_LIST: "Regression Models",
+        REGRESSION_DETAILS: "Regression Details",
+        REGRESSION_NAME: "Regression Name",
+        REGRESSION_DESCRIPTION: "Description",
+        REGRESSION_MODE: "Mode",
+        REGRESSION_X_UNIT: "X Unit",
+        REGRESSION_Y_UNIT: "Y Unit",
+        REGRESSION_USE_WEIGHTS: "Use Weights",
+        REGRESSION_INVERT: "Invert",
+        REGRESSION_DATA: "Data",
+        REGRESSION_ADD_MODEL: "Add Model",
+        REGRESSION_REMOVE_MODEL: "Remove Model",
+        REGRESSION_ADD_ROW: "Add Row",
+        REGRESSION_REMOVE_ROW: "Remove Row",
+        REGRESSION_NAME_REQUIRED: "Please enter a regression model name.",
+        REGRESSION_NAME_DUPLICATE: "A regression model with this name already exists.",
+        REGRESSION_REMOVE_CONFIRM: "Remove regression model \"{name}\"?",
     },
     "PointSettingsTab": {
         POINT_SETTINGS_TAB_INFO: "Set the name for each calibration point. You can also add and remove calibration points.",
@@ -200,6 +227,8 @@ translations = {
         HALF_WIDTH: "Half-width",
         DISTRIBUTION: "Distribution",
         FIXED_VALUE: "Fixed Value",
+        REGRESSION_MODEL: "Regression model",
+        REGRESSION_X_VALUE: "Regression x",
         NORMAL_DISTRIBUTION: "Normal Distribution",
         RECTANGULAR_DISTRIBUTION: "Rectangular Distribution",
         TRIANGULAR_DISTRIBUTION: "Triangular Distribution",
@@ -218,6 +247,7 @@ translations = {
         TYPE_A_DISPLAY: "Type A",
         TYPE_B_DISPLAY: "Type B",
         FIXED_VALUE_DISPLAY: "Fixed Value",
+        REGRESSION_VALUE_DISPLAY: "Regression",
         UNKNOWN_TYPE: "Unknown",
 
         # Error messages

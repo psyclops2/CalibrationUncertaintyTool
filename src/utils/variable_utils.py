@@ -111,7 +111,9 @@ def create_empty_value_dict():
         'fixed_value': '',
         'description': '',
         'calculation_formula': '',
-        'divisor': ''
+        'divisor': '',
+        'regression_model': '',
+        'regression_x': ''
     }
 
 def find_variable_item(variable_list, variable_name):

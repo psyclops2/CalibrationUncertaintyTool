@@ -26,8 +26,10 @@ class VariablesTabHandlers:
         is_result = self.current_variable_is_result
 
         # 計算結果変数は種類選択を無効化する
+        use_regression = self.parent.use_regression_checkbox.isChecked()
         for radio in [self.parent.type_a_radio, self.parent.type_b_radio, self.parent.type_fixed_radio]:
-            radio.setEnabled(not is_result)
+            radio.setEnabled(not is_result and not use_regression)
+        self.parent.use_regression_checkbox.setEnabled(not is_result)
 
         if is_result:
             # 結果変数では入力系をすべて非表示・無効にする
@@ -38,6 +40,9 @@ class VariablesTabHandlers:
                 widget.setVisible(False)
                 widget.setEnabled(False)
             for widget in self.parent.fixed_value_widgets.values():
+                widget.setVisible(False)
+                widget.setEnabled(False)
+            for widget in self.parent.regression_widgets.values():
                 widget.setVisible(False)
                 widget.setEnabled(False)
             self.parent.update_form_layout()
@@ -56,6 +61,9 @@ class VariablesTabHandlers:
             for widget in self.parent.fixed_value_widgets.values():
                 widget.setVisible(False)
                 widget.setEnabled(False)
+            for widget in self.parent.regression_widgets.values():
+                widget.setVisible(False)
+                widget.setEnabled(False)
 
         elif uncertainty_type == 'B':
             # TypeA用のウィジェットを非表示・無効化
@@ -70,6 +78,23 @@ class VariablesTabHandlers:
             for widget in self.parent.fixed_value_widgets.values():
                 widget.setVisible(False)
                 widget.setEnabled(False)
+            for widget in self.parent.regression_widgets.values():
+                widget.setVisible(False)
+                widget.setEnabled(False)
+
+        elif uncertainty_type == 'regression':
+            for widget in self.parent.type_a_widgets.values():
+                widget.setVisible(False)
+                widget.setEnabled(False)
+            for widget in self.parent.type_b_widgets.values():
+                widget.setVisible(False)
+                widget.setEnabled(False)
+            for widget in self.parent.fixed_value_widgets.values():
+                widget.setVisible(False)
+                widget.setEnabled(False)
+            for widget in self.parent.regression_widgets.values():
+                widget.setVisible(True)
+                widget.setEnabled(True)
 
         else:  # fixed
             # TypeA用のウィジェットを非表示・無効化
@@ -84,6 +109,9 @@ class VariablesTabHandlers:
             for widget in self.parent.fixed_value_widgets.values():
                 widget.setVisible(True)
                 widget.setEnabled(True)
+            for widget in self.parent.regression_widgets.values():
+                widget.setVisible(False)
+                widget.setEnabled(False)
 
         self.parent.update_form_layout()
 
@@ -168,6 +196,8 @@ class VariablesTabHandlers:
         try:
             if self.current_variable_is_result:
                 return
+            if self.parent.use_regression_checkbox.isChecked():
+                return
 
             if self.parent.type_a_radio.isChecked():
                 uncertainty_type = 'A'
@@ -189,6 +219,82 @@ class VariablesTabHandlers:
         except Exception as e:
             print(f"【エラー】不確かさ種類変更エラー: {str(e)}")
             print(traceback.format_exc())
+
+    def on_regression_toggled(self, checked):
+        """回帰モデル使用の切り替え"""
+        try:
+            if self.current_variable_is_result:
+                return
+            if not self.current_variable:
+                return
+
+            var_info = self.parent.parent.variable_values[self.current_variable]
+            if checked:
+                previous_type = var_info.get('type', 'A')
+                if previous_type != 'regression':
+                    var_info['previous_type'] = previous_type
+                var_info['use_regression'] = True
+                var_info['type'] = 'regression'
+                self.parent.update_regression_model_options()
+                self.update_widget_visibility('regression')
+            else:
+                var_info['use_regression'] = False
+                restored_type = var_info.get('previous_type', 'A')
+                var_info['type'] = restored_type
+                self.parent.type_a_radio.blockSignals(True)
+                self.parent.type_b_radio.blockSignals(True)
+                self.parent.type_fixed_radio.blockSignals(True)
+                if restored_type == 'A':
+                    self.parent.type_a_radio.setChecked(True)
+                elif restored_type == 'B':
+                    self.parent.type_b_radio.setChecked(True)
+                else:
+                    self.parent.type_fixed_radio.setChecked(True)
+                self.parent.type_a_radio.blockSignals(False)
+                self.parent.type_b_radio.blockSignals(False)
+                self.parent.type_fixed_radio.blockSignals(False)
+                self.update_widget_visibility(restored_type)
+
+            self.parent.display_current_value()
+            self.parent.update_form_layout()
+        except Exception as e:
+            print(f"【エラー】回帰モデル切替エラー: {str(e)}")
+            print(traceback.format_exc())
+
+    def on_regression_model_changed(self):
+        """回帰モデル選択変更"""
+        try:
+            if not self.current_variable:
+                return
+            value_info = self._get_current_value_info()
+            model_name = self.parent.regression_widgets['model'].currentText()
+            value_info['regression_model'] = model_name
+        except Exception as e:
+            print(f"【エラー】回帰モデル選択エラー: {str(e)}")
+            print(traceback.format_exc())
+
+    def on_regression_x_changed(self):
+        """回帰モデルのx入力変更"""
+        try:
+            if not self.current_variable:
+                return
+            value_info = self._get_current_value_info()
+            value_info['regression_x'] = self.parent.regression_widgets['x_value'].text()
+        except Exception as e:
+            print(f"【エラー】回帰モデルx変更エラー: {str(e)}")
+            print(traceback.format_exc())
+
+    def _get_current_value_info(self):
+        """現在の値辞書を取得"""
+        var_info = self.parent.parent.variable_values.get(self.current_variable, {})
+        values = var_info.get('values', [])
+        if not isinstance(values, list):
+            values = []
+        while len(values) <= self.parent.value_combo.currentIndex():
+            values.append(create_empty_value_dict())
+        var_info['values'] = values
+        self.parent.parent.variable_values[self.current_variable] = var_info
+        return values[self.parent.value_combo.currentIndex()]
 
     def on_nominal_value_changed(self):
         """呼び値が変更されたときの処理"""

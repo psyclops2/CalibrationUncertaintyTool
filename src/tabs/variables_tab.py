@@ -45,6 +45,8 @@ class VariablesTab(BaseTab):
         self.unit_label.setText(self.tr(LABEL_UNIT) + ":")
         self.definition_label.setText(self.tr(LABEL_DEFINITION) + ":")
         self.uncertainty_type_label.setText(self.tr(UNCERTAINTY_TYPE) + ":")
+        self.regression_toggle_label.setText(self.tr(REGRESSION_MODEL) + ":")
+        self.use_regression_checkbox.setText(self.tr(USE_REGRESSION))
         
         # ラジオボタン
         self.type_a_radio.setText(self.tr(TYPE_A))
@@ -58,6 +60,10 @@ class VariablesTab(BaseTab):
         self.central_value_label_a.setText(self.tr(CENTRAL_VALUE) + ":")
         self.standard_uncertainty_label_a.setText(self.tr(STANDARD_UNCERTAINTY) + ":")
         self.detail_description_label_a.setText(self.tr(DETAIL_DESCRIPTION) + ":")
+
+        # 回帰モデル用ウィジェット
+        self.regression_model_label.setText(self.tr(REGRESSION_MODEL) + ":")
+        self.regression_x_label.setText(self.tr(REGRESSION_X_VALUE) + ":")
         
         # TypeB用ウィジェット
         # 分布コンボボックスの項目を更新
@@ -160,6 +166,12 @@ class VariablesTab(BaseTab):
         uncertainty_type_layout.addWidget(self.type_fixed_radio)
         self.uncertainty_type_label = QLabel(self.tr(UNCERTAINTY_TYPE) + ":")
         settings_layout.addRow(self.uncertainty_type_label, uncertainty_type_layout)
+
+        # 回帰モデルの使用
+        self.regression_toggle_label = QLabel(self.tr(REGRESSION_MODEL) + ":")
+        self.use_regression_checkbox = QCheckBox(self.tr(USE_REGRESSION))
+        self.use_regression_checkbox.toggled.connect(self.handlers.on_regression_toggled)
+        settings_layout.addRow(self.regression_toggle_label, self.use_regression_checkbox)
         
         # 区切り線を追加
         separator = QFrame()
@@ -203,6 +215,23 @@ class VariablesTab(BaseTab):
         self.type_a_widgets['description'].textChanged.connect(self.handlers.on_type_a_description_changed)
         self.detail_description_label_a = QLabel(self.tr(DETAIL_DESCRIPTION) + ":")
         settings_layout.addRow(self.detail_description_label_a, self.type_a_widgets['description'])
+
+        # 回帰モデル用のウィジェット
+        self.regression_widgets = {}
+        self.regression_model_label = QLabel(self.tr(REGRESSION_MODEL) + ":")
+        self.regression_widgets['model'] = QComboBox()
+        self.regression_widgets['model'].currentIndexChanged.connect(
+            self.handlers.on_regression_model_changed
+        )
+        settings_layout.addRow(self.regression_model_label, self.regression_widgets['model'])
+
+        self.regression_x_label = QLabel(self.tr(REGRESSION_X_VALUE) + ":")
+        self.regression_widgets['x_value'] = QLineEdit()
+        self.regression_widgets['x_value'].textChanged.connect(
+            self.handlers.on_regression_x_changed
+        )
+        settings_layout.addRow(self.regression_x_label, self.regression_widgets['x_value'])
+        self.update_regression_model_options()
         
         # TypeB用のウィジェット
         self.type_b_widgets = {}
@@ -306,6 +335,9 @@ class VariablesTab(BaseTab):
         for widget in self.fixed_value_widgets.values():
             widget.setVisible(False)
             widget.setEnabled(False)
+        for widget in self.regression_widgets.values():
+            widget.setVisible(False)
+            widget.setEnabled(False)
         
     def update_variable_list(self, variables, result_variables):
         """変数リストを更新"""
@@ -363,9 +395,18 @@ class VariablesTab(BaseTab):
             self.definition_input.setText(definition)
 
             # 不確かさ種類の設定
+            use_regression = bool(var_info.get('use_regression')) or var_info.get('type') == 'regression'
+            self.use_regression_checkbox.blockSignals(True)
+            self.use_regression_checkbox.setChecked(use_regression)
+            self.use_regression_checkbox.blockSignals(False)
+
             uncertainty_type = var_info.get('type', 'A')
             if getattr(self.handlers, 'current_variable_is_result', False):
                 uncertainty_type = 'result'
+            elif use_regression:
+                uncertainty_type = 'regression'
+                var_info['type'] = 'regression'
+
             if uncertainty_type == 'A':
                 self.type_a_radio.setChecked(True)
             elif uncertainty_type == 'B':
@@ -400,6 +441,8 @@ class VariablesTab(BaseTab):
 
                 self.type_b_widgets['divisor'].setText(divisor)
                 self.type_b_widgets['divisor'].setReadOnly(distribution != NORMAL_DISTRIBUTION)
+
+            self.update_regression_model_options()
 
             # 不確かさ種類に応じたウィジェットの表示を更新
             self.handlers.update_widget_visibility(uncertainty_type)
@@ -548,7 +591,20 @@ class VariablesTab(BaseTab):
                 self.type_b_widgets['divisor'].setReadOnly(distribution != NORMAL_DISTRIBUTION)
                 
                 print(f"[DEBUG] TypeB復元: central_value='{central_value}', half_width='{half_width}', degrees_of_freedom='{degrees_of_freedom}', description='{description}', divisor='{divisor}'")
-                
+
+            elif uncertainty_type == 'regression':
+                regression_model = value_info.get('regression_model', '')
+                regression_x = value_info.get('regression_x', '')
+                self.update_regression_model_options()
+                model_index = self.regression_widgets['model'].findText(regression_model)
+                if model_index >= 0:
+                    self.regression_widgets['model'].setCurrentIndex(model_index)
+                else:
+                    self.regression_widgets['model'].setCurrentIndex(0)
+                self.regression_widgets['x_value'].setText(str(regression_x))
+
+                print(f"[DEBUG] Regression復元: model='{regression_model}', x='{regression_x}'")
+
             else:  # fixed
                 # 辞書から値を取得（読み取り専用）
                 fixed_value = value_info.get('fixed_value', '')
@@ -592,6 +648,22 @@ class VariablesTab(BaseTab):
         except Exception as e:
             print(f"【エラー】値の選択コンボボックス更新エラー: {str(e)}")
             print(traceback.format_exc())
+
+    def update_regression_model_options(self):
+        """回帰モデル選択肢を更新"""
+        if not hasattr(self, 'regression_widgets'):
+            return
+        model_combo = self.regression_widgets.get('model')
+        if not model_combo:
+            return
+        model_combo.blockSignals(True)
+        model_combo.clear()
+        model_combo.addItem("")
+        regressions = getattr(self.parent, 'regressions', {})
+        if isinstance(regressions, dict):
+            for name in regressions.keys():
+                model_combo.addItem(name)
+        model_combo.blockSignals(False)
 
     def update_form_layout(self):
         """フォームレイアウトを更新して、非表示のウィジェットを詰める"""
