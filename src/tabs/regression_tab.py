@@ -54,7 +54,6 @@ class RegressionTab(BaseTab):
 
         self.name_label.setText(self.tr(REGRESSION_NAME) + ":")
         self.description_label.setText(self.tr(REGRESSION_DESCRIPTION) + ":")
-        self.use_weights_checkbox.setText(self.tr(REGRESSION_USE_WEIGHTS))
         self.x_unit_label.setText(self.tr(REGRESSION_X_UNIT) + ":")
         self.y_unit_label.setText(self.tr(REGRESSION_Y_UNIT) + ":")
 
@@ -119,10 +118,6 @@ class RegressionTab(BaseTab):
         self.description_input = QLineEdit()
         self.description_input.textChanged.connect(self.on_description_changed)
         form_layout.addRow(self.description_label, self.description_input)
-
-        self.use_weights_checkbox = QCheckBox(self.tr(REGRESSION_USE_WEIGHTS))
-        self.use_weights_checkbox.toggled.connect(self.on_use_weights_changed)
-        form_layout.addRow("", self.use_weights_checkbox)
 
         self.x_unit_label = QLabel(self.tr(REGRESSION_X_UNIT) + ":")
         self.x_unit_input = QLineEdit()
@@ -220,9 +215,11 @@ class RegressionTab(BaseTab):
         self.inverse_group = QGroupBox(self.tr(REGRESSION_INVERSE_ESTIMATION))
         inverse_layout = QVBoxLayout()
         self.inverse_table = QTableWidget()
-        self.inverse_table.setColumnCount(2)
+        self.inverse_table.setColumnCount(3)
         self.inverse_table.setRowCount(1)
-        self.inverse_table.setHorizontalHeaderLabels([self.tr(REGRESSION_Y0), self.tr(REGRESSION_X0)])
+        self.inverse_table.setHorizontalHeaderLabels(
+            [self.tr(REGRESSION_Y0), self.tr(REGRESSION_X0), self.tr(REGRESSION_UX0)]
+        )
         self.inverse_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.inverse_table.verticalHeader().setVisible(False)
         self.inverse_table.itemChanged.connect(self.on_inverse_table_changed)
@@ -277,7 +274,6 @@ class RegressionTab(BaseTab):
 
         regressions[name] = {
             "description": "",
-            "use_weights": False,
             "x_unit": "",
             "y_unit": "",
             "data": [],
@@ -333,7 +329,6 @@ class RegressionTab(BaseTab):
             self.details_group.setEnabled(True)
             self.name_display.setText(name)
             self.description_input.setText(model.get("description", ""))
-            self.use_weights_checkbox.setChecked(bool(model.get("use_weights", False)))
             self.x_unit_input.setText(model.get("x_unit", ""))
             self.y_unit_input.setText(model.get("y_unit", ""))
             self._populate_data_table(model.get("data", []))
@@ -371,17 +366,15 @@ class RegressionTab(BaseTab):
             x0_item = QTableWidgetItem("--")
             self._set_readonly_item(x0_item)
             self.inverse_table.setItem(row_index, 1, x0_item)
+            ux0_item = QTableWidgetItem("--")
+            self._set_readonly_item(ux0_item)
+            self.inverse_table.setItem(row_index, 2, ux0_item)
         self.inverse_table.blockSignals(False)
 
     def on_description_changed(self, text):
         if self._updating:
             return
         self._update_model_field("description", text)
-
-    def on_use_weights_changed(self, checked):
-        if self._updating:
-            return
-        self._update_model_field("use_weights", bool(checked))
 
     def on_x_unit_changed(self, text):
         if self._updating:
@@ -472,42 +465,51 @@ class RegressionTab(BaseTab):
         self.parent.regressions = regressions
         self._notify_regressions_updated()
         # データが変更された場合は計算結果を更新
-        if field in {"data", "use_weights"}:
+        if field in {"data"}:
             self._update_regression_result(model)
     
     def _update_regression_result(self, model):
         """回帰計算結果を更新"""
         try:
             slope_value = None
+            residual_variance = None
+            sxx = None
+            data_count = None
             params = calculate_linear_regression_parameters(model)
             if params:
                 slope, intercept, residual_std, degrees_of_freedom, data_count = params
                 slope_value = slope
+                u_beta_value = None
+                ux_average_value = None
+                uy_average_value = None
                 # 切片α（intercept）を表示
-                self.intercept_display.setText(f"{intercept:.6g}")
+                self.intercept_display.setText(f"{intercept:.12g}")
                 # 傾きβ（slope）を表示
-                self.slope_display.setText(f"{slope:.6g}")
+                self.slope_display.setText(f"{slope:.12g}")
                 significance_f = calculate_significance_f(model, slope=slope, intercept=intercept)
                 if significance_f is None:
                     self.significance_f_display.setText("--")
                 else:
-                    self.significance_f_display.setText(f"{significance_f:.6g}")
+                    self.significance_f_display.setText(f"{significance_f:.12g}")
                 residual_variance = residual_std ** 2
-                self.residual_variance_display.setText(f"{residual_variance:.6g}")
+                self.residual_variance_display.setText(f"{residual_std:.12g}")
                 sxx, x_mean_sxx, count_sxx = calculate_regression_sxx(model)
                 if sxx is None or sxx == 0:
                     self.u_beta_display.setText("--")
                 else:
                     u_beta = math.sqrt(residual_variance / sxx)
-                    self.u_beta_display.setText(f"{u_beta:.6g}")
+                    self.u_beta_display.setText(f"{u_beta:.12g}")
+                    u_beta_value = u_beta
                 ux_average = calculate_value_average(model, "ux")
                 if ux_average is None:
                     self.ux_average_display.setText("--")
                 else:
-                    self.ux_average_display.setText(f"{ux_average:.6g}")
+                    self.ux_average_display.setText(f"{ux_average:.12g}")
+                    ux_average_value = ux_average
                 if data_count:
                     uy_average = math.sqrt(residual_variance / data_count)
-                    self.uy_average_display.setText(f"{uy_average:.6g}")
+                    self.uy_average_display.setText(f"{uy_average:.12g}")
+                    uy_average_value = uy_average
                 else:
                     self.uy_average_display.setText("--")
             else:
@@ -522,12 +524,18 @@ class RegressionTab(BaseTab):
             if x_mean is None:
                 self.x_average_display.setText("--")
             else:
-                self.x_average_display.setText(f"{x_mean:.6g}")
+                self.x_average_display.setText(f"{x_mean:.12g}")
             if y_mean is None:
                 self.y_average_display.setText("--")
             else:
-                self.y_average_display.setText(f"{y_mean:.6g}")
-            self._update_inverse_estimation(model, slope_value)
+                self.y_average_display.setText(f"{y_mean:.12g}")
+            self._update_inverse_estimation(
+                model,
+                slope_value,
+                u_beta=u_beta_value,
+                ux_average=ux_average_value,
+                uy_average=uy_average_value,
+            )
         except Exception as e:
             print(f"【エラー】回帰計算結果更新エラー: {str(e)}")
             self.intercept_display.setText("--")
@@ -541,11 +549,14 @@ class RegressionTab(BaseTab):
             self.uy_average_display.setText("--")
             self._update_inverse_estimation(model, None)
 
-    def _update_inverse_estimation(self, model, slope):
+    def _update_inverse_estimation(self, model, slope, u_beta=None, ux_average=None, uy_average=None):
         x_mean, y_mean = calculate_xy_averages(model)
         self._inverse_slope = slope
         self._inverse_x_mean = x_mean
         self._inverse_y_mean = y_mean
+        self._inverse_u_beta = u_beta
+        self._inverse_ux_average = ux_average
+        self._inverse_uy_average = uy_average
         self._update_inverse_table()
 
     def _update_inverse_table(self):
@@ -555,9 +566,16 @@ class RegressionTab(BaseTab):
                 self._ensure_inverse_row_items(row)
                 y0_item = self.inverse_table.item(row, 0)
                 x0_item = self.inverse_table.item(row, 1)
+                ux0_item = self.inverse_table.item(row, 2)
                 y0_value = self._parse_float(y0_item.text() if y0_item else "")
                 x0_value = self._calculate_inverse_x0(y0_value)
-                x0_item.setText("--" if x0_value is None else f"{x0_value:.6g}")
+                ux0_value = self._calculate_inverse_ux0(y0_value)
+                x0_item.setText("--" if x0_value is None else f"{x0_value:.12g}")
+                if ux0_item is None:
+                    ux0_item = QTableWidgetItem("--")
+                    self._set_readonly_item(ux0_item)
+                    self.inverse_table.setItem(row, 2, ux0_item)
+                ux0_item.setText("--" if ux0_value is None else f"{ux0_value:.12g}")
         finally:
             self._updating = False
 
@@ -569,6 +587,29 @@ class RegressionTab(BaseTab):
             return None
         return ((y0_value - y_mean) / slope) + x_mean
 
+    def _calculate_inverse_ux0(self, y0_value):
+        y_mean = getattr(self, "_inverse_y_mean", None)
+        slope = getattr(self, "_inverse_slope", None)
+        u_beta = getattr(self, "_inverse_u_beta", None)
+        ux_average = getattr(self, "_inverse_ux_average", None)
+        uy_average = getattr(self, "_inverse_uy_average", None)
+        if (
+            y0_value is None
+            or slope in (None, 0)
+            or y_mean is None
+            or u_beta is None
+            or ux_average is None
+            or uy_average is None
+        ):
+            return None
+        term_uy = (uy_average ** 2) / (slope ** 2)
+        term_beta = ((y0_value - y_mean) ** 2) * (u_beta ** 2) / (slope ** 4)
+        term_ux = ux_average ** 2
+        variance = term_uy + term_beta + term_ux
+        if variance < 0:
+            return None
+        return math.sqrt(variance)
+
     def _ensure_inverse_row_items(self, row):
         y0_item = self.inverse_table.item(row, 0)
         if y0_item is None:
@@ -579,18 +620,26 @@ class RegressionTab(BaseTab):
             x0_item = QTableWidgetItem("--")
             self._set_readonly_item(x0_item)
             self.inverse_table.setItem(row, 1, x0_item)
+        ux0_item = self.inverse_table.item(row, 2)
+        if ux0_item is None:
+            ux0_item = QTableWidgetItem("--")
+            self._set_readonly_item(ux0_item)
+            self.inverse_table.setItem(row, 2, ux0_item)
 
     def on_inverse_table_changed(self, item):
         if self._updating or item.column() != 0:
             return
         x0_item = self.inverse_table.item(item.row(), 1)
-        if x0_item is None:
+        ux0_item = self.inverse_table.item(item.row(), 2)
+        if x0_item is None or ux0_item is None:
             return
         y0_value = self._parse_float(item.text())
         x0_value = self._calculate_inverse_x0(y0_value)
+        ux0_value = self._calculate_inverse_ux0(y0_value)
         self._updating = True
         try:
-            x0_item.setText("--" if x0_value is None else f"{x0_value:.6g}")
+            x0_item.setText("--" if x0_value is None else f"{x0_value:.12g}")
+            ux0_item.setText("--" if ux0_value is None else f"{ux0_value:.12g}")
         finally:
             self._updating = False
         self._update_inverse_model_data()
@@ -637,7 +686,7 @@ class RegressionTab(BaseTab):
         if not hasattr(self, "inverse_table"):
             return
         self.inverse_table.setHorizontalHeaderLabels(
-            [self.tr(REGRESSION_Y0), self.tr(REGRESSION_X0)]
+            [self.tr(REGRESSION_Y0), self.tr(REGRESSION_X0), self.tr(REGRESSION_UX0)]
         )
 
     def _notify_regressions_updated(self):

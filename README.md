@@ -19,6 +19,7 @@ The software also supports batch calculations of calibration uncertainty across 
 3. Automatic calculation of sensitivity coefficients
 4. Automatic calculation of uncertainty propagation equations
 5. Display and export of budget sheets
+6. Linear regression tools for calibration data (model management, CSV import, inverse estimation)
 
 ## System Requirements
 
@@ -214,12 +215,37 @@ For operational use, when ν\_eff is 10 or higher, the coverage factor is treate
 
    * The "Uncertainty Calculation" tab creates a budget sheet for a selected calibration point.
 
-6. **Document Information**
+6. **Regression**
+
+   * Create, copy, and delete regression models and edit descriptions and x/y units.
+   * Enter calibration data in a table with `x`, `u(x)`, and `y`; add/remove rows as needed.
+   * Import CSV data by pasting text (`x, u(x), y` or `x, y` format; requires at least two points).
+   * Review computed results: intercept, slope, Significance F (p-value), residual variance, means, and uncertainty terms.
+   * Perform inverse estimation: input `y0` values and read back estimated `x0` and `u(x0)`; add/remove rows.
+   * Formulas used in the calculations:
+
+```text
+Linear model: y = βx + α
+Mean values: x̄ = (1/n) Σ xᵢ, ȳ = (1/n) Σ yᵢ
+Sxx = Σ (xᵢ - x̄)²
+β = Σ[(xᵢ - x̄)(yᵢ - ȳ)] / Sxx
+α = ȳ - β x̄
+Residuals: rᵢ = yᵢ - (β xᵢ + α)
+Residual variance: s² = Σ rᵢ² / (n - 2)  (n ≥ 3), s = √s²
+Significance F: SSR = Σ(ŷᵢ - ȳ)², SSE = Σ rᵢ², MSE = SSE/(n-2), F = SSR/MSE
+u(β) = √(s² / Sxx)
+ūx = (1/n) Σ u(xᵢ)
+ūy = √(s² / n)
+Inverse estimation: x₀ = (y₀ - ȳ)/β + x̄
+u(x₀) = √( ūy²/β² + (y₀ - ȳ)² u(β)² / β⁴ + ūx² )
+```
+
+7. **Document Information**
 
    * The "Document Info" tab lets you record document metadata for reports, including document number, document name, version, and a description (Markdown supported).
    * Enter revision history as CSV rows (version, description, author, checker, approver, date) to include in generated reports.
 
-7. **Report**
+8. **Report**
 
    * The "Report" function generates a batch budget for all calibration points of a selected result quantity.
    * Export results as HTML files.
