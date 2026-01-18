@@ -369,6 +369,7 @@ class UncertaintyCalculationTab(BaseTab):
             left_side = left_side.strip()
             right_side = right_side.strip()
             result_var = left_side
+            result_unit = self._get_unit(result_var)
             
             # 変数を抽出
             variables = self.equation_handler.get_variables_from_equation(right_side)
@@ -407,7 +408,7 @@ class UncertaintyCalculationTab(BaseTab):
                     self.calibration_table.setItem(i, 3, QTableWidgetItem('--'))  # 自由度
                     self.calibration_table.setItem(i, 4, QTableWidgetItem('--'))  # 分布
                     self.calibration_table.setItem(i, 5, QTableWidgetItem('--'))  # 感度係数
-                    self._set_display_only_item(i, 6, "--", unit)  # 寄与不確かさ
+                    self._set_display_only_item(i, 6, "--", result_unit)  # 寄与不確かさ
                     contributions.append(0)
                     degrees_of_freedom_list.append(0)
                     continue
@@ -420,7 +421,7 @@ class UncertaintyCalculationTab(BaseTab):
                     self.calibration_table.setItem(i, 3, QTableWidgetItem('--'))  # 自由度
                     self.calibration_table.setItem(i, 4, QTableWidgetItem('--'))  # 分布
                     self.calibration_table.setItem(i, 5, QTableWidgetItem('--'))  # 感度係数
-                    self._set_display_only_item(i, 6, "--", unit)  # 寄与不確かさ
+                    self._set_display_only_item(i, 6, "--", result_unit)  # 寄与不確かさ
                     contributions.append(0)
                     degrees_of_freedom_list.append(0)
                     continue
@@ -457,13 +458,13 @@ class UncertaintyCalculationTab(BaseTab):
                     if standard_uncertainty and sensitivity:
                         contribution = float(standard_uncertainty) * float(sensitivity)
                         contribution_display = format_standard_uncertainty(contribution)
-                        self._set_display_only_item(i, 6, contribution_display, unit)
+                        self._set_display_only_item(i, 6, contribution_display, result_unit)
                         contributions.append(contribution)
                     else:
-                        self._set_display_only_item(i, 6, "--", unit)
+                        self._set_display_only_item(i, 6, "--", result_unit)
                         contributions.append(0)
                 except (ValueError, TypeError) as e:
-                    self._set_display_only_item(i, 6, "--", unit)
+                    self._set_display_only_item(i, 6, "--", result_unit)
                     contributions.append(0)
             
             # 合成標準不確かさの計算

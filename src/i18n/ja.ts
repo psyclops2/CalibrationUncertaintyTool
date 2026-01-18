@@ -85,6 +85,10 @@
         <translation>モデル式</translation>
     </message>
     <message>
+        <source>TAB_REGRESSION</source>
+        <translation>回帰モデル</translation>
+    </message>
+    <message>
         <source>TAB_VARIABLES</source>
         <translation>変数管理</translation>
     </message>
@@ -105,6 +109,10 @@
         <translation>校正点設定</translation>
     </message>
     <message>
+        <source>DOCUMENT_INFO_TAB</source>
+        <translation>文書情報</translation>
+    </message>
+    <message>
         <source>BUTTON_SAVE</source>
         <translation>保存</translation>
     </message>
@@ -115,6 +123,18 @@
     <message>
         <source>MESSAGE_SUCCESS</source>
         <translation>成功</translation>
+    </message>
+    <message>
+        <source>MESSAGE_WARNING</source>
+        <translation>警告</translation>
+    </message>
+    <message>
+        <source>MESSAGE_INFO</source>
+        <translation>情報</translation>
+    </message>
+    <message>
+        <source>MESSAGE_CONFIRM</source>
+        <translation>確認</translation>
     </message>
     <message>
         <source>FILE_LOADED</source>
@@ -174,6 +194,37 @@
     <message>
         <source>VARIABLE_ORDER_LOAD_FAILED</source>
         <translation>変数の並び順の読み込みに失敗しました。</translation>
+    </message>
+</context>
+<context>
+    <name>DocumentInfoTab</name>
+    <message>
+        <source>DOCUMENT_NUMBER</source>
+        <translation>文書番号</translation>
+    </message>
+    <message>
+        <source>DOCUMENT_NAME</source>
+        <translation>文書名</translation>
+    </message>
+    <message>
+        <source>VERSION_INFO</source>
+        <translation>バージョン情報</translation>
+    </message>
+    <message>
+        <source>DESCRIPTION_LABEL</source>
+        <translation>説明文 (Markdownのみ)</translation>
+    </message>
+    <message>
+        <source>REVISION_HISTORY</source>
+        <translation>改訂履歴</translation>
+    </message>
+    <message>
+        <source>REVISION_HISTORY_PLACEHOLDER</source>
+        <translation>v1,説明文,作成者,照査者,承認者,2024-01-01</translation>
+    </message>
+    <message>
+        <source>REVISION_HISTORY_INSTRUCTION</source>
+        <translation>各行を「ver,説明文,作成者,照査者,承認者,改定日」の形式で入力してください。</translation>
     </message>
 </context>
 <context>
@@ -260,19 +311,19 @@
     </message>
     <message>
         <source>NORMAL_DISTRIBUTION</source>
-        <translation>Normal Distribution</translation>
+        <translation>正規分布</translation>
     </message>
     <message>
         <source>RECTANGULAR_DISTRIBUTION</source>
-        <translation>Rectangular Distribution</translation>
+        <translation>矩形分布</translation>
     </message>
     <message>
         <source>TRIANGULAR_DISTRIBUTION</source>
-        <translation>Triangular Distribution</translation>
+        <translation>三角分布</translation>
     </message>
     <message>
         <source>U_DISTRIBUTION</source>
-        <translation>U-shaped Distribution</translation>
+        <translation>U字型分布</translation>
     </message>
     <message>
         <source>DIVISOR</source>
@@ -291,6 +342,42 @@
         <translation>計算</translation>
     </message>
     <message>
+        <source>USE_REGRESSION</source>
+        <translation>回帰モデルから取得</translation>
+    </message>
+    <message>
+        <source>VALUE_SOURCE</source>
+        <translation>値のソース</translation>
+    </message>
+    <message>
+        <source>SOURCE_MANUAL</source>
+        <translation>手入力</translation>
+    </message>
+    <message>
+        <source>SOURCE_REGRESSION</source>
+        <translation>回帰式</translation>
+    </message>
+    <message>
+        <source>REGRESSION_MODEL</source>
+        <translation>回帰モデル</translation>
+    </message>
+    <message>
+        <source>REGRESSION_X_MODE</source>
+        <translation>xの取り方</translation>
+    </message>
+    <message>
+        <source>REGRESSION_X_MODE_POINT_NAME</source>
+        <translation>校正点名をそのまま数値とみなす</translation>
+    </message>
+    <message>
+        <source>REGRESSION_X_MODE_FIXED</source>
+        <translation>固定値を指定する</translation>
+    </message>
+    <message>
+        <source>REGRESSION_X_VALUE</source>
+        <translation>回帰モデルのx</translation>
+    </message>
+    <message>
         <source>BUTTON_ADD</source>
         <translation>追加</translation>
     </message>
@@ -305,6 +392,177 @@
     <message>
         <source>LABEL_UNIT</source>
         <translation>単位</translation>
+    </message>
+</context>
+<context>
+    <name>RegressionTab</name>
+    <message>
+        <source>REGRESSION_TAB</source>
+        <translation>回帰モデル</translation>
+    </message>
+    <message>
+        <source>REGRESSION_LIST</source>
+        <translation>回帰モデル一覧</translation>
+    </message>
+    <message>
+        <source>REGRESSION_DETAILS</source>
+        <translation>回帰モデル詳細</translation>
+    </message>
+    <message>
+        <source>REGRESSION_NAME</source>
+        <translation>回帰モデル名</translation>
+    </message>
+    <message>
+        <source>REGRESSION_DESCRIPTION</source>
+        <translation>説明</translation>
+    </message>
+    <message>
+        <source>REGRESSION_MODE</source>
+        <translation>モード</translation>
+    </message>
+    <message>
+        <source>REGRESSION_X_UNIT</source>
+        <translation>X単位</translation>
+    </message>
+    <message>
+        <source>REGRESSION_Y_UNIT</source>
+        <translation>Y単位</translation>
+    </message>
+    <message>
+        <source>REGRESSION_USE_WEIGHTS</source>
+        <translation>重み付き最小二乗法</translation>
+    </message>
+    <message>
+        <source>REGRESSION_INVERT</source>
+        <translation>反転</translation>
+    </message>
+    <message>
+        <source>REGRESSION_DATA</source>
+        <translation>データ</translation>
+    </message>
+    <message>
+        <source>REGRESSION_ADD_MODEL</source>
+        <translation>回帰モデル追加</translation>
+    </message>
+    <message>
+        <source>REGRESSION_REMOVE_MODEL</source>
+        <translation>回帰モデル削除</translation>
+    </message>
+    <message>
+        <source>REGRESSION_ADD_ROW</source>
+        <translation>行追加</translation>
+    </message>
+    <message>
+        <source>REGRESSION_REMOVE_ROW</source>
+        <translation>行削除</translation>
+    </message>
+    <message>
+        <source>REGRESSION_NAME_REQUIRED</source>
+        <translation>回帰モデル名を入力してください。</translation>
+    </message>
+    <message>
+        <source>REGRESSION_NAME_DUPLICATE</source>
+        <translation>同名の回帰モデルが既に存在します。</translation>
+    </message>
+    <message>
+        <source>REGRESSION_REMOVE_CONFIRM</source>
+        <translation>回帰モデル「{name}」を削除しますか？</translation>
+    </message>
+    <message>
+        <source>REGRESSION_COPY_MODEL</source>
+        <translation>コピー</translation>
+    </message>
+    <message>
+        <source>REGRESSION_IMPORT_CSV</source>
+        <translation>CSVからインポート</translation>
+    </message>
+    <message>
+        <source>REGRESSION_SELECT_MODEL_FIRST</source>
+        <translation>まず回帰モデルを選択してください。</translation>
+    </message>
+    <message>
+        <source>REGRESSION_CSV_INSTRUCTION</source>
+        <translation>CSV形式でデータを入力してください（x, y または x, y, ux, uy）</translation>
+    </message>
+    <message>
+        <source>REGRESSION_CSV_PARSE_ERROR</source>
+        <translation>行の解析エラー: {line}</translation>
+    </message>
+    <message>
+        <source>REGRESSION_CSV_MIN_DATA_POINTS</source>
+        <translation>データポイントは2つ以上必要です。</translation>
+    </message>
+    <message>
+        <source>REGRESSION_CSV_IMPORT_SUCCESS</source>
+        <translation>CSVデータのインポートに成功しました。</translation>
+    </message>
+    <message>
+        <source>REGRESSION_CSV_IMPORT_ERROR</source>
+        <translation>CSVデータのインポートエラー</translation>
+    </message>
+    <message>
+        <source>REGRESSION_RESULT</source>
+        <translation>計算結果</translation>
+    </message>
+    <message>
+        <source>REGRESSION_INTERCEPT</source>
+        <translation>切片α</translation>
+    </message>
+    <message>
+        <source>REGRESSION_SLOPE</source>
+        <translation>傾きβ</translation>
+    </message>
+    <message>
+        <source>REGRESSION_SIGNIFICANCE_F</source>
+        <translation>優位F</translation>
+    </message>
+    <message>
+        <source>REGRESSION_U_INTERCEPT</source>
+        <translation>u(x)切片αu</translation>
+    </message>
+    <message>
+        <source>REGRESSION_U_SLOPE</source>
+        <translation>u(x)傾きβu</translation>
+    </message>
+    <message>
+        <source>REGRESSION_U_SIGNIFICANCE_F</source>
+        <translation>u(x)優位F</translation>
+    </message>
+    <message>
+        <source>REGRESSION_INVERSE_ESTIMATION</source>
+        <translation>逆推定</translation>
+    </message>
+    <message>
+        <source>REGRESSION_Y0</source>
+        <translation>y0</translation>
+    </message>
+    <message>
+        <source>REGRESSION_X0</source>
+        <translation>x0</translation>
+    </message>
+    <message>
+        <source>REGRESSION_X_AVERAGE</source>
+        <translation>x平均</translation>
+    </message>
+    <message>
+        <source>REGRESSION_Y_AVERAGE</source>
+        <translation>y平均</translation>
+    </message>
+    <message>
+        <source>REGRESSION_RESIDUAL_VARIANCE</source>
+        <translation>残差の分散</translation>
+    </message>
+    <message>
+        <source>REGRESSION_UX_AVERAGE</source>
+        <translation>u(x̄)</translation>
+    </message>
+    <message>
+        <source>REGRESSION_UY_AVERAGE</source>
+        <translation>u(ȳ)</translation>
+    </message>
+    <message>
+        <source>REGRESSION_U_BETA</source>
+        <translation>u(β)</translation>
     </message>
 </context>
 <context>
@@ -367,6 +625,22 @@
     <message>
         <source>DISTRIBUTION</source>
         <translation>分布</translation>
+    </message>
+    <message>
+        <source>NORMAL_DISTRIBUTION</source>
+        <translation>正規分布</translation>
+    </message>
+    <message>
+        <source>RECTANGULAR_DISTRIBUTION</source>
+        <translation>矩形分布</translation>
+    </message>
+    <message>
+        <source>TRIANGULAR_DISTRIBUTION</source>
+        <translation>三角分布</translation>
+    </message>
+    <message>
+        <source>U_DISTRIBUTION</source>
+        <translation>U字型分布</translation>
     </message>
     <message>
         <source>SENSITIVITY_COEFFICIENT</source>
@@ -452,6 +726,10 @@
         <translation>校正不確かさ計算レポート</translation>
     </message>
     <message>
+        <source>REPORT_DOCUMENT_INFO</source>
+        <translation>文書情報</translation>
+    </message>
+    <message>
         <source>REPORT_MODEL_EQUATION</source>
         <translation>数式モデル</translation>
     </message>
@@ -474,6 +752,34 @@
     <message>
         <source>REPORT_CALCULATION_RESULT</source>
         <translation>計算結果</translation>
+    </message>
+    <message>
+        <source>REPORT_REVISION_HISTORY</source>
+        <translation>改訂履歴</translation>
+    </message>
+    <message>
+        <source>REPORT_REGRESSION_MODELS</source>
+        <translation>回帰モデル一覧</translation>
+    </message>
+    <message>
+        <source>REPORT_REGRESSION_DATA_COUNT</source>
+        <translation>データ点数</translation>
+    </message>
+    <message>
+        <source>REPORT_REGRESSION_SLOPE</source>
+        <translation>傾き</translation>
+    </message>
+    <message>
+        <source>REPORT_REGRESSION_INTERCEPT</source>
+        <translation>切片</translation>
+    </message>
+    <message>
+        <source>REPORT_REGRESSION_DOF</source>
+        <translation>自由度</translation>
+    </message>
+    <message>
+        <source>REPORT_REGRESSION_RESIDUAL_STD</source>
+        <translation>残差標準偏差</translation>
     </message>
     <message>
         <source>REPORT_QUANTITY</source>
@@ -536,6 +842,46 @@
         <translation>項目</translation>
     </message>
     <message>
+        <source>DOCUMENT_NUMBER</source>
+        <translation>文書番号</translation>
+    </message>
+    <message>
+        <source>DOCUMENT_NAME</source>
+        <translation>文書名</translation>
+    </message>
+    <message>
+        <source>VERSION_INFO</source>
+        <translation>バージョン情報</translation>
+    </message>
+    <message>
+        <source>DESCRIPTION_LABEL</source>
+        <translation>説明</translation>
+    </message>
+    <message>
+        <source>REVISION_VERSION</source>
+        <translation>版</translation>
+    </message>
+    <message>
+        <source>REVISION_DESCRIPTION</source>
+        <translation>説明</translation>
+    </message>
+    <message>
+        <source>REVISION_AUTHOR</source>
+        <translation>作成者</translation>
+    </message>
+    <message>
+        <source>REVISION_CHECKER</source>
+        <translation>照査者</translation>
+    </message>
+    <message>
+        <source>REVISION_APPROVER</source>
+        <translation>承認者</translation>
+    </message>
+    <message>
+        <source>REVISION_DATE</source>
+        <translation>改定日</translation>
+    </message>
+    <message>
         <source>DETAIL_DESCRIPTION</source>
         <translation>詳細説明</translation>
     </message>
@@ -550,6 +896,30 @@
     <message>
         <source>FIXED_VALUE</source>
         <translation>固定値</translation>
+    </message>
+    <message>
+        <source>REGRESSION_MODEL</source>
+        <translation>回帰モデル</translation>
+    </message>
+    <message>
+        <source>REGRESSION_X_VALUE</source>
+        <translation>回帰モデルのx</translation>
+    </message>
+    <message>
+        <source>NORMAL_DISTRIBUTION</source>
+        <translation>正規分布</translation>
+    </message>
+    <message>
+        <source>RECTANGULAR_DISTRIBUTION</source>
+        <translation>矩形分布</translation>
+    </message>
+    <message>
+        <source>TRIANGULAR_DISTRIBUTION</source>
+        <translation>三角分布</translation>
+    </message>
+    <message>
+        <source>U_DISTRIBUTION</source>
+        <translation>U字型分布</translation>
     </message>
     <message>
         <source>REPORT_CALIBRATION_POINT</source>
@@ -590,6 +960,10 @@
     <message>
         <source>FIXED_VALUE_DISPLAY</source>
         <translation>固定値</translation>
+    </message>
+    <message>
+        <source>REGRESSION_VALUE_DISPLAY</source>
+        <translation>回帰モデル</translation>
     </message>
     <message>
         <source>UNKNOWN_TYPE</source>

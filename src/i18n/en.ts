@@ -85,6 +85,10 @@ Please restart the application to apply the changes.</translation>
         <translation>Model Equation</translation>
     </message>
     <message>
+        <source>TAB_REGRESSION</source>
+        <translation>Regression</translation>
+    </message>
+    <message>
         <source>TAB_VARIABLES</source>
         <translation>Variable Management</translation>
     </message>
@@ -105,6 +109,10 @@ Please restart the application to apply the changes.</translation>
         <translation>Point Settings</translation>
     </message>
     <message>
+        <source>DOCUMENT_INFO_TAB</source>
+        <translation>Document Info</translation>
+    </message>
+    <message>
         <source>BUTTON_SAVE</source>
         <translation>Save</translation>
     </message>
@@ -115,6 +123,18 @@ Please restart the application to apply the changes.</translation>
     <message>
         <source>MESSAGE_SUCCESS</source>
         <translation>Success</translation>
+    </message>
+    <message>
+        <source>MESSAGE_WARNING</source>
+        <translation>Warning</translation>
+    </message>
+    <message>
+        <source>MESSAGE_INFO</source>
+        <translation>Information</translation>
+    </message>
+    <message>
+        <source>MESSAGE_CONFIRM</source>
+        <translation>Confirm</translation>
     </message>
     <message>
         <source>FILE_LOADED</source>
@@ -174,6 +194,37 @@ Please restart the application to apply the changes.</translation>
     <message>
         <source>VARIABLE_ORDER_LOAD_FAILED</source>
         <translation>Failed to load variable order.</translation>
+    </message>
+</context>
+<context>
+    <name>DocumentInfoTab</name>
+    <message>
+        <source>DOCUMENT_NUMBER</source>
+        <translation>Document Number</translation>
+    </message>
+    <message>
+        <source>DOCUMENT_NAME</source>
+        <translation>Document Name</translation>
+    </message>
+    <message>
+        <source>VERSION_INFO</source>
+        <translation>Version Info</translation>
+    </message>
+    <message>
+        <source>DESCRIPTION_LABEL</source>
+        <translation>Description (Markdown only)</translation>
+    </message>
+    <message>
+        <source>REVISION_HISTORY</source>
+        <translation>Revision History</translation>
+    </message>
+    <message>
+        <source>REVISION_HISTORY_PLACEHOLDER</source>
+        <translation>v1,Description,Author,Reviewer,Approver,2024-01-01</translation>
+    </message>
+    <message>
+        <source>REVISION_HISTORY_INSTRUCTION</source>
+        <translation>Enter each line as 'ver,description,author,reviewer,approver,date'.</translation>
     </message>
 </context>
 <context>
@@ -291,6 +342,42 @@ Please restart the application to apply the changes.</translation>
         <translation>Calculate</translation>
     </message>
     <message>
+        <source>USE_REGRESSION</source>
+        <translation>Use regression model</translation>
+    </message>
+    <message>
+        <source>VALUE_SOURCE</source>
+        <translation>Value source</translation>
+    </message>
+    <message>
+        <source>SOURCE_MANUAL</source>
+        <translation>Manual input</translation>
+    </message>
+    <message>
+        <source>SOURCE_REGRESSION</source>
+        <translation>Regression</translation>
+    </message>
+    <message>
+        <source>REGRESSION_MODEL</source>
+        <translation>Regression model</translation>
+    </message>
+    <message>
+        <source>REGRESSION_X_MODE</source>
+        <translation>x mode</translation>
+    </message>
+    <message>
+        <source>REGRESSION_X_MODE_POINT_NAME</source>
+        <translation>Use calibration point name as numeric value</translation>
+    </message>
+    <message>
+        <source>REGRESSION_X_MODE_FIXED</source>
+        <translation>Specify fixed value</translation>
+    </message>
+    <message>
+        <source>REGRESSION_X_VALUE</source>
+        <translation>Regression x</translation>
+    </message>
+    <message>
         <source>BUTTON_ADD</source>
         <translation>Add</translation>
     </message>
@@ -305,6 +392,177 @@ Please restart the application to apply the changes.</translation>
     <message>
         <source>LABEL_UNIT</source>
         <translation>Unit</translation>
+    </message>
+</context>
+<context>
+    <name>RegressionTab</name>
+    <message>
+        <source>REGRESSION_TAB</source>
+        <translation>Regression</translation>
+    </message>
+    <message>
+        <source>REGRESSION_LIST</source>
+        <translation>Regression Models</translation>
+    </message>
+    <message>
+        <source>REGRESSION_DETAILS</source>
+        <translation>Regression Details</translation>
+    </message>
+    <message>
+        <source>REGRESSION_NAME</source>
+        <translation>Regression Name</translation>
+    </message>
+    <message>
+        <source>REGRESSION_DESCRIPTION</source>
+        <translation>Description</translation>
+    </message>
+    <message>
+        <source>REGRESSION_MODE</source>
+        <translation>Mode</translation>
+    </message>
+    <message>
+        <source>REGRESSION_X_UNIT</source>
+        <translation>X Unit</translation>
+    </message>
+    <message>
+        <source>REGRESSION_Y_UNIT</source>
+        <translation>Y Unit</translation>
+    </message>
+    <message>
+        <source>REGRESSION_USE_WEIGHTS</source>
+        <translation>Weighted least squares</translation>
+    </message>
+    <message>
+        <source>REGRESSION_INVERT</source>
+        <translation>Invert</translation>
+    </message>
+    <message>
+        <source>REGRESSION_DATA</source>
+        <translation>Data</translation>
+    </message>
+    <message>
+        <source>REGRESSION_ADD_MODEL</source>
+        <translation>Add Model</translation>
+    </message>
+    <message>
+        <source>REGRESSION_REMOVE_MODEL</source>
+        <translation>Remove Model</translation>
+    </message>
+    <message>
+        <source>REGRESSION_ADD_ROW</source>
+        <translation>Add Row</translation>
+    </message>
+    <message>
+        <source>REGRESSION_REMOVE_ROW</source>
+        <translation>Remove Row</translation>
+    </message>
+    <message>
+        <source>REGRESSION_NAME_REQUIRED</source>
+        <translation>Please enter a regression model name.</translation>
+    </message>
+    <message>
+        <source>REGRESSION_NAME_DUPLICATE</source>
+        <translation>A regression model with this name already exists.</translation>
+    </message>
+    <message>
+        <source>REGRESSION_REMOVE_CONFIRM</source>
+        <translation>Remove regression model "{name}"?</translation>
+    </message>
+    <message>
+        <source>REGRESSION_COPY_MODEL</source>
+        <translation>Copy</translation>
+    </message>
+    <message>
+        <source>REGRESSION_IMPORT_CSV</source>
+        <translation>Import from CSV</translation>
+    </message>
+    <message>
+        <source>REGRESSION_SELECT_MODEL_FIRST</source>
+        <translation>Please select a regression model first.</translation>
+    </message>
+    <message>
+        <source>REGRESSION_CSV_INSTRUCTION</source>
+        <translation>Enter data in CSV format (x, y or x, y, ux, uy)</translation>
+    </message>
+    <message>
+        <source>REGRESSION_CSV_PARSE_ERROR</source>
+        <translation>Parse error on line: {line}</translation>
+    </message>
+    <message>
+        <source>REGRESSION_CSV_MIN_DATA_POINTS</source>
+        <translation>At least 2 data points are required.</translation>
+    </message>
+    <message>
+        <source>REGRESSION_CSV_IMPORT_SUCCESS</source>
+        <translation>CSV data imported successfully.</translation>
+    </message>
+    <message>
+        <source>REGRESSION_CSV_IMPORT_ERROR</source>
+        <translation>CSV import error</translation>
+    </message>
+    <message>
+        <source>REGRESSION_RESULT</source>
+        <translation>Calculation Result</translation>
+    </message>
+    <message>
+        <source>REGRESSION_INTERCEPT</source>
+        <translation>Intercept α</translation>
+    </message>
+    <message>
+        <source>REGRESSION_SLOPE</source>
+        <translation>Slope β</translation>
+    </message>
+    <message>
+        <source>REGRESSION_SIGNIFICANCE_F</source>
+        <translation>Significance F</translation>
+    </message>
+    <message>
+        <source>REGRESSION_U_INTERCEPT</source>
+        <translation>u(x) intercept αu</translation>
+    </message>
+    <message>
+        <source>REGRESSION_U_SLOPE</source>
+        <translation>u(x) slope βu</translation>
+    </message>
+    <message>
+        <source>REGRESSION_U_SIGNIFICANCE_F</source>
+        <translation>u(x) Significance F</translation>
+    </message>
+    <message>
+        <source>REGRESSION_INVERSE_ESTIMATION</source>
+        <translation>Inverse Estimation</translation>
+    </message>
+    <message>
+        <source>REGRESSION_Y0</source>
+        <translation>y0</translation>
+    </message>
+    <message>
+        <source>REGRESSION_X0</source>
+        <translation>x0</translation>
+    </message>
+    <message>
+        <source>REGRESSION_X_AVERAGE</source>
+        <translation>x average</translation>
+    </message>
+    <message>
+        <source>REGRESSION_Y_AVERAGE</source>
+        <translation>y average</translation>
+    </message>
+    <message>
+        <source>REGRESSION_RESIDUAL_VARIANCE</source>
+        <translation>Residual variance</translation>
+    </message>
+    <message>
+        <source>REGRESSION_UX_AVERAGE</source>
+        <translation>u(x̄)</translation>
+    </message>
+    <message>
+        <source>REGRESSION_UY_AVERAGE</source>
+        <translation>u(ȳ)</translation>
+    </message>
+    <message>
+        <source>REGRESSION_U_BETA</source>
+        <translation>u(β)</translation>
     </message>
 </context>
 <context>
@@ -369,6 +627,22 @@ Please restart the application to apply the changes.</translation>
         <translation>Distribution</translation>
     </message>
     <message>
+        <source>NORMAL_DISTRIBUTION</source>
+        <translation>Normal Distribution</translation>
+    </message>
+    <message>
+        <source>RECTANGULAR_DISTRIBUTION</source>
+        <translation>Rectangular Distribution</translation>
+    </message>
+    <message>
+        <source>TRIANGULAR_DISTRIBUTION</source>
+        <translation>Triangular Distribution</translation>
+    </message>
+    <message>
+        <source>U_DISTRIBUTION</source>
+        <translation>U-shaped Distribution</translation>
+    </message>
+    <message>
         <source>SENSITIVITY_COEFFICIENT</source>
         <translation>Sensitivity Coefficient</translation>
     </message>
@@ -406,6 +680,10 @@ Please restart the application to apply the changes.</translation>
     <message>
         <source>GENERATE_REPORT</source>
         <translation>Generate Report</translation>
+    </message>
+    <message>
+        <source>RESULT_VARIABLE</source>
+        <translation>Result Variable</translation>
     </message>
     <message>
         <source>SAVE_REPORT</source>
@@ -448,6 +726,10 @@ Please restart the application to apply the changes.</translation>
         <translation>Calibration Uncertainty Calculation Report</translation>
     </message>
     <message>
+        <source>REPORT_DOCUMENT_INFO</source>
+        <translation>Document Information</translation>
+    </message>
+    <message>
         <source>REPORT_MODEL_EQUATION</source>
         <translation>Model Equation</translation>
     </message>
@@ -470,6 +752,34 @@ Please restart the application to apply the changes.</translation>
     <message>
         <source>REPORT_CALCULATION_RESULT</source>
         <translation>Calculation Result</translation>
+    </message>
+    <message>
+        <source>REPORT_REVISION_HISTORY</source>
+        <translation>Revision History</translation>
+    </message>
+    <message>
+        <source>REPORT_REGRESSION_MODELS</source>
+        <translation>Regression Models</translation>
+    </message>
+    <message>
+        <source>REPORT_REGRESSION_DATA_COUNT</source>
+        <translation>Data Points</translation>
+    </message>
+    <message>
+        <source>REPORT_REGRESSION_SLOPE</source>
+        <translation>Slope</translation>
+    </message>
+    <message>
+        <source>REPORT_REGRESSION_INTERCEPT</source>
+        <translation>Intercept</translation>
+    </message>
+    <message>
+        <source>REPORT_REGRESSION_DOF</source>
+        <translation>Degrees of Freedom</translation>
+    </message>
+    <message>
+        <source>REPORT_REGRESSION_RESIDUAL_STD</source>
+        <translation>Residual Std Dev</translation>
     </message>
     <message>
         <source>REPORT_QUANTITY</source>
@@ -532,6 +842,46 @@ Please restart the application to apply the changes.</translation>
         <translation>Item</translation>
     </message>
     <message>
+        <source>DOCUMENT_NUMBER</source>
+        <translation>Document Number</translation>
+    </message>
+    <message>
+        <source>DOCUMENT_NAME</source>
+        <translation>Document Name</translation>
+    </message>
+    <message>
+        <source>VERSION_INFO</source>
+        <translation>Version Info</translation>
+    </message>
+    <message>
+        <source>DESCRIPTION_LABEL</source>
+        <translation>Description</translation>
+    </message>
+    <message>
+        <source>REVISION_VERSION</source>
+        <translation>Version</translation>
+    </message>
+    <message>
+        <source>REVISION_DESCRIPTION</source>
+        <translation>Description</translation>
+    </message>
+    <message>
+        <source>REVISION_AUTHOR</source>
+        <translation>Author</translation>
+    </message>
+    <message>
+        <source>REVISION_CHECKER</source>
+        <translation>Reviewer</translation>
+    </message>
+    <message>
+        <source>REVISION_APPROVER</source>
+        <translation>Approver</translation>
+    </message>
+    <message>
+        <source>REVISION_DATE</source>
+        <translation>Revised Date</translation>
+    </message>
+    <message>
         <source>DETAIL_DESCRIPTION</source>
         <translation>Detailed Description</translation>
     </message>
@@ -546,6 +896,30 @@ Please restart the application to apply the changes.</translation>
     <message>
         <source>FIXED_VALUE</source>
         <translation>Fixed Value</translation>
+    </message>
+    <message>
+        <source>REGRESSION_MODEL</source>
+        <translation>Regression model</translation>
+    </message>
+    <message>
+        <source>REGRESSION_X_VALUE</source>
+        <translation>Regression x</translation>
+    </message>
+    <message>
+        <source>NORMAL_DISTRIBUTION</source>
+        <translation>Normal Distribution</translation>
+    </message>
+    <message>
+        <source>RECTANGULAR_DISTRIBUTION</source>
+        <translation>Rectangular Distribution</translation>
+    </message>
+    <message>
+        <source>TRIANGULAR_DISTRIBUTION</source>
+        <translation>Triangular Distribution</translation>
+    </message>
+    <message>
+        <source>U_DISTRIBUTION</source>
+        <translation>U-shaped Distribution</translation>
     </message>
     <message>
         <source>REPORT_CALIBRATION_POINT</source>
@@ -586,6 +960,10 @@ Please restart the application to apply the changes.</translation>
     <message>
         <source>FIXED_VALUE_DISPLAY</source>
         <translation>Fixed Value</translation>
+    </message>
+    <message>
+        <source>REGRESSION_VALUE_DISPLAY</source>
+        <translation>Regression</translation>
     </message>
     <message>
         <source>UNKNOWN_TYPE</source>

@@ -113,7 +113,11 @@ def create_empty_value_dict():
         'calculation_formula': '',
         'divisor': '',
         'regression_model': '',
-        'regression_x': ''
+        'regression_x': '',
+        'source': 'manual',  # 'manual' または 'regression'
+        'regression_id': '',  # 回帰モデルID
+        'regression_x_mode': 'fixed',  # 'point_name', 'fixed', 'variable'（将来拡張用）
+        'regression_x_value': ''  # xの値（固定値の場合）
     }
 
 def find_variable_item(variable_list, variable_name):

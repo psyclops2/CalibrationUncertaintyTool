@@ -242,6 +242,7 @@ class MainWindow(QMainWindow):
                 if var not in self.result_variables:
                     self.ensure_variable_initialized(var)
             # 分布データを翻訳キーに正規化
+            # 既存のJSONファイルとの互換性のため、sourceフィールドを補完
             for var_name, var_data in self.variable_values.items():
                 if not isinstance(var_data, dict):
                     continue
@@ -250,6 +251,30 @@ class MainWindow(QMainWindow):
                     normalized = get_distribution_translation_key(distribution)
                     if normalized:
                         var_data['distribution'] = normalized
+                
+                # sourceフィールドの補完（既存データとの互換性）
+                values = var_data.get('values', [])
+                if isinstance(values, list):
+                    use_regression = var_data.get('use_regression', False)
+                    var_type = var_data.get('type', 'A')
+                    for value_info in values:
+                        if not isinstance(value_info, dict):
+                            continue
+                        # sourceフィールドが存在しない場合は補完
+                        if 'source' not in value_info:
+                            if use_regression or var_type == 'regression':
+                                value_info['source'] = 'regression'
+                            else:
+                                value_info['source'] = 'manual'
+                        # regression_idが存在しない場合はregression_modelから補完
+                        if 'regression_id' not in value_info and 'regression_model' in value_info:
+                            value_info['regression_id'] = value_info['regression_model']
+                        # regression_x_modeが存在しない場合は'fixed'をデフォルト
+                        if 'regression_x_mode' not in value_info:
+                            value_info['regression_x_mode'] = 'fixed'
+                        # regression_x_valueが存在しない場合はregression_xから補完
+                        if 'regression_x_value' not in value_info and 'regression_x' in value_info:
+                            value_info['regression_x_value'] = value_info['regression_x']
             # 不確かさ計算タブの計算・テーブル再構築
             if hasattr(self, 'uncertainty_calculation_tab'):
                 self.uncertainty_calculation_tab.update_result_combo()

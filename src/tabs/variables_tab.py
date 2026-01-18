@@ -45,8 +45,8 @@ class VariablesTab(BaseTab):
         self.unit_label.setText(self.tr(LABEL_UNIT) + ":")
         self.definition_label.setText(self.tr(LABEL_DEFINITION) + ":")
         self.uncertainty_type_label.setText(self.tr(UNCERTAINTY_TYPE) + ":")
-        self.regression_toggle_label.setText(self.tr(REGRESSION_MODEL) + ":")
-        self.use_regression_checkbox.setText(self.tr(USE_REGRESSION))
+        self.value_source_label.setText(self.tr(VALUE_SOURCE) + ":")
+        # value_source_comboの項目は既に設定済み
         
         # ラジオボタン
         self.type_a_radio.setText(self.tr(TYPE_A))
@@ -63,6 +63,7 @@ class VariablesTab(BaseTab):
 
         # 回帰モデル用ウィジェット
         self.regression_model_label.setText(self.tr(REGRESSION_MODEL) + ":")
+        self.regression_x_mode_label.setText(self.tr(REGRESSION_X_MODE) + ":")
         self.regression_x_label.setText(self.tr(REGRESSION_X_VALUE) + ":")
         
         # TypeB用ウィジェット
@@ -167,11 +168,13 @@ class VariablesTab(BaseTab):
         self.uncertainty_type_label = QLabel(self.tr(UNCERTAINTY_TYPE) + ":")
         settings_layout.addRow(self.uncertainty_type_label, uncertainty_type_layout)
 
-        # 回帰モデルの使用
-        self.regression_toggle_label = QLabel(self.tr(REGRESSION_MODEL) + ":")
-        self.use_regression_checkbox = QCheckBox(self.tr(USE_REGRESSION))
-        self.use_regression_checkbox.toggled.connect(self.handlers.on_regression_toggled)
-        settings_layout.addRow(self.regression_toggle_label, self.use_regression_checkbox)
+        # 値のソース選択（校正点ごと）
+        self.value_source_label = QLabel(self.tr(VALUE_SOURCE) + ":")
+        self.value_source_combo = QComboBox()
+        self.value_source_combo.addItem(self.tr(SOURCE_MANUAL), 'manual')
+        self.value_source_combo.addItem(self.tr(SOURCE_REGRESSION), 'regression')
+        self.value_source_combo.currentIndexChanged.connect(self.handlers.on_value_source_changed)
+        settings_layout.addRow(self.value_source_label, self.value_source_combo)
         
         # 区切り線を追加
         separator = QFrame()
@@ -225,10 +228,21 @@ class VariablesTab(BaseTab):
         )
         settings_layout.addRow(self.regression_model_label, self.regression_widgets['model'])
 
+        # xの取り方
+        self.regression_x_mode_label = QLabel(self.tr(REGRESSION_X_MODE) + ":")
+        self.regression_widgets['x_mode'] = QComboBox()
+        self.regression_widgets['x_mode'].addItem(self.tr(REGRESSION_X_MODE_POINT_NAME), 'point_name')
+        self.regression_widgets['x_mode'].addItem(self.tr(REGRESSION_X_MODE_FIXED), 'fixed')
+        # 将来拡張用: self.regression_widgets['x_mode'].addItem(self.tr(REGRESSION_X_MODE_VARIABLE), 'variable')
+        self.regression_widgets['x_mode'].currentIndexChanged.connect(
+            self.handlers.on_regression_x_mode_changed
+        )
+        settings_layout.addRow(self.regression_x_mode_label, self.regression_widgets['x_mode'])
+
         self.regression_x_label = QLabel(self.tr(REGRESSION_X_VALUE) + ":")
         self.regression_widgets['x_value'] = QLineEdit()
         self.regression_widgets['x_value'].textChanged.connect(
-            self.handlers.on_regression_x_changed
+            self.handlers.on_regression_x_value_changed
         )
         settings_layout.addRow(self.regression_x_label, self.regression_widgets['x_value'])
         self.update_regression_model_options()
@@ -395,17 +409,27 @@ class VariablesTab(BaseTab):
             self.definition_input.setText(definition)
 
             # 不確かさ種類の設定
-            use_regression = bool(var_info.get('use_regression')) or var_info.get('type') == 'regression'
-            self.use_regression_checkbox.blockSignals(True)
-            self.use_regression_checkbox.setChecked(use_regression)
-            self.use_regression_checkbox.blockSignals(False)
-
             uncertainty_type = var_info.get('type', 'A')
             if getattr(self.handlers, 'current_variable_is_result', False):
                 uncertainty_type = 'result'
-            elif use_regression:
-                uncertainty_type = 'regression'
-                var_info['type'] = 'regression'
+            
+            # 現在の校正点の値のソースを取得
+            values = var_info.get('values', [])
+            value_index = self.value_combo.currentIndex()
+            if 0 <= value_index < len(values):
+                value_info = values[value_index]
+                source = value_info.get('source', 'manual')
+                self.value_source_combo.blockSignals(True)
+                index = self.value_source_combo.findData(source)
+                if index >= 0:
+                    self.value_source_combo.setCurrentIndex(index)
+                else:
+                    self.value_source_combo.setCurrentIndex(0)
+                self.value_source_combo.blockSignals(False)
+            else:
+                self.value_source_combo.blockSignals(True)
+                self.value_source_combo.setCurrentIndex(0)
+                self.value_source_combo.blockSignals(False)
 
             if uncertainty_type == 'A':
                 self.type_a_radio.setChecked(True)
@@ -510,12 +534,29 @@ class VariablesTab(BaseTab):
                 self.handlers.update_widget_visibility('result')
                 return
 
+            # 値のソースを確認
+            source = value_info.get('source', 'manual')
+            # 後方互換性のため、sourceが存在しない場合はuse_regressionやtypeを確認
+            if source == 'manual' and (var_info.get('use_regression') or var_info.get('type') == 'regression'):
+                source = 'regression'
+                value_info['source'] = 'regression'
+            
             # 不確かさ種類を取得（デフォルトはA）
             uncertainty_type = var_info.get('type', 'A')
-            print(f"[DEBUG] display_current_value: 復元開始 - 変数={current_var}, type={uncertainty_type}, value_index={index}")
+            
+            # 値のソースに応じてウィジェットの表示を更新
+            if source == 'regression':
+                self.handlers.update_widget_visibility_for_source('regression')
+            else:
+                self.handlers.update_widget_visibility(uncertainty_type)
+            
+            print(f"[DEBUG] display_current_value: 復元開始 - 変数={current_var}, source={source}, type={uncertainty_type}, value_index={index}")
             
             # 値をセット（ウィジェットの表示/非表示は既に設定済み）
-            if uncertainty_type == 'A':
+            if source == 'regression':
+                # 回帰式の場合の表示処理は既にupdate_widget_visibility_for_sourceで行われている
+                pass
+            elif uncertainty_type == 'A':
                 # 辞書から値を取得（読み取り専用）
                 measurements = value_info.get('measurements', '')
                 degrees_of_freedom = value_info.get('degrees_of_freedom', 0)
@@ -592,18 +633,40 @@ class VariablesTab(BaseTab):
                 
                 print(f"[DEBUG] TypeB復元: central_value='{central_value}', half_width='{half_width}', degrees_of_freedom='{degrees_of_freedom}', description='{description}', divisor='{divisor}'")
 
-            elif uncertainty_type == 'regression':
-                regression_model = value_info.get('regression_model', '')
-                regression_x = value_info.get('regression_x', '')
+            # 値のソースが回帰式の場合
+            source = value_info.get('source', 'manual')
+            if source == 'regression':
+                regression_id = value_info.get('regression_id', '')
+                regression_x_mode = value_info.get('regression_x_mode', 'fixed')
+                regression_x_value = value_info.get('regression_x_value', '')
+                
                 self.update_regression_model_options()
-                model_index = self.regression_widgets['model'].findText(regression_model)
+                model_index = self.regression_widgets['model'].findText(regression_id)
                 if model_index >= 0:
                     self.regression_widgets['model'].setCurrentIndex(model_index)
                 else:
                     self.regression_widgets['model'].setCurrentIndex(0)
-                self.regression_widgets['x_value'].setText(str(regression_x))
+                
+                # xの取り方を設定
+                x_mode_index = self.regression_widgets['x_mode'].findData(regression_x_mode)
+                if x_mode_index >= 0:
+                    self.regression_widgets['x_mode'].setCurrentIndex(x_mode_index)
+                else:
+                    self.regression_widgets['x_mode'].setCurrentIndex(1)  # デフォルトは固定値
+                
+                # xの値を設定（固定値の場合のみ）
+                if regression_x_mode == 'fixed':
+                    self.regression_widgets['x_value'].setText(str(regression_x_value))
+                elif regression_x_mode == 'point_name':
+                    # 校正点名を数値として使う場合は、現在の校正点名を表示
+                    point_name = self.value_combo.currentText()
+                    try:
+                        point_value = float(point_name)
+                        self.regression_widgets['x_value'].setText(str(point_value))
+                    except ValueError:
+                        self.regression_widgets['x_value'].setText('')
 
-                print(f"[DEBUG] Regression復元: model='{regression_model}', x='{regression_x}'")
+                print(f"[DEBUG] Regression復元: id='{regression_id}', x_mode='{regression_x_mode}', x_value='{regression_x_value}'")
 
             else:  # fixed
                 # 辞書から値を取得（読み取り専用）
