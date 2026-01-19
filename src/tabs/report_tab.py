@@ -71,6 +71,18 @@ class ReportTab(BaseTab):
 
         return f"{value_text} {display_unit}"
 
+    @staticmethod
+    def _format_multiline_cell(text, placeholder='-'):
+        """HTMLのセル表示用に改行を保持してエスケープする。"""
+        if text is None:
+            return placeholder
+        raw_text = str(text)
+        if not raw_text.strip():
+            return placeholder
+        normalized = raw_text.replace('\r\n', '\n').replace('\r', '\n')
+        escaped = html_lib.escape(normalized)
+        return escaped.replace('\n', '<br>')
+
     def retranslate_ui(self):
         """UIのテキストを現在の言語で更新"""
         self.result_label.setText(self.tr(RESULT_VARIABLE) + ":")
@@ -264,12 +276,14 @@ class ReportTab(BaseTab):
             for var_name in variable_names:
                 var_data = get_variable_data(var_name)
                 unit = var_data.get('unit', '') or self.UNIT_PLACEHOLDER
-                definition = var_data.get('definition', '-')
+                definition = self._format_multiline_cell(var_data.get('definition', ''))
                 uncertainty_type = self.get_uncertainty_type_display(var_data.get('type', ''), var_name)
+                safe_var_name = html_lib.escape(str(var_name))
+                safe_unit = html_lib.escape(str(unit))
                 html += f"""
                 <tr>
-                    <td>{var_name}</td>
-                    <td>{unit}</td>
+                    <td>{safe_var_name}</td>
+                    <td>{safe_unit}</td>
                     <td>{definition}</td>
                     <td>{uncertainty_type}</td>
                 </tr>
@@ -277,45 +291,6 @@ class ReportTab(BaseTab):
             html += "</table>"
 
             # 回帰モデル一覧セクション
-            regressions = getattr(self.parent, 'regressions', {})
-            if isinstance(regressions, dict) and regressions:
-                html += f'<div class="title">{self.tr(REPORT_REGRESSION_MODELS)}</div>'
-                html += '<table>'
-                html += '<tr>'
-                html += f'<th>{self.tr(REGRESSION_NAME)}</th>'
-                html += f'<th>{self.tr(REGRESSION_DESCRIPTION)}</th>'
-                html += f'<th>{self.tr(REPORT_REGRESSION_DATA_COUNT)}</th>'
-                html += f'<th>{self.tr(REPORT_REGRESSION_SLOPE)}</th>'
-                html += f'<th>{self.tr(REPORT_REGRESSION_INTERCEPT)}</th>'
-                html += f'<th>{self.tr(REPORT_REGRESSION_DOF)}</th>'
-                html += f'<th>{self.tr(REPORT_REGRESSION_RESIDUAL_STD)}</th>'
-                html += '</tr>'
-                
-                for model_id, model_data in regressions.items():
-                    if not isinstance(model_data, dict):
-                        continue
-                    params = calculate_linear_regression_parameters(model_data)
-                    if params:
-                        slope, intercept, residual_std, dof, data_count = params
-                        description = model_data.get('description', '-')
-                        html += '<tr>'
-                        html += f'<td>{html_lib.escape(str(model_id))}</td>'
-                        html += f'<td>{html_lib.escape(str(description))}</td>'
-                        html += f'<td>{data_count}</td>'
-                        html += f'<td>{slope:.6g}</td>'
-                        html += f'<td>{intercept:.6g}</td>'
-                        html += f'<td>{dof if isinstance(dof, str) else f"{dof:.0f}"}</td>'
-                        html += f'<td>{residual_std:.6g}</td>'
-                        html += '</tr>'
-                    else:
-                        html += '<tr>'
-                        html += f'<td>{html_lib.escape(str(model_id))}</td>'
-                        html += f'<td>{html_lib.escape(str(model_data.get("description", "-")))}</td>'
-                        html += '<td colspan="5">-</td>'
-                        html += '</tr>'
-                
-                html += '</table>'
-
             point_names = getattr(self.parent, 'value_names', [])
             calc_tab = getattr(self.parent, 'uncertainty_calculation_tab', None)
 

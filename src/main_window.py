@@ -187,18 +187,32 @@ class MainWindow(QMainWindow):
                 values = values[:self.value_count]
             cleaned_info['values'] = values
             save_variable_values[var_name] = cleaned_info
+
+        # JSON出力の順序は「データを使用するタブの並び順」に合わせる。
+        # ※ JSON仕様上、objectの順序は保証されないが、保存ファイルの可読性/差分を安定させる目的で整列する。
         return {
+            # DocumentInfoTab
+            'document_info': self.document_info_tab.get_document_info()
+            if hasattr(self, 'document_info_tab')
+            else self.document_info,
+
+            # ModelEquationTab
             'last_equation': self.last_equation,
-            'variables': self.variables,
-            'result_variables': self.result_variables,
-            'variable_values': save_variable_values,
+
+            # RegressionTab
+            'regressions': self.regressions,
+
+            # PointSettingsTab / calibration points
             'value_count': self.value_count,
             'current_value_index': self.current_value_index,
             'value_names': self.value_names,
-            'regressions': self.regressions,
-            'document_info': self.document_info_tab.get_document_info() if hasattr(self, 'document_info_tab') else self.document_info,
+
+            # VariablesTab
+            'variables': self.variables,
+            'result_variables': self.result_variables,
+            'variable_values': save_variable_values,
             'last_selected_variable': last_selected_variable,
-            'last_selected_value_index': last_selected_value_index
+            'last_selected_value_index': last_selected_value_index,
         }
         
     def load_data(self, data):

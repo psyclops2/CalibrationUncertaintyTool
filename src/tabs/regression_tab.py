@@ -31,6 +31,39 @@ from src.utils.regression_utils import (
 )
 
 
+def _parse_float_for_sort(value):
+    try:
+        if value is None:
+            return None
+        if isinstance(value, (int, float)):
+            return float(value)
+        value_str = str(value).strip()
+        if value_str in {"", "--"}:
+            return None
+        return float(value_str)
+    except (TypeError, ValueError):
+        return None
+
+
+class NumericTableWidgetItem(QTableWidgetItem):
+    def __init__(self, text="", numeric_value=None):
+        super().__init__(text)
+        self.setData(Qt.UserRole, numeric_value)
+
+    def __lt__(self, other):
+        left = self.data(Qt.UserRole)
+        right = other.data(Qt.UserRole) if isinstance(other, QTableWidgetItem) else None
+        if left is None and right is None:
+            return super().__lt__(other)
+        if left is None:
+            return False
+        if right is None:
+            return True
+        try:
+            return float(left) < float(right)
+        except (TypeError, ValueError):
+            return super().__lt__(other)
+
 class RegressionTab(BaseTab):
     """回帰モデルタブ"""
 
@@ -39,6 +72,7 @@ class RegressionTab(BaseTab):
         self.parent = parent
         self.current_model_name = None
         self._updating = False
+        self._table_sort_state = {}
         self.setup_ui()
 
     def retranslate_ui(self):
@@ -142,6 +176,7 @@ class RegressionTab(BaseTab):
         self.data_table.setHorizontalHeaderLabels(["x", "u(x)", "y"])
         self.data_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.data_table.itemChanged.connect(self.on_data_changed)
+        self._init_header_sorting(self.data_table, "data")
         data_layout.addWidget(self.data_table)
 
         row_buttons_layout = QHBoxLayout()
@@ -223,6 +258,7 @@ class RegressionTab(BaseTab):
         self.inverse_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.inverse_table.verticalHeader().setVisible(False)
         self.inverse_table.itemChanged.connect(self.on_inverse_table_changed)
+        self._init_header_sorting(self.inverse_table, "inverse")
 
         self._ensure_inverse_row_items(0)
         inverse_layout.addWidget(self.inverse_table)
@@ -244,6 +280,36 @@ class RegressionTab(BaseTab):
 
         self.details_group.setEnabled(False)
         self.refresh_model_list()
+
+    def _init_header_sorting(self, table, key):
+        header = table.horizontalHeader()
+        header.setSectionsClickable(True)
+        header.setSortIndicatorShown(True)
+        header.sectionClicked.connect(
+            lambda column, t=table, k=key: self._toggle_table_sort(t, k, column)
+        )
+        self._table_sort_state.setdefault(key, {"column": -1, "order": Qt.AscendingOrder})
+
+    def _toggle_table_sort(self, table, key, column):
+        state = self._table_sort_state.get(key, {"column": -1, "order": Qt.AscendingOrder})
+        if state["column"] == column:
+            order = Qt.DescendingOrder if state["order"] == Qt.AscendingOrder else Qt.AscendingOrder
+        else:
+            order = Qt.AscendingOrder
+        self._table_sort_state[key] = {"column": column, "order": order}
+        table.sortItems(column, order)
+        table.horizontalHeader().setSortIndicator(column, order)
+
+    def _make_numeric_item(self, value, readonly=False):
+        text = "" if value is None else str(value)
+        item = NumericTableWidgetItem(text, _parse_float_for_sort(value))
+        if readonly:
+            self._set_readonly_item(item)
+        return item
+
+    @staticmethod
+    def _set_item_numeric_sort_value(item, value):
+        item.setData(Qt.UserRole, _parse_float_for_sort(value))
 
     def refresh_model_list(self):
         """回帰モデル一覧を更新"""
@@ -338,6 +404,7 @@ class RegressionTab(BaseTab):
             self._updating = False
 
     def _populate_data_table(self, data):
+        sort_state = self._table_sort_state.get("data", {"column": -1, "order": Qt.AscendingOrder})
         self.data_table.blockSignals(True)
         self.data_table.setRowCount(0)
         if not isinstance(data, list):
@@ -345,15 +412,22 @@ class RegressionTab(BaseTab):
         for row in data:
             row_index = self.data_table.rowCount()
             self.data_table.insertRow(row_index)
-            x_item = QTableWidgetItem(str(row.get("x", "")) if isinstance(row, dict) else "")
-            ux_item = QTableWidgetItem(str(row.get("ux", "")) if isinstance(row, dict) else "")
-            y_item = QTableWidgetItem(str(row.get("y", "")) if isinstance(row, dict) else "")
+            x_value = row.get("x", "") if isinstance(row, dict) else ""
+            ux_value = row.get("ux", "") if isinstance(row, dict) else ""
+            y_value = row.get("y", "") if isinstance(row, dict) else ""
+            x_item = self._make_numeric_item(x_value)
+            ux_item = self._make_numeric_item(ux_value)
+            y_item = self._make_numeric_item(y_value)
             self.data_table.setItem(row_index, 0, x_item)
             self.data_table.setItem(row_index, 1, ux_item)
             self.data_table.setItem(row_index, 2, y_item)
         self.data_table.blockSignals(False)
+        if sort_state["column"] >= 0:
+            self.data_table.sortItems(sort_state["column"], sort_state["order"])
+            self.data_table.horizontalHeader().setSortIndicator(sort_state["column"], sort_state["order"])
 
     def _populate_inverse_table(self, y0_values):
+        sort_state = self._table_sort_state.get("inverse", {"column": -1, "order": Qt.AscendingOrder})
         self.inverse_table.blockSignals(True)
         self.inverse_table.setRowCount(0)
         if not isinstance(y0_values, list) or not y0_values:
@@ -361,15 +435,17 @@ class RegressionTab(BaseTab):
         for value in y0_values:
             row_index = self.inverse_table.rowCount()
             self.inverse_table.insertRow(row_index)
-            y0_item = QTableWidgetItem("" if value is None else str(value))
+            y0_item = self._make_numeric_item("" if value is None else value)
             self.inverse_table.setItem(row_index, 0, y0_item)
-            x0_item = QTableWidgetItem("--")
-            self._set_readonly_item(x0_item)
+            x0_item = self._make_numeric_item("--", readonly=True)
             self.inverse_table.setItem(row_index, 1, x0_item)
-            ux0_item = QTableWidgetItem("--")
-            self._set_readonly_item(ux0_item)
+            ux0_item = self._make_numeric_item("--", readonly=True)
             self.inverse_table.setItem(row_index, 2, ux0_item)
         self.inverse_table.blockSignals(False)
+        self._update_inverse_table()
+        if sort_state["column"] >= 0:
+            self.inverse_table.sortItems(sort_state["column"], sort_state["order"])
+            self.inverse_table.horizontalHeader().setSortIndicator(sort_state["column"], sort_state["order"])
 
     def on_description_changed(self, text):
         if self._updating:
@@ -389,6 +465,12 @@ class RegressionTab(BaseTab):
     def on_data_changed(self, item):
         if self._updating:
             return
+        if item is not None:
+            self.data_table.blockSignals(True)
+            try:
+                self._set_item_numeric_sort_value(item, item.text())
+            finally:
+                self.data_table.blockSignals(False)
         self._update_model_field("data", self._collect_table_data())
 
     def add_data_row(self):
@@ -396,9 +478,9 @@ class RegressionTab(BaseTab):
             return
         row_index = self.data_table.rowCount()
         self.data_table.insertRow(row_index)
-        self.data_table.setItem(row_index, 0, QTableWidgetItem(""))
-        self.data_table.setItem(row_index, 1, QTableWidgetItem(""))
-        self.data_table.setItem(row_index, 2, QTableWidgetItem(""))
+        self.data_table.setItem(row_index, 0, self._make_numeric_item(""))
+        self.data_table.setItem(row_index, 1, self._make_numeric_item(""))
+        self.data_table.setItem(row_index, 2, self._make_numeric_item(""))
         self._update_model_field("data", self._collect_table_data())
 
     def remove_data_row(self):
@@ -570,12 +652,15 @@ class RegressionTab(BaseTab):
                 y0_value = self._parse_float(y0_item.text() if y0_item else "")
                 x0_value = self._calculate_inverse_x0(y0_value)
                 ux0_value = self._calculate_inverse_ux0(y0_value)
-                x0_item.setText("--" if x0_value is None else f"{x0_value:.12g}")
+                x0_text = "--" if x0_value is None else f"{x0_value:.12g}"
+                x0_item.setText(x0_text)
+                self._set_item_numeric_sort_value(x0_item, x0_text)
                 if ux0_item is None:
-                    ux0_item = QTableWidgetItem("--")
-                    self._set_readonly_item(ux0_item)
+                    ux0_item = self._make_numeric_item("--", readonly=True)
                     self.inverse_table.setItem(row, 2, ux0_item)
-                ux0_item.setText("--" if ux0_value is None else f"{ux0_value:.12g}")
+                ux0_text = "--" if ux0_value is None else f"{ux0_value:.12g}"
+                ux0_item.setText(ux0_text)
+                self._set_item_numeric_sort_value(ux0_item, ux0_text)
         finally:
             self._updating = False
 
@@ -613,22 +698,25 @@ class RegressionTab(BaseTab):
     def _ensure_inverse_row_items(self, row):
         y0_item = self.inverse_table.item(row, 0)
         if y0_item is None:
-            y0_item = QTableWidgetItem("")
+            y0_item = self._make_numeric_item("")
             self.inverse_table.setItem(row, 0, y0_item)
         x0_item = self.inverse_table.item(row, 1)
         if x0_item is None:
-            x0_item = QTableWidgetItem("--")
-            self._set_readonly_item(x0_item)
+            x0_item = self._make_numeric_item("--", readonly=True)
             self.inverse_table.setItem(row, 1, x0_item)
         ux0_item = self.inverse_table.item(row, 2)
         if ux0_item is None:
-            ux0_item = QTableWidgetItem("--")
-            self._set_readonly_item(ux0_item)
+            ux0_item = self._make_numeric_item("--", readonly=True)
             self.inverse_table.setItem(row, 2, ux0_item)
 
     def on_inverse_table_changed(self, item):
         if self._updating or item.column() != 0:
             return
+        self.inverse_table.blockSignals(True)
+        try:
+            self._set_item_numeric_sort_value(item, item.text())
+        finally:
+            self.inverse_table.blockSignals(False)
         x0_item = self.inverse_table.item(item.row(), 1)
         ux0_item = self.inverse_table.item(item.row(), 2)
         if x0_item is None or ux0_item is None:
@@ -638,8 +726,12 @@ class RegressionTab(BaseTab):
         ux0_value = self._calculate_inverse_ux0(y0_value)
         self._updating = True
         try:
-            x0_item.setText("--" if x0_value is None else f"{x0_value:.12g}")
-            ux0_item.setText("--" if ux0_value is None else f"{ux0_value:.12g}")
+            x0_text = "--" if x0_value is None else f"{x0_value:.12g}"
+            ux0_text = "--" if ux0_value is None else f"{ux0_value:.12g}"
+            x0_item.setText(x0_text)
+            ux0_item.setText(ux0_text)
+            self._set_item_numeric_sort_value(x0_item, x0_text)
+            self._set_item_numeric_sort_value(ux0_item, ux0_text)
         finally:
             self._updating = False
         self._update_inverse_model_data()
