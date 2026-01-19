@@ -74,7 +74,20 @@ POSSIBILITY OF SUCH DAMAGE.
 
 ---
 
-## 4. Python 標準ライブラリ
+
+## 4. Markdown (Python-Markdown)
+
+| Item | Value |
+| --- | --- |
+| Example version | 3.* |
+| Home | https://python-markdown.github.io/ |
+| License | BSD 3-Clause License |
+| PyPI | https://pypi.org/project/Markdown/ |
+
+> Python-Markdown is distributed under the BSD 3-Clause License.
+> The full license text is the same as the BSD 3-Clause License shown in the NumPy section above.
+
+## 5. Python 標準ライブラリ
 
 * **ライセンス:** Python Software Foundation License 2.0（PSF‑2.0）
 * **著作権者:** © 2001 – 2025 Python Software Foundation
@@ -84,12 +97,13 @@ POSSIBILITY OF SUCH DAMAGE.
 
 ---
 
-## 5. SPDX サマリ
+## 6. SPDX サマリ
 
 ```
 PySide6                LGPL-3.0-or-later
 NumPy                  BSD-3-Clause
 SymPy                  BSD-3-Clause
+Python-Markdown        BSD-3-Clause
 python-stdlib          Python-2.0
 ```
 

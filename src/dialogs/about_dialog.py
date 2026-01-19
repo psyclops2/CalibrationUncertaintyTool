@@ -44,13 +44,18 @@ class AboutDialog(QDialog):
                 <li>PySide6 (LGPLv3)<br>
                     <a href='https://www.gnu.org/licenses/lgpl-3.0.html'>https://www.gnu.org/licenses/lgpl-3.0.html</a>
                 </li>
-                <li>sympy (BSD License)<br>
+                <li>SymPy (BSD 3-Clause)<br>
                     <a href='https://opensource.org/licenses/BSD-3-Clause'>https://opensource.org/licenses/BSD-3-Clause</a>
                 </li>
-                <li>numpy (BSD License)<br>
+                <li>NumPy (BSD 3-Clause)<br>
                     <a href='https://opensource.org/licenses/BSD-3-Clause'>https://opensource.org/licenses/BSD-3-Clause</a>
+                </li>
+                <li>Python-Markdown (BSD 3-Clause)<br>
+                    <a href='https://python-markdown.github.io/'>https://python-markdown.github.io/</a>
                 </li>
             </ul>
+            <p>For full third-party notices, see <b>THIRD_PARTY_LICENSES.md</b>.<br>
+            詳細は <b>THIRD_PARTY_LICENSES.md</b> を参照してください。</p>
         """)
         layout.addWidget(libraries_text)
 

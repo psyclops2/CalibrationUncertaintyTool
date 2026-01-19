@@ -27,6 +27,7 @@ The software also supports batch calculations of calibration uncertainty across 
 * PySide6 (LGPLv3 license)
 * NumPy (BSD license)
 * SymPy (BSD license)
+* Markdown (BSD license)
 
 ## Installation
 
@@ -272,6 +273,7 @@ This software depends on the following external libraries (not included in the d
 | PySide6 | LGPLv3 (© The Qt Company) | [Qt for Python](https://www.qt.io/qt-for-python) / [LGPLv3](https://www.gnu.org/licenses/lgpl-3.0.html) |
 | NumPy   | BSD 3-Clause              | [NumPy](https://numpy.org/) / [BSD License](https://opensource.org/licenses/BSD-3-Clause)               |
 | SymPy   | BSD 3-Clause              | [SymPy](https://www.sympy.org/) / [BSD License](https://opensource.org/licenses/BSD-3-Clause)           |
+| Markdown (Python-Markdown) | BSD 3-Clause | [Python-Markdown](https://python-markdown.github.io/) / [BSD License](https://opensource.org/licenses/BSD-3-Clause) |
 
 The Python standard library (e.g., json, decimal, re, math, traceback) is used under the [Python Software Foundation License](https://docs.python.org/3/license.html).
 

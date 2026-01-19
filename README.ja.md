@@ -24,6 +24,7 @@ JCGM 100（Guide to the Expression of Uncertainty in Measurement）GUMの方法�
 - PySide6 (LGPLv3ライセンス)
 - NumPy (BSDライセンス)
 - SymPy (BSDライセンス)
+- Markdown (BSDライセンス)
 
 ## インストール方法
 1. リポジトリをクローン
@@ -297,6 +298,7 @@ u(x₀) = √( ūy²/β² + (y₀ - ȳ)² u(β)² / β⁴ + ūx² )
 | PySide6         | LGPLv3（© The Qt Company） | [Qt for Python](https://www.qt.io/qt-for-python) / [LGPLv3](https://www.gnu.org/licenses/lgpl-3.0.html) |
 | NumPy           | BSD 3-Clause             | [NumPy](https://numpy.org/) / [BSD License](https://opensource.org/licenses/BSD-3-Clause)               |
 | SymPy           | BSD 3-Clause             | [SymPy](https://www.sympy.org/) / [BSD License](https://opensource.org/licenses/BSD-3-Clause)           |
+| Markdown (Python-Markdown) | BSD 3-Clause | [Python-Markdown](https://python-markdown.github.io/) / [BSD License](https://opensource.org/licenses/BSD-3-Clause) |
 
 Python 標準ライブラリ（json, decimal, re, math, traceback）は [Python Software Foundation License](https://docs.python.org/3/license.html) に従います。
 
