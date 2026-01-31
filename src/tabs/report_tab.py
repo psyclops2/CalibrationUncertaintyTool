@@ -326,7 +326,7 @@ class ReportTab(BaseTab):
                             description = value_item.get('description', '-') if value_item else '-'
                             html += f"<div>{self.tr(DETAIL_DESCRIPTION)}: {description}</div>"
                         elif uncertainty_type == 'fixed':
-                            fixed_value = var_data.get('fixed_value', '-')
+                            fixed_value = value_item.get('central_value', '-') if value_item else '-'
                             html += f"<div>{self.tr(FIXED_VALUE)}: {fixed_value}</div>"
                             description = value_item.get('description', '-') if value_item else '-'
                             html += f"<div>{self.tr(DETAIL_DESCRIPTION)}: {description}</div>"

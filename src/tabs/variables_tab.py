@@ -641,7 +641,7 @@ class VariablesTab(BaseTab):
 
             elif uncertainty_type == 'fixed':  # fixed
                 # 辞書から値を取得（読み取り専用）
-                fixed_value = value_info.get('fixed_value', '')
+                fixed_value = value_info.get('central_value', '')
                 description = value_info.get('description', '')
                 
                 # ウィジェットに値を設定

@@ -572,7 +572,6 @@ class VariablesTabHandlers:
             value_index = self.parent.value_combo.currentIndex()
             if 'values' in self.parent.parent.variable_values[self.current_variable]:
                 self.parent.parent.variable_values[self.current_variable]['values'][value_index].update({
-                    'fixed_value': fixed_value,
                     'central_value': fixed_value  # 固定値も中央値として保存
                 })
                 
@@ -882,7 +881,6 @@ class VariablesTabHandlers:
             value_index = self.parent.value_combo.currentIndex()
             if 'values' in self.parent.parent.variable_values[self.current_variable]:
                 self.parent.parent.variable_values[self.current_variable]['values'][value_index].update({
-                    'fixed_value': central_value,
                     'central_value': central_value
                 })
                 

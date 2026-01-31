@@ -113,7 +113,7 @@ class ValueHandler:
                     value = value_data.get('central_value', '')
 
                 else:  # fixed
-                    value = value_data.get('fixed_value', '')
+                    value = value_data.get('central_value', '')
 
                 return value
 
