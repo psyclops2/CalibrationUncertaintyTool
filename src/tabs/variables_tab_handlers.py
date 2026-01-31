@@ -27,12 +27,8 @@ class VariablesTabHandlers:
 
         # 計算結果変数は種類選択を無効化する
         # 値のソースを取得
-        source = 'manual'
-        if hasattr(self.parent, 'value_source_combo'):
-            source = self.parent.value_source_combo.currentData() or 'manual'
-        
         for radio in [self.parent.type_a_radio, self.parent.type_b_radio, self.parent.type_fixed_radio]:
-            radio.setEnabled(not is_result and source != 'regression')
+            radio.setEnabled(not is_result)
         if hasattr(self.parent, 'value_source_combo'):
             self.parent.value_source_combo.setEnabled(not is_result)
 
@@ -106,7 +102,7 @@ class VariablesTabHandlers:
                 widget.setVisible(False)
                 widget.setEnabled(False)
 
-        show_half_width = (not is_result) and uncertainty_type == 'B' and source != 'regression'
+        show_half_width = (not is_result) and uncertainty_type == 'B'
         if hasattr(self.parent, 'half_width_label'):
             self.parent.half_width_label.setVisible(show_half_width)
             self.parent.half_width_label.setEnabled(show_half_width)
@@ -195,11 +191,6 @@ class VariablesTabHandlers:
             if self.current_variable_is_result:
                 return
             # 値のソースが回帰式の場合は変更を無視
-            if hasattr(self.parent, 'value_source_combo'):
-                source = self.parent.value_source_combo.currentData() or 'manual'
-                if source == 'regression':
-                    return
-
             if self.parent.type_a_radio.isChecked():
                 uncertainty_type = 'A'
 
@@ -229,7 +220,7 @@ class VariablesTabHandlers:
             if not self.current_variable:
                 return
 
-            source = self.parent.value_source_combo.currentData() or 'manual'
+            source = 'manual'
             value_info = self._get_current_value_info()
             value_info['source'] = source
 

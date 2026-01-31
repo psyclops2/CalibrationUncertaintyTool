@@ -62,9 +62,6 @@ class VariablesTab(BaseTab):
         self.detail_description_label_a.setText(self.tr(DETAIL_DESCRIPTION) + ":")
 
         # 回帰モデル用ウィジェット
-        self.regression_model_label.setText(self.tr(REGRESSION_MODEL) + ":")
-        self.regression_x_mode_label.setText(self.tr(REGRESSION_X_MODE) + ":")
-        self.regression_x_label.setText(self.tr(REGRESSION_X_VALUE) + ":")
         
         # TypeB用ウィジェット
         # 分布コンボボックスの項目を更新
@@ -172,7 +169,6 @@ class VariablesTab(BaseTab):
         self.value_source_label = QLabel(self.tr(VALUE_SOURCE) + ":")
         self.value_source_combo = QComboBox()
         self.value_source_combo.addItem(self.tr(SOURCE_MANUAL), 'manual')
-        self.value_source_combo.addItem(self.tr(SOURCE_REGRESSION), 'regression')
         self.value_source_combo.currentIndexChanged.connect(self.handlers.on_value_source_changed)
         settings_layout.addRow(self.value_source_label, self.value_source_combo)
         
@@ -219,33 +215,13 @@ class VariablesTab(BaseTab):
         self.detail_description_label_a = QLabel(self.tr(DETAIL_DESCRIPTION) + ":")
         settings_layout.addRow(self.detail_description_label_a, self.type_a_widgets['description'])
 
-        # 回帰モデル用のウィジェット
         self.regression_widgets = {}
-        self.regression_model_label = QLabel(self.tr(REGRESSION_MODEL) + ":")
-        self.regression_widgets['model'] = QComboBox()
-        self.regression_widgets['model'].currentIndexChanged.connect(
-            self.handlers.on_regression_model_changed
-        )
-        settings_layout.addRow(self.regression_model_label, self.regression_widgets['model'])
+
+        # 回帰モデル用のウィジェット
 
         # xの取り方
-        self.regression_x_mode_label = QLabel(self.tr(REGRESSION_X_MODE) + ":")
-        self.regression_widgets['x_mode'] = QComboBox()
-        self.regression_widgets['x_mode'].addItem(self.tr(REGRESSION_X_MODE_POINT_NAME), 'point_name')
-        self.regression_widgets['x_mode'].addItem(self.tr(REGRESSION_X_MODE_FIXED), 'fixed')
         # 将来拡張用: self.regression_widgets['x_mode'].addItem(self.tr(REGRESSION_X_MODE_VARIABLE), 'variable')
-        self.regression_widgets['x_mode'].currentIndexChanged.connect(
-            self.handlers.on_regression_x_mode_changed
-        )
-        settings_layout.addRow(self.regression_x_mode_label, self.regression_widgets['x_mode'])
 
-        self.regression_x_label = QLabel(self.tr(REGRESSION_X_VALUE) + ":")
-        self.regression_widgets['x_value'] = QLineEdit()
-        self.regression_widgets['x_value'].textChanged.connect(
-            self.handlers.on_regression_x_value_changed
-        )
-        settings_layout.addRow(self.regression_x_label, self.regression_widgets['x_value'])
-        self.update_regression_model_options()
         
         # TypeB用のウィジェット
         self.type_b_widgets = {}
@@ -349,9 +325,6 @@ class VariablesTab(BaseTab):
         for widget in self.fixed_value_widgets.values():
             widget.setVisible(False)
             widget.setEnabled(False)
-        for widget in self.regression_widgets.values():
-            widget.setVisible(False)
-            widget.setEnabled(False)
         
     def update_variable_list(self, variables, result_variables):
         """変数リストを更新"""
@@ -410,6 +383,9 @@ class VariablesTab(BaseTab):
 
             # 不確かさ種類の設定
             uncertainty_type = var_info.get('type', 'A')
+            if uncertainty_type not in ('A', 'B', 'fixed'):
+                uncertainty_type = 'A'
+                var_info['type'] = 'A'
             if getattr(self.handlers, 'current_variable_is_result', False):
                 uncertainty_type = 'result'
             
@@ -466,7 +442,6 @@ class VariablesTab(BaseTab):
                 self.type_b_widgets['divisor'].setText(divisor)
                 self.type_b_widgets['divisor'].setReadOnly(distribution != NORMAL_DISTRIBUTION)
 
-            self.update_regression_model_options()
 
             # 不確かさ種類に応じたウィジェットの表示を更新
             self.handlers.update_widget_visibility(uncertainty_type)
@@ -535,20 +510,16 @@ class VariablesTab(BaseTab):
                 return
 
             # 値のソースを確認
-            source = value_info.get('source', 'manual')
-            # 後方互換性のため、sourceが存在しない場合はuse_regressionやtypeを確認
-            if source == 'manual' and (var_info.get('use_regression') or var_info.get('type') == 'regression'):
-                source = 'regression'
-                value_info['source'] = 'regression'
+            source = value_info.get('source', 'manual') or 'manual'
+            if source != 'manual':
+                source = 'manual'
+                value_info['source'] = 'manual'
             
             # 不確かさ種類を取得（デフォルトはA）
             uncertainty_type = var_info.get('type', 'A')
             
             # 値のソースに応じてウィジェットの表示を更新
-            if source == 'regression':
-                self.handlers.update_widget_visibility_for_source('regression')
-            else:
-                self.handlers.update_widget_visibility(uncertainty_type)
+            self.handlers.update_widget_visibility(uncertainty_type)
             
             print(f"[DEBUG] display_current_value: 復元開始 - 変数={current_var}, source={source}, type={uncertainty_type}, value_index={index}")
             
@@ -668,7 +639,7 @@ class VariablesTab(BaseTab):
 
                 print(f"[DEBUG] Regression復元: id='{regression_id}', x_mode='{regression_x_mode}', x_value='{regression_x_value}'")
 
-            else:  # fixed
+            elif uncertainty_type == 'fixed':  # fixed
                 # 辞書から値を取得（読み取り専用）
                 fixed_value = value_info.get('fixed_value', '')
                 description = value_info.get('description', '')

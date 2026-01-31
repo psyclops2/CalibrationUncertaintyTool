@@ -136,7 +136,7 @@ class RegressionTab(BaseTab):
         list_layout.addLayout(buttons_layout)
 
         self.list_group.setLayout(list_layout)
-        main_layout.addWidget(self.list_group, 1)
+        main_layout.addWidget(self.list_group, 0.2)
 
         # 右側: 回帰モデル詳細
         self.details_group = QGroupBox(self.tr(REGRESSION_DETAILS))

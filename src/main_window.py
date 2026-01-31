@@ -276,10 +276,7 @@ class MainWindow(QMainWindow):
                             continue
                         # sourceフィールドが存在しない場合は補完
                         if 'source' not in value_info:
-                            if use_regression or var_type == 'regression':
-                                value_info['source'] = 'regression'
-                            else:
-                                value_info['source'] = 'manual'
+                            value_info['source'] = 'manual'
                         # regression_idが存在しない場合はregression_modelから補完
                         if 'regression_id' not in value_info and 'regression_model' in value_info:
                             value_info['regression_id'] = value_info['regression_model']
