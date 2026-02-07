@@ -1,5 +1,6 @@
 import traceback
 import copy
+import os
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTabWidget, QMessageBox, QFileDialog, QMenuBar, QMenu
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt, QEvent, Slot
@@ -28,8 +29,11 @@ class MainWindow(QMainWindow):
         self.language_manager = language_manager or LanguageManager()
 
         
+        # ファイル状態
+        self.current_file_path = None
+
         # ウィンドウの設定
-        self.setWindowTitle(self.tr(APP_TITLE))
+        self.update_window_title()
         self.setGeometry(100, 100, 1200, 800)
         
         # アプリケーションの状態管理
@@ -53,6 +57,19 @@ class MainWindow(QMainWindow):
         # UIの初期化
         self.setup_ui()
         self.create_menu_bar()
+
+    def set_current_file_path(self, file_path):
+        """現在開いているファイルパスを設定して、タイトルを更新する"""
+        self.current_file_path = file_path
+        self.update_window_title()
+
+    def update_window_title(self):
+        """アプリ名の後に現在のファイル名を表示する"""
+        base_title = self.tr(APP_TITLE)
+        if self.current_file_path:
+            self.setWindowTitle(f"{base_title} - {os.path.basename(self.current_file_path)}")
+        else:
+            self.setWindowTitle(base_title)
         
     def setup_ui(self):
         """UIの設定"""
@@ -111,7 +128,8 @@ class MainWindow(QMainWindow):
     def update_menu_bar_text(self):
         """メニューバーのテキストを現在の言語で更新"""
         self.file_menu.setTitle(self.tr(MENU_FILE))
-        self.save_action.setText(self.tr(FILE_SAVE_AS))
+        self.save_action.setText(self.tr(FILE_SAVE))
+        self.save_as_action.setText(self.tr(FILE_SAVE_AS))
         self.open_action.setText(self.tr(FILE_OPEN))
         self.exit_action.setText(self.tr(FILE_EXIT))
         self.language_menu.setTitle(self.tr(MENU_LANGUAGE))
@@ -130,12 +148,19 @@ class MainWindow(QMainWindow):
         self.help_menu = menubar.addMenu(self.tr(MENU_HELP))
         
         # ファイルメニュー
-        self.save_action = QAction(self.tr(FILE_SAVE_AS), self)
+        self.save_action = QAction(self.tr(FILE_SAVE), self)
         self.save_action.triggered.connect(self.save_file)
+        self.save_action.setShortcut("Ctrl+S")
         self.file_menu.addAction(self.save_action)
+
+        self.save_as_action = QAction(self.tr(FILE_SAVE_AS), self)
+        self.save_as_action.triggered.connect(self.save_file_as)
+        self.save_as_action.setShortcut("Ctrl+Shift+S")
+        self.file_menu.addAction(self.save_as_action)
         
         self.open_action = QAction(self.tr(FILE_OPEN), self)
         self.open_action.triggered.connect(self.open_file)
+        self.open_action.setShortcut("Ctrl+O")
         self.file_menu.addAction(self.open_action)
         
         self.exit_action = QAction(self.tr(FILE_EXIT), self)
@@ -309,8 +334,33 @@ class MainWindow(QMainWindow):
             print(traceback.format_exc())
             QMessageBox.critical(self, self.tr(MESSAGE_ERROR), f"データの読み込みに失敗しました:\n{str(e)}")
 
+    def _write_save_data_to_path(self, file_path):
+        save_data = self.get_save_data()
+
+        # Decimal型のみstrに変換するカスタムエンコーダ
+        def decimal_default(obj):
+            if isinstance(obj, decimal.Decimal):
+                return str(obj)
+            raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(save_data, f, indent=4, ensure_ascii=False, default=decimal_default)
+
     def save_file(self):
-        """ファイルを保存"""
+        """上書き保存（保存先が未設定の場合は「名前を付けて保存」）"""
+        if not self.current_file_path:
+            return self.save_file_as()
+
+        try:
+            self._write_save_data_to_path(self.current_file_path)
+            QMessageBox.information(self, self.tr(MESSAGE_SUCCESS), self.tr(FILE_SAVED))
+        except Exception as e:
+            print(f"【エラー】ファイル保存エラー: {str(e)}")
+            print(traceback.format_exc())
+            QMessageBox.critical(self, self.tr(MESSAGE_ERROR), self.tr(FILE_SAVE_ERROR) + f"\n{str(e)}")
+
+    def save_file_as(self):
+        """名前を付けて保存"""
         try:
             options = QFileDialog.Options()
             file_path, _ = QFileDialog.getSaveFileName(
@@ -320,18 +370,14 @@ class MainWindow(QMainWindow):
                 "JSON Files (*.json);;All Files (*)",
                 options=options
             )
-            
-            if file_path:
-                save_data = self.get_save_data()
-                # Decimal型のみstrに変換するカスタムエンコーダ
-                def decimal_default(obj):
-                    if isinstance(obj, decimal.Decimal):
-                        return str(obj)
-                    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
-                with open(file_path, 'w', encoding='utf-8') as f:
-                    json.dump(save_data, f, indent=4, ensure_ascii=False, default=decimal_default)
-                QMessageBox.information(self, self.tr(MESSAGE_SUCCESS), self.tr(FILE_SAVED))
-                
+
+            if not file_path:
+                return
+
+            self._write_save_data_to_path(file_path)
+            self.set_current_file_path(file_path)
+            QMessageBox.information(self, self.tr(MESSAGE_SUCCESS), self.tr(FILE_SAVED))
+
         except Exception as e:
             print(f"【エラー】ファイル保存エラー: {str(e)}")
             print(traceback.format_exc())
@@ -353,6 +399,7 @@ class MainWindow(QMainWindow):
                 with open(file_path, 'r', encoding='utf-8') as f:
                     loaded_data = json.load(f)
                 self.load_data(loaded_data)
+                self.set_current_file_path(file_path)
                 
         except FileNotFoundError:
             QMessageBox.critical(self, self.tr(MESSAGE_ERROR), self.tr(FILE_NOT_FOUND))
@@ -504,7 +551,7 @@ class MainWindow(QMainWindow):
     def retranslate_ui(self):
         """UIのテキストを現在の言語で更新"""
         # ウィンドウタイトル
-        self.setWindowTitle(self.tr(APP_TITLE))
+        self.update_window_title()
         
         # タブのタイトル
         self.tab_widget.setTabText(0, self.tr(DOCUMENT_INFO_TAB))

@@ -41,6 +41,7 @@ ADD_POINT = 'add_point'
 REMOVE_POINT = 'remove_point'
 
 # ファイルメニューアクション
+FILE_SAVE = "FILE_SAVE"  # 保存
 FILE_SAVE_AS = "FILE_SAVE_AS"  # 名前を付けて保存...
 FILE_OPEN = "FILE_OPEN"  # 開く...
 FILE_EXIT = "FILE_EXIT"  # 終了

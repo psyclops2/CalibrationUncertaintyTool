@@ -20,6 +20,7 @@ translations = {
 
         # ファイルメニューアクション
         FILE_OPEN: "開く...",
+        FILE_SAVE: "上書き保存...",
         FILE_SAVE_AS: "名前を付けて保存...",
         FILE_EXIT: "終了",
         

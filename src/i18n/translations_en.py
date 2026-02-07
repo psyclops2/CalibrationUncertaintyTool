@@ -16,6 +16,7 @@ translations = {
 
         # File menu actions
         FILE_OPEN: "Open...",
+        FILE_SAVE: "Save...",
         FILE_SAVE_AS: "Save As...",
         FILE_EXIT: "Exit",
         
