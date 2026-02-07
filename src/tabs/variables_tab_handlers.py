@@ -348,15 +348,6 @@ class VariablesTabHandlers:
         self.parent.parent.variable_values[self.current_variable] = var_info
         return values[self.parent.value_combo.currentIndex()]
 
-    def on_nominal_value_changed(self):
-        """呼び値が変更されたときの処理"""
-        try:
-            if self.current_variable:
-                self.parent.parent.variable_values[self.current_variable]['nominal_value'] = self.parent.nominal_value_input.text()
-        except Exception as e:
-            print(f"【エラー】呼び値変更エラー: {str(e)}")
-            print(traceback.format_exc())
-
     def on_unit_changed(self):
         """単位が変更されたときの処理"""
         try:

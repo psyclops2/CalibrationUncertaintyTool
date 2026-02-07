@@ -178,6 +178,9 @@ class MainWindow(QMainWindow):
             if not isinstance(var_info, dict):
                 continue
             cleaned_info = copy.deepcopy(var_info)
+            # 互換性を考慮しない方針のため、use_regression は保存しない
+            cleaned_info.pop('use_regression', None)
+            cleaned_info.pop('nominal_value', None)
             values = cleaned_info.get('values', [])
             if not isinstance(values, list):
                 values = []
@@ -269,8 +272,6 @@ class MainWindow(QMainWindow):
                 # sourceフィールドの補完（既存データとの互換性）
                 values = var_data.get('values', [])
                 if isinstance(values, list):
-                    use_regression = var_data.get('use_regression', False)
-                    var_type = var_data.get('type', 'A')
                     for value_info in values:
                         if not isinstance(value_info, dict):
                             continue
@@ -402,8 +403,6 @@ class MainWindow(QMainWindow):
         # 基本フィールドの初期化
         var_info.setdefault('unit', '')
         var_info.setdefault('definition', '')
-        var_info.setdefault('nominal_value', '')
-        var_info.setdefault('use_regression', False)
 
         # 既存のタイプを尊重しつつ、結果変数であれば'result'を設定
         if is_result:

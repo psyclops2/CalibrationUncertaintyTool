@@ -42,8 +42,7 @@ class ValueHandler:
             # sourceフィールドを確認
             source = value_data.get('source', 'manual')
             if source != 'regression':
-                # 後方互換性のため、use_regressionやtypeも確認
-                if not (var_data.get('type') == 'regression' or var_data.get('use_regression')):
+                if var_data.get('type') != 'regression':
                     return None, None, None
             else:
                 # sourceが'regression'の場合は、必ず回帰式から取得
@@ -101,7 +100,7 @@ class ValueHandler:
 
                 # sourceフィールドを確認
                 source = value_data.get('source', 'manual')
-                if source == 'regression' or var_data.get('type') == 'regression' or var_data.get('use_regression'):
+                if source == 'regression' or var_data.get('type') == 'regression':
                     value, _, _ = self._get_regression_result(var)
                     if value is None:
                         value = ''
@@ -140,7 +139,7 @@ class ValueHandler:
 
                 # sourceフィールドを確認
                 source = value_data.get('source', 'manual')
-                if source == 'regression' or var_data.get('type') == 'regression' or var_data.get('use_regression'):
+                if source == 'regression' or var_data.get('type') == 'regression':
                     _, value, _ = self._get_regression_result(var)
                     if value is None:
                         value = ''
@@ -179,7 +178,7 @@ class ValueHandler:
 
                 # sourceフィールドを確認
                 source = value_data.get('source', 'manual')
-                if source == 'regression' or var_data.get('type') == 'regression' or var_data.get('use_regression'):
+                if source == 'regression' or var_data.get('type') == 'regression':
                     _, _, degrees_of_freedom = self._get_regression_result(var)
                     if degrees_of_freedom is None:
                         degrees_of_freedom = ''
@@ -204,7 +203,7 @@ class ValueHandler:
                 if isinstance(values, list) and 0 <= self.current_value_index < len(values):
                     value_data = values[self.current_value_index]
                     source = value_data.get('source', 'manual')
-                    if source == 'regression' or var_data.get('type') == 'regression' or var_data.get('use_regression'):
+                    if source == 'regression' or var_data.get('type') == 'regression':
                         return get_distribution_translation_key('Normal Distribution')
                 if var_data.get('type') == 'B':
                     distribution = var_data.get('distribution', '')

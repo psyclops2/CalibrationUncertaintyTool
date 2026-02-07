@@ -41,7 +41,6 @@ class VariablesTab(BaseTab):
         if self.mode_display.text() == self.tr(NOT_SELECTED, "未選択"):
             self.mode_display.setText(self.tr(NOT_SELECTED))
             
-        self.nominal_value_label.setText(self.tr(LABEL_NOMINAL_VALUE) + ":")
         self.unit_label.setText(self.tr(LABEL_UNIT) + ":")
         self.definition_label.setText(self.tr(LABEL_DEFINITION) + ":")
         self.uncertainty_type_label.setText(self.tr(UNCERTAINTY_TYPE) + ":")
@@ -131,12 +130,6 @@ class VariablesTab(BaseTab):
         # 4. 量詳細設定
         self.settings_group = QGroupBox(self.tr(VARIABLE_DETAIL_SETTINGS))
         settings_layout = QFormLayout()
-        
-        # 呼び値フィールドの追加
-        self.nominal_value_input = QLineEdit()
-        self.nominal_value_input.textChanged.connect(self.handlers.on_nominal_value_changed)
-        self.nominal_value_label = QLabel(self.tr(LABEL_NOMINAL_VALUE) + ":")
-        settings_layout.addRow(self.nominal_value_label, self.nominal_value_input)
         
         # 単位
         self.unit_input = QLineEdit()
@@ -368,10 +361,6 @@ class VariablesTab(BaseTab):
                 return
 
             var_info = self.parent.variable_values[self.handlers.current_variable]
-            
-            # 呼び値の設定
-            nominal_value = var_info.get('nominal_value', '')
-            self.nominal_value_input.setText(nominal_value)
             
             # 単位の設定
             unit = var_info.get('unit', '')
