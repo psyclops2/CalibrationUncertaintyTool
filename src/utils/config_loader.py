@@ -1,5 +1,6 @@
 import configparser
 import os
+import re
 
 from .app_logger import log_error, log_warning
 
@@ -109,10 +110,93 @@ class ConfigLoader:
     def save_config(self) -> bool:
         """設定ファイルに変更を保存する"""
         try:
-            with open(self.config_path, 'w', encoding='utf-8') as f:
-                self.config.write(f)
-
+            self._save_config_preserving_format()
             return True
         except Exception as e:
             log_error(f"設定ファイルの保存に失敗しました: {str(e)}")
             return False
+
+    @staticmethod
+    def _parse_section_header(line: str):
+        match = re.match(r"^\s*\[([^\]]+)\]\s*(?:[;#].*)?(?:\r?\n)?$", line)
+        if not match:
+            return None
+        return match.group(1).strip()
+
+    @staticmethod
+    def _parse_option_line(line: str):
+        match = re.match(
+            r"^([ \t]*)([^=;#\s][^=]*?)([ \t]*=[ \t]*)(.*?)([ \t]*(?:[#;].*)?)?(\r?\n)?$",
+            line,
+        )
+        if not match:
+            return None
+
+        key = match.group(2).strip()
+        return {
+            "indent": match.group(1) or "",
+            "key_raw": match.group(2),
+            "key_normalized": key.lower(),
+            "separator": match.group(3) or " = ",
+            "comment": match.group(5) or "",
+            "newline": match.group(6) or "\n",
+        }
+
+    def _get_section_ranges(self, lines):
+        ranges = {}
+        headers = []
+        for index, line in enumerate(lines):
+            section_name = self._parse_section_header(line)
+            if section_name is not None:
+                headers.append((section_name, index))
+
+        for index, (section_name, start) in enumerate(headers):
+            end = headers[index + 1][1] if index + 1 < len(headers) else len(lines)
+            ranges[section_name] = (start, end)
+        return ranges
+
+    def _save_config_preserving_format(self):
+        with open(self.config_path, 'r', encoding='utf-8') as config_file:
+            lines = config_file.readlines()
+
+        for section in self.config.sections():
+            section_ranges = self._get_section_ranges(lines)
+            section_items = list(self.config.items(section))
+
+            if section in section_ranges:
+                section_start, section_end = section_ranges[section]
+                option_line_indices = {}
+
+                for line_index in range(section_start + 1, section_end):
+                    parsed = self._parse_option_line(lines[line_index])
+                    if parsed is None:
+                        continue
+                    option_line_indices[parsed["key_normalized"]] = (line_index, parsed)
+
+                missing_lines = []
+                for option_name, option_value in section_items:
+                    normalized_name = option_name.lower()
+                    value_text = str(option_value)
+                    if normalized_name in option_line_indices:
+                        line_index, parsed = option_line_indices[normalized_name]
+                        lines[line_index] = (
+                            f"{parsed['indent']}{parsed['key_raw']}{parsed['separator']}"
+                            f"{value_text}{parsed['comment']}{parsed['newline']}"
+                        )
+                    else:
+                        missing_lines.append(f"{option_name} = {value_text}\n")
+
+                if missing_lines:
+                    insertion_index = section_end
+                    lines[insertion_index:insertion_index] = missing_lines
+            else:
+                if lines and not lines[-1].endswith("\n"):
+                    lines[-1] += "\n"
+                if lines and lines[-1].strip():
+                    lines.append("\n")
+                lines.append(f"[{section}]\n")
+                for option_name, option_value in section_items:
+                    lines.append(f"{option_name} = {option_value}\n")
+
+        with open(self.config_path, 'w', encoding='utf-8') as config_file:
+            config_file.writelines(lines)

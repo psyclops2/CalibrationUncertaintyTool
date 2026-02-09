@@ -3,7 +3,7 @@ import copy
 import os
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTabWidget, QMessageBox, QFileDialog, QMenuBar, QMenu
 from PySide6.QtGui import QAction
-from PySide6.QtCore import Qt, QEvent, Slot
+from PySide6.QtCore import Qt, QEvent, Slot, QLocale
 import json
 import decimal
 
@@ -20,7 +20,9 @@ from src.tabs.report_tab import ReportTab
 from src.tabs.partial_derivative_tab import PartialDerivativeTab
 from src.tabs.point_settings_tab import PointSettingsTab
 from src.dialogs.about_dialog import AboutDialog
+from src.dialogs.settings_dialog import SettingsDialog
 from src.utils.language_manager import LanguageManager
+from src.utils.config_loader import ConfigLoader
 
 from src.utils.translation_keys import *
 from src.utils.variable_utils import create_empty_value_dict, get_distribution_translation_key
@@ -142,11 +144,8 @@ class MainWindow(QMainWindow):
         self.save_action.setText(self.tr(FILE_SAVE))
         self.save_as_action.setText(self.tr(FILE_SAVE_AS))
         self.open_action.setText(self.tr(FILE_OPEN))
+        self.settings_action.setText(self._settings_action_text())
         self.exit_action.setText(self.tr(FILE_EXIT))
-        self.language_menu.setTitle(self.tr(MENU_LANGUAGE))
-        self.ja_action.setText(self.tr(LANGUAGE_JAPANESE))
-        self.en_action.setText(self.tr(LANGUAGE_ENGLISH))
-        self.system_locale_action.setText(self.tr(USE_SYSTEM_LOCALE))
         self.help_menu.setTitle(self.tr(MENU_HELP))
         self.about_action.setText(self.tr(ABOUT_APP))
         self.tab_widget.setTabText(0, self.tr(DOCUMENT_INFO_TAB))
@@ -155,7 +154,6 @@ class MainWindow(QMainWindow):
         """メニューバーの作成"""
         menubar = self.menuBar()
         self.file_menu = menubar.addMenu(self.tr(MENU_FILE))
-        self.language_menu = menubar.addMenu(self.tr(MENU_LANGUAGE))
         self.help_menu = menubar.addMenu(self.tr(MENU_HELP))
         
         # ファイルメニュー
@@ -173,31 +171,23 @@ class MainWindow(QMainWindow):
         self.open_action.triggered.connect(self.open_file)
         self.open_action.setShortcut("Ctrl+O")
         self.file_menu.addAction(self.open_action)
+
+        self.file_menu.addSeparator()
+        self.settings_action = QAction(self._settings_action_text(), self)
+        self.settings_action.triggered.connect(self.open_settings_dialog)
+        self.file_menu.addAction(self.settings_action)
         
         self.exit_action = QAction(self.tr(FILE_EXIT), self)
         self.exit_action.triggered.connect(self.close)
         self.file_menu.addAction(self.exit_action)
         
-        # 言語メニュー
-        self.ja_action = QAction(self.tr(LANGUAGE_JAPANESE), self)
-        self.ja_action.triggered.connect(lambda: self.change_language('ja'))
-        self.language_menu.addAction(self.ja_action)
-        
-        self.en_action = QAction(self.tr(LANGUAGE_ENGLISH), self)
-        self.en_action.triggered.connect(lambda: self.change_language('en'))
-        self.language_menu.addAction(self.en_action)
-        
-        self.system_locale_action = QAction(self.tr(USE_SYSTEM_LOCALE), self)
-        self.system_locale_action.setCheckable(True)
-        use_system = self.language_manager.config.config.getboolean('Language', 'use_system_locale', fallback=False)
-        self.system_locale_action.setChecked(use_system)
-        self.system_locale_action.triggered.connect(self.toggle_system_locale)
-        self.language_menu.addAction(self.system_locale_action)
-        
         # ヘルプメニュー
         self.about_action = QAction(self.tr(ABOUT_APP), self)
         self.about_action.triggered.connect(self.show_about_dialog)
         self.help_menu.addAction(self.about_action)
+
+    def _settings_action_text(self):
+        return "設定..." if self.language_manager.current_language == 'ja' else "Settings..."
         
     def get_save_data(self):
         """保存するデータを辞書にまとめる"""
@@ -542,6 +532,49 @@ class MainWindow(QMainWindow):
         """Aboutダイアログを表示"""
         dialog = AboutDialog(self)
         dialog.exec_()
+
+    def open_settings_dialog(self):
+        """アプリ設定ダイアログを表示して保存する"""
+        config_loader = ConfigLoader()
+        dialog = SettingsDialog(config_loader, self)
+        if dialog.exec_() != SettingsDialog.Accepted:
+            return
+
+        values = dialog.get_values()
+
+        if not config_loader.config.has_section("Calculation"):
+            config_loader.config.add_section("Calculation")
+        if not config_loader.config.has_section("UncertaintyRounding"):
+            config_loader.config.add_section("UncertaintyRounding")
+        if not config_loader.config.has_section("Language"):
+            config_loader.config.add_section("Language")
+        if not config_loader.config.has_section("CalibrationPoints"):
+            config_loader.config.add_section("CalibrationPoints")
+
+        config_loader.config.set("Calculation", "precision", values["calculation_precision"])
+        config_loader.config.set("UncertaintyRounding", "significant_digits", values["rounding_significant_digits"])
+        config_loader.config.set("UncertaintyRounding", "rounding_mode", values["rounding_mode"])
+        config_loader.config.set("Language", "current", values["language_current"])
+        config_loader.config.set("Language", "use_system_locale", values["language_use_system_locale"])
+        config_loader.config.set("CalibrationPoints", "min_count", values["calibration_min_count"])
+        config_loader.config.set("CalibrationPoints", "max_count", values["calibration_max_count"])
+
+        if not config_loader.save_config():
+            QMessageBox.critical(self, self.tr(MESSAGE_ERROR), self.tr(FILE_SAVE_ERROR))
+            return
+
+        self.language_manager.config = config_loader
+        use_system = values["language_use_system_locale"] == "true"
+        if use_system:
+            system_language = QLocale.system().name()[:2]
+            self.language_manager.current_language = (
+                system_language if system_language in ['ja', 'en'] else 'en'
+            )
+        else:
+            self.language_manager.current_language = values["language_current"]
+        self.language_manager.load_language()
+        self.retranslate_ui()
+        QMessageBox.information(self, self.tr(MESSAGE_SUCCESS), self.tr(FILE_SAVED))
         
     def log_error(self, message, error_type="エラー", details=None):
         """エラーログの記録"""
