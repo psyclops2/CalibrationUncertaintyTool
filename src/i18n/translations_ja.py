@@ -41,6 +41,7 @@ translations = {
         TAB_EQUATION: "モデル式",
         TAB_REGRESSION: "回帰モデル",
         TAB_VARIABLES: "変数管理",
+        TAB_CORRELATION: "相関係数",
         TAB_CALCULATION: "不確かさ計算",
         TAB_MONTE_CARLO: "モンテカルロ",
         TAB_REPORT: "レポート",
@@ -75,6 +76,12 @@ translations = {
         VARIABLE_ORDER_UPDATE_FAILED: "変数の並び順の更新に失敗しました。",
         VARIABLE_ORDER_SAVE_FAILED: "変数の並び順の保存に失敗しました。",
         VARIABLE_ORDER_LOAD_FAILED: "変数の並び順の読み込みに失敗しました。",
+    },
+    "CorrelationTab": {
+        CORRELATION_MATRIX_INPUT: "相関係数行列",
+        CORRELATION_MATRIX_DESCRIPTION: "既定値は対角成分が1.0、非対角成分が0.0です。",
+        CORRELATION_NO_INPUT_VARIABLES: "モデル式から入力変数が検出されていません。",
+        CORRELATION_VALUE_MAX_ERROR: "相関係数は1以下で入力してください。",
     },
     "DocumentInfoTab": {
         DOCUMENT_NUMBER: "文書番号",

@@ -12,6 +12,7 @@ from src.utils.app_logger import log_error as write_error_log
 from src.tabs.document_info_tab import DocumentInfoTab
 from src.tabs.model_equation_tab import ModelEquationTab
 from src.tabs.variables_tab import VariablesTab
+from src.tabs.correlation_tab import CorrelationTab
 from src.tabs.regression_tab import RegressionTab
 from src.tabs.uncertainty_calculation_tab import UncertaintyCalculationTab
 from src.tabs.monte_carlo_tab import MonteCarloTab
@@ -42,6 +43,7 @@ class MainWindow(QMainWindow):
         # アプリケーションの状態管理
         self.variables = []
         self.result_variables = []
+        self.correlation_coefficients = {}
         self.variable_values = {}
         self.last_equation = ""
         self.value_count = 1
@@ -90,6 +92,7 @@ class MainWindow(QMainWindow):
         self.regression_tab = RegressionTab(self)
         self.point_settings_tab = PointSettingsTab(self)
         self.variables_tab = VariablesTab(self)
+        self.correlation_tab = CorrelationTab(self)
         self.uncertainty_calculation_tab = UncertaintyCalculationTab(self)
         self.monte_carlo_tab = MonteCarloTab(self)
         self.partial_derivative_tab = PartialDerivativeTab(self)
@@ -105,6 +108,7 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(self.monte_carlo_tab, self.tr(TAB_MONTE_CARLO))
         self.tab_widget.addTab(self.report_tab, self.tr(TAB_REPORT))
         self.tab_widget.addTab(self.partial_derivative_tab, self.tr(PARTIAL_DERIVATIVE))
+        self.tab_widget.addTab(self.correlation_tab, self.tr(TAB_CORRELATION))
         
         # タブ切り替え時のシグナル接続
         self.tab_widget.currentChanged.connect(self.on_tab_changed)
@@ -245,6 +249,7 @@ class MainWindow(QMainWindow):
             # VariablesTab
             'variables': self.variables,
             'result_variables': self.result_variables,
+            'correlation_coefficients': self.correlation_coefficients,
             'variable_values': save_variable_values,
             'last_selected_variable': last_selected_variable,
             'last_selected_value_index': last_selected_value_index,
@@ -255,6 +260,7 @@ class MainWindow(QMainWindow):
         try:
             self.variables = data.get('variables', [])
             self.result_variables = data.get('result_variables', [])
+            self.correlation_coefficients = data.get('correlation_coefficients', {})
             self.variable_values = data.get('variable_values', {})
             self.last_equation = data.get('last_equation', "")
             self.value_count = data.get('value_count', 1)
@@ -279,6 +285,8 @@ class MainWindow(QMainWindow):
             if hasattr(self, 'variables_tab'):
                 self.variables_tab.update_variable_list(self.variables, self.result_variables)
                 self.variables_tab.restore_selection_state()  # 選択状態と詳細表示をリフレッシュ
+            if hasattr(self, 'correlation_tab'):
+                self.correlation_tab.refresh_matrix()
             if hasattr(self, 'model_equation_tab'):
                 self.model_equation_tab.set_equation(self.last_equation)
             if hasattr(self, 'regression_tab'):
@@ -332,6 +340,8 @@ class MainWindow(QMainWindow):
                     self.uncertainty_calculation_tab.on_value_changed(0)
             if hasattr(self, 'monte_carlo_tab'):
                 self.monte_carlo_tab.refresh_controls()
+            if hasattr(self, 'correlation_tab'):
+                self.correlation_tab.refresh_matrix()
             # レポートタブも必ずリフレッシュ
             if hasattr(self, 'report_tab'):
                 self.report_tab.update_variable_list(self.variables, self.result_variables)
@@ -514,6 +524,8 @@ class MainWindow(QMainWindow):
                     self.variables,
                     self.result_variables
                 )
+            if hasattr(self, 'correlation_tab'):
+                self.correlation_tab.refresh_matrix()
             if hasattr(self, 'uncertainty_calculation_tab'):
                 self.uncertainty_calculation_tab.update_result_combo()
             if hasattr(self, 'monte_carlo_tab'):
@@ -578,6 +590,7 @@ class MainWindow(QMainWindow):
         self.tab_widget.setTabText(6, self.tr(TAB_MONTE_CARLO))
         self.tab_widget.setTabText(7, self.tr(TAB_REPORT))
         self.tab_widget.setTabText(8, self.tr(PARTIAL_DERIVATIVE))
+        self.tab_widget.setTabText(9, self.tr(TAB_CORRELATION))
 
         # 各タブのUIテキストを更新
         if hasattr(self, 'document_info_tab') and hasattr(self.document_info_tab, 'retranslate_ui'):
@@ -588,6 +601,9 @@ class MainWindow(QMainWindow):
             
         if hasattr(self, 'variables_tab') and hasattr(self.variables_tab, 'retranslate_ui'):
             self.variables_tab.retranslate_ui()
+
+        if hasattr(self, 'correlation_tab') and hasattr(self.correlation_tab, 'retranslate_ui'):
+            self.correlation_tab.retranslate_ui()
 
         if hasattr(self, 'regression_tab') and hasattr(self.regression_tab, 'retranslate_ui'):
             self.regression_tab.retranslate_ui()

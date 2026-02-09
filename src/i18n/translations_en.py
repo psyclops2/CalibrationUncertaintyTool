@@ -37,6 +37,7 @@ translations = {
         TAB_EQUATION: "Model Equation",
         TAB_REGRESSION: "Regression",
         TAB_VARIABLES: "Variable Management",
+        TAB_CORRELATION: "Correlation",
         TAB_CALCULATION: "Uncertainty Calculation",
         TAB_MONTE_CARLO: "Monte Carlo",
         TAB_REPORT: "Report",
@@ -71,6 +72,12 @@ translations = {
         VARIABLE_ORDER_UPDATE_FAILED: "Failed to update variable order.",
         VARIABLE_ORDER_SAVE_FAILED: "Failed to save variable order.",
         VARIABLE_ORDER_LOAD_FAILED: "Failed to load variable order.",
+    },
+    "CorrelationTab": {
+        CORRELATION_MATRIX_INPUT: "Correlation Coefficient Matrix",
+        CORRELATION_MATRIX_DESCRIPTION: "Default values are 1.0 on the diagonal and 0.0 on off-diagonal elements.",
+        CORRELATION_NO_INPUT_VARIABLES: "No input variables available from the model equation.",
+        CORRELATION_VALUE_MAX_ERROR: "Correlation coefficient must be less than or equal to 1.",
     },
     "DocumentInfoTab": {
         DOCUMENT_NUMBER: "Document Number",
