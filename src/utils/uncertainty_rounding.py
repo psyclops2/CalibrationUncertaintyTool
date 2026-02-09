@@ -1,6 +1,7 @@
 from decimal import Decimal, ROUND_HALF_UP, ROUND_DOWN
 from .config_loader import ConfigLoader
 import traceback
+from .app_logger import log_error
 
 def get_uncertainty_rounding_settings():
     """不確かさの丸め設定を取得"""
@@ -76,8 +77,7 @@ def round_uncertainty(value: Decimal, mode: str = None) -> Decimal:
         return final_value
         
     except Exception as e:
-        print(f"【エラー】不確かさの丸めエラー: {str(e)}")
-        print(traceback.format_exc())
+        log_error(f"不確かさの丸めエラー: {str(e)}", details=traceback.format_exc())
         return Decimal('0')
 
 def format_uncertainty(value: Decimal, mode: str = None) -> str:
@@ -128,5 +128,5 @@ def format_uncertainty(value: Decimal, mode: str = None) -> str:
         return f"{format_str.format(abs_value)} E{exponent}"
         
     except Exception as e:
-        print(f"【エラー】不確かさの文字列変換エラー: {str(e)}")
+        log_error(f"不確かさの文字列変換エラー: {str(e)}", details=traceback.format_exc())
         return "0"

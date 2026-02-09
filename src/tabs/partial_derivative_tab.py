@@ -8,6 +8,7 @@ import re
 from src.tabs.base_tab import BaseTab
 from src.utils.translation_keys import *
 from src.utils.equation_normalizer import normalize_equation_text
+from src.utils.app_logger import log_error
 
 class PartialDerivativeTab(BaseTab):
     """偏微分タブ"""
@@ -74,9 +75,8 @@ class PartialDerivativeTab(BaseTab):
                 self.equation_display.clear()
                 self.partial_diff_area.clear()
         except Exception as e:
-            print(f"【エラー】モデル式表示更新エラー: {str(e)}")
-            print(traceback.format_exc())
-            
+            log_error(f"モデル式表示更新エラー: {str(e)}", details=traceback.format_exc())
+             
     def calculate_partial_derivatives(self):
         """偏微分の計算と表示"""
         try:

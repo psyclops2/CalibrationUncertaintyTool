@@ -12,6 +12,7 @@ from src.utils.equation_formatter import EquationFormatter
 from src.tabs.base_tab import BaseTab
 from src.utils.translation_keys import *
 from src.utils.equation_handler import EquationHandler
+from src.utils.app_logger import log_debug, log_error
 
 ZERO_WIDTH_PATTERN = re.compile(r'[\u200B\u200C\u200D\uFEFF]')
 
@@ -43,7 +44,7 @@ class ModelEquationTab(BaseTab):
 
     def retranslate_ui(self):
         """UIのテキストを現在の言語で更新"""
-        print(f"[DEBUG] Retranslating UI for context: {self.metaObject().className()}")
+        log_debug(f"[DEBUG] Retranslating UI for context: {self.metaObject().className()}")
         self.equation_group.setTitle(self.tr(MODEL_EQUATION_INPUT))
         self.equation_input.setPlaceholderText(self.tr(EQUATION_PLACEHOLDER))
         self.variable_group.setTitle(self.tr(VARIABLE_LIST_DRAG_DROP))
@@ -125,8 +126,7 @@ class ModelEquationTab(BaseTab):
 
             
         except Exception as e:
-            print(f"【エラー】変数の並び順更新エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"変数の並び順更新エラー: {str(e)}", details=traceback.format_exc())
             QMessageBox.warning(self, self.tr(MESSAGE_ERROR), f"{self.tr('VARIABLE_ORDER_UPDATE_FAILED')}: {str(e)}")
             
     def save_variable_order(self):
@@ -147,8 +147,7 @@ class ModelEquationTab(BaseTab):
 
             
         except Exception as e:
-            print(f"【エラー】変数の並び順保存エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"変数の並び順保存エラー: {str(e)}", details=traceback.format_exc())
             QMessageBox.critical(self, self.tr(MESSAGE_ERROR), f"{self.tr('VARIABLE_ORDER_SAVE_FAILED')}: {str(e)}")
             
     def load_variable_order(self):
@@ -180,8 +179,7 @@ class ModelEquationTab(BaseTab):
 
             
         except Exception as e:
-            print(f"【エラー】変数の並び順読み込みエラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"変数の並び順読み込みエラー: {str(e)}", details=traceback.format_exc())
             QMessageBox.critical(self, self.tr(MESSAGE_ERROR), f"{self.tr('VARIABLE_ORDER_LOAD_FAILED')}: {str(e)}")
             
     def update_variable_list(self):
@@ -196,8 +194,7 @@ class ModelEquationTab(BaseTab):
                     
 
         except Exception as e:
-            print(f"【エラー】変数リスト更新エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"変数リスト更新エラー: {str(e)}", details=traceback.format_exc())
             
     def _on_equation_focus_lost(self, event):
         """方程式入力エリアからフォーカスが外れたときの処理（内部メソッド）"""
@@ -231,8 +228,7 @@ class ModelEquationTab(BaseTab):
                 self.parent.uncertainty_calculation_tab.update_value_combo()
                 
         except Exception as e:
-            print(f"【エラー】方程式解析エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"方程式解析エラー: {str(e)}", details=traceback.format_exc())
             self.equation_status.setText(f"エラー: {str(e)}")
         
         # HTML表示を必ず更新
@@ -246,10 +242,10 @@ class ModelEquationTab(BaseTab):
     def check_equation_changes(self, equation):
         """方程式の変更を監視し、変数の追加・削除を検出"""
         try:
-            print(f"\n{'#'*80}")
-            print(f"#" + " " * 30 + "方程式変更チェック" + " " * 30 + "#")
-            print(f"{'#'*80}")
-            print(f"入力された方程式: '{equation}'")
+            log_debug(f"\n{'#'*80}")
+            log_debug(f"#" + " " * 30 + "方程式変更チェック" + " " * 30 + "#")
+            log_debug(f"{'#'*80}")
+            log_debug(f"入力された方程式: '{equation}'")
             
             # 方程式を分割
             equations = [eq.strip() for eq in equation.split(',')]
@@ -263,7 +259,7 @@ class ModelEquationTab(BaseTab):
                     continue
                 left_side = self._normalize_variable_name(eq.split('=', 1)[0])
                 result_vars.add(left_side)
-                print(f"  - 左辺から検出: {left_side}")
+                log_debug(f"  - 左辺から検出: {left_side}")
             
 
             
@@ -276,7 +272,7 @@ class ModelEquationTab(BaseTab):
                 left_side, right_side = eq.split('=', 1)
                 left_side = self._normalize_variable_name(left_side)
                 right_side = right_side.strip()
-                print(f"  方程式解析: {left_side} = {right_side}")
+                log_debug(f"  方程式解析: {left_side} = {right_side}")
                 
                 # 演算子で式を分割
                 # まず演算子の前後にスペースを追加
@@ -297,7 +293,7 @@ class ModelEquationTab(BaseTab):
                                 continue
                             if normalized_term not in result_vars:
                                 new_vars.add(normalized_term)
-                                print(f"    → 入力変数として追加: {normalized_term}")
+                                log_debug(f"    → 入力変数として追加: {normalized_term}")
             
 
 
@@ -338,8 +334,8 @@ class ModelEquationTab(BaseTab):
                 msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
                 msg.setDefaultButton(QMessageBox.No)
                 
-                print("確認メッセージ:")
-                print(message)
+                log_debug("確認メッセージ:")
+                log_debug(message)
                 
                 if msg.exec_() == QMessageBox.Yes:
 
@@ -446,15 +442,17 @@ class ModelEquationTab(BaseTab):
                 self.parent.last_equation = equation
 
             
-            print(f"\n{'#'*80}")
-            print(f"#" + " " * 30 + "方程式変更チェック完了" + " " * 30 + "#")
-            print(f"{'#'*80}\n")
+            log_debug(f"\n{'#'*80}")
+            log_debug(f"#" + " " * 30 + "方程式変更チェック完了" + " " * 30 + "#")
+            log_debug(f"{'#'*80}\n")
             return True
             
         except Exception as e:
-            print(f"【エラー】方程式変更チェックエラー: {str(e)}")
-            print(traceback.format_exc())
-            self.parent.log_error(f"方程式の変更チェックエラー: {str(e)}", "方程式チェックエラー")
+            self.parent.log_error(
+                f"方程式の変更チェックエラー: {str(e)}",
+                "方程式チェックエラー",
+                details=traceback.format_exc(),
+            )
             return False
             
     def resolve_equation(self, target_var, equations):
@@ -519,8 +517,7 @@ class ModelEquationTab(BaseTab):
             return f"{target_var} = {expanded_right}"
             
         except Exception as e:
-            print(f"【エラー】式の整理エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"式の整理エラー: {str(e)}", details=traceback.format_exc())
             return None
 
     def update_html_display(self, equation):
@@ -557,8 +554,7 @@ class ModelEquationTab(BaseTab):
             self.html_display.setHtml(html)
 
         except Exception as e:
-            print(f"【エラー】HTML表示の更新エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"HTML表示の更新エラー: {str(e)}", details=traceback.format_exc())
 
     def detect_variables(self, equation):
         """モデル式から変数を検出"""
@@ -625,9 +621,11 @@ class ModelEquationTab(BaseTab):
                 # 変数リストを更新
                 self.update_variable_list()
         except Exception as e:
-            print(f"【エラー】方程式設定エラー: {str(e)}")
-            print(traceback.format_exc())
-            self.parent.log_error(f"方程式の設定エラー: {str(e)}", "方程式設定エラー")
+            self.parent.log_error(
+                f"方程式の設定エラー: {str(e)}",
+                "方程式設定エラー",
+                details=traceback.format_exc(),
+            )
 
     def on_equation_changed(self):
         """数式が変更されたときの処理"""
@@ -655,8 +653,7 @@ class ModelEquationTab(BaseTab):
                 self.parent.uncertainty_calculation_tab.update_value_combo()
                 
         except Exception as e:
-            print(f"【エラー】数式変更処理エラー: {str(e)}")
-            print(traceback.format_exc()) 
+            log_error(f"数式変更処理エラー: {str(e)}", details=traceback.format_exc())
 
     def parse_equation(self, equation):
         import re

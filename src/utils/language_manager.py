@@ -6,6 +6,7 @@
 from PySide6.QtCore import QTranslator, QLocale, QCoreApplication
 import os
 from .config_loader import ConfigLoader
+from .app_logger import log_debug, log_error
 
 class LanguageManager:
     """言語管理クラス"""
@@ -32,16 +33,16 @@ class LanguageManager:
     
     def load_language(self):
         """現在の言語設定に基づいて翻訳をロード"""
-        print(f"[DEBUG] load_language called for language: {self.current_language}")
+        log_debug(f"[DEBUG] load_language called for language: {self.current_language}")
         
         # 翻訳ファイルのパス（絶対パスで指定）
         app_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         translation_file = os.path.join(app_dir, "i18n", f"{self.current_language}.qm")
-        print(f"[DEBUG] Attempting to load translation file: {translation_file}")
+        log_debug(f"[DEBUG] Attempting to load translation file: {translation_file}")
         
         # 翻訳をロード
         if not os.path.exists(translation_file):
-            print(f"[DEBUG][ERROR] Translation file not found: {translation_file}")
+            log_error(f"Translation file not found: {translation_file}", error_type="DEBUG_ERROR")
             return False
 
         # 既存のTranslatorを一旦削除してから新しいものをロードする
@@ -49,14 +50,17 @@ class LanguageManager:
         self.translator = QTranslator()
 
         if self.translator.load(translation_file):
-            print(f"[DEBUG] Successfully loaded translation file: {translation_file}")
+            log_debug(f"[DEBUG] Successfully loaded translation file: {translation_file}")
             if QCoreApplication.installTranslator(self.translator):
-                print("[DEBUG] Translator installed successfully.")
+                log_debug("[DEBUG] Translator installed successfully.")
             else:
-                print("[DEBUG][ERROR] Failed to install translator.")
+                log_error("Failed to install translator.", error_type="DEBUG_ERROR")
             return True
         else:
-            print(f"[DEBUG][ERROR] Failed to load language file (file exists but content may be invalid or unreadable): {translation_file}")
+            log_error(
+                f"Failed to load language file (file exists but content may be invalid or unreadable): {translation_file}",
+                error_type="DEBUG_ERROR",
+            )
             return False
     
     def get_locale(self):
@@ -86,7 +90,7 @@ class LanguageManager:
 
             return True
         
-        print(f"【エラー】サポートされていない言語コード: {language_code}")
+        log_error(f"サポートされていない言語コード: {language_code}")
         return False
     
     def toggle_system_locale(self, use_system):

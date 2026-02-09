@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, Slot
 from ..utils.config_loader import ConfigLoader
 import traceback
+from ..utils.app_logger import log_debug, log_error
 from ..utils.variable_utils import (
     calculate_type_a_uncertainty,
     calculate_type_b_uncertainty,
@@ -350,8 +351,7 @@ class VariablesTab(BaseTab):
 
             
         except Exception as e:
-            print(f"【エラー】変数リスト更新エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"変数リスト更新エラー: {str(e)}", details=traceback.format_exc())
             QMessageBox.warning(self, "エラー", "変数リストの更新に失敗しました。")
             
     def display_common_settings(self):
@@ -436,8 +436,7 @@ class VariablesTab(BaseTab):
             self.handlers.update_widget_visibility(uncertainty_type)
                 
         except Exception as e:
-            print(f"【エラー】共通設定表示エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"共通設定表示エラー: {str(e)}", details=traceback.format_exc())
 
     def display_current_value(self):
         """現在選択されている値の情報を表示"""
@@ -446,11 +445,11 @@ class VariablesTab(BaseTab):
             
         try:
             current_var = self.handlers.current_variable
-            print(f"[DEBUG] display_current_value: 開始 - 変数={current_var}")
+            log_debug(f"[DEBUG] display_current_value: 開始 - 変数={current_var}")
             
             # 変数の辞書が存在することを確認
             if current_var not in self.parent.variable_values:
-                print(f"[DEBUG] display_current_value: 変数の辞書が存在しないため作成 - {current_var}")
+                log_debug(f"[DEBUG] display_current_value: 変数の辞書が存在しないため作成 - {current_var}")
                 # 完全に新しい辞書を作成（前の変数の値の影響を受けないように）
                 self.parent.variable_values[current_var] = {
                     'values': [create_empty_value_dict()],
@@ -463,35 +462,39 @@ class VariablesTab(BaseTab):
             
             # valuesが存在しない、またはリストでない場合は初期化
             if 'values' not in var_info or not isinstance(var_info['values'], list):
-                print(f"[DEBUG] display_current_value: valuesリストが不正なため初期化")
+                log_debug("[DEBUG] display_current_value: valuesリストが不正なため初期化")
                 var_info['values'] = []
                 
             values = var_info['values']
 
             # 値のリストが空の場合はデフォルト値を追加
             if not values:
-                print(f"[DEBUG] display_current_value: 値のリストが空のため初期化")
+                log_debug("[DEBUG] display_current_value: 値のリストが空のため初期化")
                 values.append(create_empty_value_dict())
 
             # 校正点の数に合わせて値のリストを拡張
             required_values = self.value_combo.count()
             if len(values) < required_values:
-                print(f"[DEBUG] display_current_value: 値リストを校正点数に合わせて拡張 - 現在 {len(values)} -> 必要 {required_values}")
+                log_debug(
+                    f"[DEBUG] display_current_value: 値リストを校正点数に合わせて拡張 - 現在 {len(values)} -> 必要 {required_values}"
+                )
                 for _ in range(required_values - len(values)):
                     values.append(create_empty_value_dict())
 
             # 現在のインデックスを取得（範囲外の場合は0にリセット）
             index = self.value_combo.currentIndex()
             if index < 0 or index >= len(values):
-                print(f"[DEBUG] display_current_value: インデックスが範囲外のため0にリセット - index={index}, length={len(values)}")
+                log_debug(
+                    f"[DEBUG] display_current_value: インデックスが範囲外のため0にリセット - index={index}, length={len(values)}"
+                )
                 index = 0
                 if self.value_combo.count() > 0:
                     self.value_combo.setCurrentIndex(0)
             
             # 現在の値を取得
             value_info = values[index]
-            print(f"[DEBUG] display_current_value: 辞書から取得した値={value_info}")
-            print(f"[DEBUG] display_current_value: 使用する値のインデックス={index}, 値の総数={len(values)}")
+            log_debug(f"[DEBUG] display_current_value: 辞書から取得した値={value_info}")
+            log_debug(f"[DEBUG] display_current_value: 使用する値のインデックス={index}, 値の総数={len(values)}")
             
             # 計算結果変数は値入力をスキップし、単位などの共通設定のみ扱う
             if getattr(self.handlers, 'current_variable_is_result', False):
@@ -510,7 +513,9 @@ class VariablesTab(BaseTab):
             # 値のソースに応じてウィジェットの表示を更新
             self.handlers.update_widget_visibility(uncertainty_type)
             
-            print(f"[DEBUG] display_current_value: 復元開始 - 変数={current_var}, source={source}, type={uncertainty_type}, value_index={index}")
+            log_debug(
+                f"[DEBUG] display_current_value: 復元開始 - 変数={current_var}, source={source}, type={uncertainty_type}, value_index={index}"
+            )
             
             # 値をセット（ウィジェットの表示/非表示は既に設定済み）
             if source == 'regression':
@@ -545,7 +550,9 @@ class VariablesTab(BaseTab):
                 
                 self.type_a_widgets['description'].setText(str(description))
                 
-                print(f"[DEBUG] TypeA復元: measurements='{measurements}', degrees_of_freedom='{degrees_of_freedom}', central_value='{central_value}', description='{description}'")
+                log_debug(
+                    f"[DEBUG] TypeA復元: measurements='{measurements}', degrees_of_freedom='{degrees_of_freedom}', central_value='{central_value}', description='{description}'"
+                )
                 
             elif uncertainty_type == 'B':
                 # 辞書から値を取得（読み取り専用）
@@ -591,7 +598,9 @@ class VariablesTab(BaseTab):
                 var_info['distribution'] = distribution
                 self.type_b_widgets['divisor'].setReadOnly(distribution != NORMAL_DISTRIBUTION)
                 
-                print(f"[DEBUG] TypeB復元: central_value='{central_value}', half_width='{half_width}', degrees_of_freedom='{degrees_of_freedom}', description='{description}', divisor='{divisor}'")
+                log_debug(
+                    f"[DEBUG] TypeB復元: central_value='{central_value}', half_width='{half_width}', degrees_of_freedom='{degrees_of_freedom}', description='{description}', divisor='{divisor}'"
+                )
 
             # 値のソースが回帰式の場合
             source = value_info.get('source', 'manual')
@@ -626,7 +635,9 @@ class VariablesTab(BaseTab):
                     except ValueError:
                         self.regression_widgets['x_value'].setText('')
 
-                print(f"[DEBUG] Regression復元: id='{regression_id}', x_mode='{regression_x_mode}', x_value='{regression_x_value}'")
+                log_debug(
+                    f"[DEBUG] Regression復元: id='{regression_id}', x_mode='{regression_x_mode}', x_value='{regression_x_value}'"
+                )
 
             elif uncertainty_type == 'fixed':  # fixed
                 # 辞書から値を取得（読み取り専用）
@@ -639,15 +650,14 @@ class VariablesTab(BaseTab):
                 self.fixed_value_widgets['central_value'].setText(str(fixed_value))
                 self.fixed_value_widgets['description'].setText(str(description))
                 
-                print(f"[DEBUG] Fixed復元: fixed_value='{fixed_value}', description='{description}'")
+                log_debug(f"[DEBUG] Fixed復元: fixed_value='{fixed_value}', description='{description}'")
                     
             # フォームレイアウトの更新
             self.update_form_layout()
-            print(f"[DEBUG] display_current_value: 復元完了")
+            log_debug("[DEBUG] display_current_value: 復元完了")
 
         except Exception as e:
-            print(f"【エラー】現在値の表示エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"現在値の表示エラー: {str(e)}", details=traceback.format_exc())
 
     def update_value_combo(self):
         """値の選択コンボボックスを更新（校正点設定タブの情報を参照）"""
@@ -669,8 +679,7 @@ class VariablesTab(BaseTab):
             self.value_combo.blockSignals(False)
             
         except Exception as e:
-            print(f"【エラー】値の選択コンボボックス更新エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"値の選択コンボボックス更新エラー: {str(e)}", details=traceback.format_exc())
 
     def update_regression_model_options(self):
         """回帰モデル選択肢を更新"""
@@ -744,8 +753,7 @@ class VariablesTab(BaseTab):
                                     label_widget.setVisible(any_visible)
         
         except Exception as e:
-            print(f"【エラー】フォームレイアウト更新エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"フォームレイアウト更新エラー: {str(e)}", details=traceback.format_exc())
 
     def get_distribution_options(self):
         """分布コンボボックスの選択肢を取得"""
@@ -794,5 +802,4 @@ class VariablesTab(BaseTab):
             self.display_current_value()
                 
         except Exception as e:
-            print(f"【エラー】選択状態の復元エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"選択状態の復元エラー: {str(e)}", details=traceback.format_exc())

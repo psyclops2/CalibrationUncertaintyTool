@@ -4,6 +4,7 @@ import traceback
 import decimal
 from decimal import Decimal, getcontext
 from .config_loader import ConfigLoader
+from .app_logger import log_error
 
 def evaluate_formula(formula, variables=None):
     """
@@ -50,6 +51,5 @@ def evaluate_formula(formula, variables=None):
         return result
         
     except Exception as e:
-        print(f"【エラー】計算式の評価エラー: {str(e)}")
-        print(traceback.format_exc())
+        log_error(f"計算式の評価エラー: {str(e)}", details=traceback.format_exc())
         return None 

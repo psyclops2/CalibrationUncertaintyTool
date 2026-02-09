@@ -2,6 +2,7 @@ import traceback
 from .variable_utils import get_distribution_translation_key
 from .calculation_utils import evaluate_formula
 from .regression_utils import calculate_linear_regression_prediction
+from .app_logger import log_error
 
 class ValueHandler:
     def __init__(self, main_window, current_value_index=0):
@@ -80,8 +81,7 @@ class ValueHandler:
             
             return calculate_linear_regression_prediction(regression_model, x_value)
         except Exception as e:
-            print(f"【エラー】回帰値取得エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"回帰値取得エラー: {str(e)}", details=traceback.format_exc())
             return None, None, None
 
     def get_central_value(self, var):
@@ -119,8 +119,7 @@ class ValueHandler:
             return ''
             
         except Exception as e:
-            print(f"【エラー】中央値取得エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"中央値取得エラー: {str(e)}", details=traceback.format_exc())
             return ''
 
     def get_standard_uncertainty(self, var):
@@ -158,8 +157,7 @@ class ValueHandler:
             return ''
             
         except Exception as e:
-            print(f"【エラー】標準不確かさ取得エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"標準不確かさ取得エラー: {str(e)}", details=traceback.format_exc())
             return ''
 
     def get_degrees_of_freedom(self, var):
@@ -190,8 +188,7 @@ class ValueHandler:
             return ''
             
         except Exception as e:
-            print(f"【エラー】自由度取得エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"自由度取得エラー: {str(e)}", details=traceback.format_exc())
             return ''
 
     def get_distribution(self, var):
@@ -213,8 +210,7 @@ class ValueHandler:
             return ''
             
         except Exception as e:
-            print(f"【エラー】分布取得エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"分布取得エラー: {str(e)}", details=traceback.format_exc())
             return ''
             
     def update_variable_value(self, var, field, value):
@@ -243,6 +239,5 @@ class ValueHandler:
             return False
             
         except Exception as e:
-            print(f"【エラー】変数値更新エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"変数値更新エラー: {str(e)}", details=traceback.format_exc())
             return False

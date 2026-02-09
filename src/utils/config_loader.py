@@ -1,6 +1,8 @@
 import configparser
 import os
 
+from .app_logger import log_error, log_warning
+
 class ConfigLoader:
     def __init__(self, config_path: str = None):
         self.config = configparser.ConfigParser()
@@ -19,7 +21,7 @@ class ConfigLoader:
         try:
             return int(self.config.get('Calculation', 'precision'))
         except configparser.NoSectionError:
-            print("【警告】Calculationセクションが見つかりません。デフォルト値を使用します。")
+            log_warning("Calculationセクションが見つかりません。デフォルト値を使用します。")
             return 28
 
     def get_calibration_point_limits(self) -> dict:
@@ -30,7 +32,7 @@ class ConfigLoader:
                 'max_count': int(self.config.get('CalibrationPoints', 'max_count'))
             }
         except configparser.NoSectionError:
-            print("【警告】CalibrationPointsセクションが見つかりません。デフォルト値を使用します。")
+            log_warning("CalibrationPointsセクションが見つかりません。デフォルト値を使用します。")
             return {
                 'min_count': 1,
                 'max_count': 10
@@ -54,7 +56,7 @@ class ConfigLoader:
                 'u': self.config.get('Distribution', 'u_distribution')
             }
         except configparser.NoSectionError:
-            print("【警告】Distributionセクションが見つかりません。デフォルト値を使用します。")
+            log_warning("Distributionセクションが見つかりません。デフォルト値を使用します。")
             return {
                 'normal': '',
                 'rectangular': '1.732050808',
@@ -73,7 +75,7 @@ class ConfigLoader:
                     t_values[int(key)] = float(value)
             return t_values
         except configparser.NoSectionError:
-            print("【警告】TValuesセクションが見つかりません。デフォルト値を使用します。")
+            log_warning("TValuesセクションが見つかりません。デフォルト値を使用します。")
             return {
                 1: 12.706,
                 2: 4.303,
@@ -110,5 +112,5 @@ class ConfigLoader:
 
             return True
         except Exception as e:
-            print(f"【エラー】設定ファイルの保存に失敗しました: {str(e)}")
+            log_error(f"設定ファイルの保存に失敗しました: {str(e)}")
             return False

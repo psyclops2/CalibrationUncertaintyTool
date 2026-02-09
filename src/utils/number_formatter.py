@@ -1,6 +1,7 @@
 from decimal import Decimal, ROUND_HALF_UP, ROUND_UP, ROUND_DOWN
 from .config_loader import ConfigLoader
 import traceback
+from .app_logger import log_error
 
 def _to_decimal(value: float | Decimal) -> Decimal:
     """float/Decimal を Decimal に正規化"""
@@ -63,8 +64,7 @@ def format_central_value(value) -> str:
         rounded = _round_to_significant_digits(_to_decimal(value), digits, ROUND_HALF_UP)
         return _format_with_exponent(rounded, digits)
     except Exception as e:
-        print(f"【エラー】校正値の文字列変換エラー: {str(e)}")
-        print(traceback.format_exc())
+        log_error(f"校正値の文字列変換エラー: {str(e)}", details=traceback.format_exc())
         return "0"
 
 
@@ -76,8 +76,7 @@ def format_standard_uncertainty(value) -> str:
         rounded = _round_to_significant_digits(_to_decimal(value), digits, ROUND_HALF_UP)
         return _format_with_exponent(rounded, digits)
     except Exception as e:
-        print(f"【エラー】標準不確かさの文字列変換エラー: {str(e)}")
-        print(traceback.format_exc())
+        log_error(f"標準不確かさの文字列変換エラー: {str(e)}", details=traceback.format_exc())
         return "0"
 
 
@@ -117,8 +116,7 @@ def format_expanded_uncertainty(value) -> str:
 
         return _format_with_exponent(rounded, digits)
     except Exception as e:
-        print(f"【エラー】拡張不確かさの文字列変換エラー: {str(e)}")
-        print(traceback.format_exc())
+        log_error(f"拡張不確かさの文字列変換エラー: {str(e)}", details=traceback.format_exc())
         return "0"
 
 
@@ -132,8 +130,7 @@ def format_coverage_factor(value) -> str:
     try:
         return f"{_to_decimal(value).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)}"
     except Exception as e:
-        print(f"【エラー】包含係数の文字列変換エラー: {str(e)}")
-        print(traceback.format_exc())
+        log_error(f"包含係数の文字列変換エラー: {str(e)}", details=traceback.format_exc())
         return "0"
 
 
@@ -151,8 +148,7 @@ def format_central_value_with_uncertainty(value, expanded_uncertainty) -> str:
         rounded_value = _to_decimal(value).quantize(quantize_exp, rounding=ROUND_HALF_UP)
         return f"{rounded_value:.{decimals}f}"
     except Exception as e:
-        print(f"【エラー】不確かさに合わせた中央値の文字列変換エラー: {str(e)}")
-        print(traceback.format_exc())
+        log_error(f"不確かさに合わせた中央値の文字列変換エラー: {str(e)}", details=traceback.format_exc())
         return format_central_value(value)
 
 
@@ -165,6 +161,5 @@ def format_number_str(value):
         rounded = _round_to_significant_digits(dec_value, digits, ROUND_HALF_UP)
         return _format_with_exponent(rounded, digits)
     except Exception as e:
-        print(f"【エラー】汎用数値の文字列変換エラー: {str(e)}")
-        print(traceback.format_exc())
+        log_error(f"汎用数値の文字列変換エラー: {str(e)}", details=traceback.format_exc())
         return "0"

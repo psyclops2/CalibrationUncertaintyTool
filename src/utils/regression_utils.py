@@ -3,6 +3,8 @@ import traceback
 
 import sympy as sp
 
+from .app_logger import log_error
+
 
 def _parse_float(value):
     """Safely parse a float from various input types."""
@@ -48,8 +50,7 @@ def calculate_xy_averages(model_data, x_key="x", y_key="y"):
         y_mean = sum(ys) / len(ys)
         return x_mean, y_mean
     except Exception as e:
-        print(f"[ERROR] Regression averages failed: {str(e)}")
-        print(traceback.format_exc())
+        log_error(f"Regression averages failed: {str(e)}", error_type="ERROR", details=traceback.format_exc())
         return None, None
 
 
@@ -68,8 +69,7 @@ def calculate_value_average(model_data, value_key):
             return None
         return sum(values) / len(values)
     except Exception as e:
-        print(f"[ERROR] Regression average failed: {str(e)}")
-        print(traceback.format_exc())
+        log_error(f"Regression average failed: {str(e)}", error_type="ERROR", details=traceback.format_exc())
         return None
 
 
@@ -83,8 +83,7 @@ def calculate_regression_sxx(model_data):
         sxx = sum((x - x_mean) ** 2 for x in xs)
         return sxx, x_mean, len(xs)
     except Exception as e:
-        print(f"[ERROR] Regression Sxx failed: {str(e)}")
-        print(traceback.format_exc())
+        log_error(f"Regression Sxx failed: {str(e)}", error_type="ERROR", details=traceback.format_exc())
         return None, None, 0
 
 
@@ -120,8 +119,7 @@ def calculate_linear_regression_parameters(model_data, x_key="x", y_key="y"):
         return (slope, intercept, residual_std, degrees_of_freedom, len(xs))
 
     except Exception as e:
-        print(f"[ERROR] Regression parameters failed: {str(e)}")
-        print(traceback.format_exc())
+        log_error(f"Regression parameters failed: {str(e)}", error_type="ERROR", details=traceback.format_exc())
         return None
 
 
@@ -175,8 +173,7 @@ def calculate_significance_f(model_data, slope=None, intercept=None, x_key="x", 
         return max(0.0, min(1.0, p_value))
 
     except Exception as e:
-        print(f"[ERROR] Regression significance F failed: {str(e)}")
-        print(traceback.format_exc())
+        log_error(f"Regression significance F failed: {str(e)}", error_type="ERROR", details=traceback.format_exc())
         return None
 
 
@@ -217,6 +214,5 @@ def calculate_linear_regression_prediction(model_data, x_value):
         return prediction, standard_uncertainty, degrees_of_freedom
 
     except Exception as e:
-        print(f"[ERROR] Regression prediction failed: {str(e)}")
-        print(traceback.format_exc())
+        log_error(f"Regression prediction failed: {str(e)}", error_type="ERROR", details=traceback.format_exc())
         return None, None, None

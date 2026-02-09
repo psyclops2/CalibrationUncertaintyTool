@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import QMessageBox
 from PySide6.QtCore import Qt
 import traceback
+from ..utils.app_logger import log_error
 from ..utils.variable_utils import (
     calculate_type_a_uncertainty,
     calculate_type_b_uncertainty,
@@ -126,8 +127,7 @@ class VariablesTabHandlers:
             self.parent.display_current_value()
 
         except Exception as e:
-            print(f"【エラー】値選択エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"値選択エラー: {str(e)}", details=traceback.format_exc())
 
     def on_variable_selected(self, current, previous):
         """量が選択された時の処理"""
@@ -179,8 +179,7 @@ class VariablesTabHandlers:
             self.parent.display_current_value()
 
         except Exception as e:
-            print(f"【エラー】量選択エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"量選択エラー: {str(e)}", details=traceback.format_exc())
 
     def on_type_changed(self, checked):
         """不確かさ種類が変更されたときの処理"""
@@ -209,8 +208,7 @@ class VariablesTabHandlers:
             self.parent.update_form_layout()
             
         except Exception as e:
-            print(f"【エラー】不確かさ種類変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"不確かさ種類変更エラー: {str(e)}", details=traceback.format_exc())
 
     def on_value_source_changed(self, index):
         """値のソース変更時の処理"""
@@ -254,8 +252,7 @@ class VariablesTabHandlers:
             self.update_widget_visibility_for_source(source)
             self.parent.update_form_layout()
         except Exception as e:
-            print(f"【エラー】値のソース変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"値のソース変更エラー: {str(e)}", details=traceback.format_exc())
 
     def update_widget_visibility_for_source(self, source):
         """値のソースに応じてウィジェットの表示を更新"""
@@ -290,8 +287,7 @@ class VariablesTabHandlers:
             value_info['regression_id'] = model_name
             value_info['regression_model'] = model_name  # 後方互換性のため
         except Exception as e:
-            print(f"【エラー】回帰モデル選択エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"回帰モデル選択エラー: {str(e)}", details=traceback.format_exc())
 
     def on_regression_x_mode_changed(self, index):
         """回帰モデルのxの取り方変更"""
@@ -320,8 +316,7 @@ class VariablesTabHandlers:
                 if regression_x_value:
                     self.parent.regression_widgets['x_value'].setText(str(regression_x_value))
         except Exception as e:
-            print(f"【エラー】回帰モデルxの取り方変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"回帰モデルxの取り方変更エラー: {str(e)}", details=traceback.format_exc())
 
     def on_regression_x_value_changed(self):
         """回帰モデルのx値入力変更"""
@@ -333,8 +328,7 @@ class VariablesTabHandlers:
             value_info['regression_x_value'] = x_value
             value_info['regression_x'] = x_value  # 後方互換性のため
         except Exception as e:
-            print(f"【エラー】回帰モデルx値変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"回帰モデルx値変更エラー: {str(e)}", details=traceback.format_exc())
 
     def _get_current_value_info(self):
         """現在の値辞書を取得"""
@@ -354,8 +348,7 @@ class VariablesTabHandlers:
             if self.current_variable:
                 self.parent.parent.variable_values[self.current_variable]['unit'] = self.parent.unit_input.text()
         except Exception as e:
-            print(f"【エラー】単位変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"単位変更エラー: {str(e)}", details=traceback.format_exc())
 
     def on_definition_changed(self):
         """定義が変更されたときの処理"""
@@ -363,8 +356,7 @@ class VariablesTabHandlers:
             if self.current_variable:
                 self.parent.parent.variable_values[self.current_variable]['definition'] = self.parent.definition_input.toPlainText()
         except Exception as e:
-            print(f"【エラー】定義変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"定義変更エラー: {str(e)}", details=traceback.format_exc())
 
     def on_measurements_focus_lost(self, event):
         """測定値入力からフォーカスが外れたときの処理"""
@@ -396,8 +388,7 @@ class VariablesTabHandlers:
                     })
             
         except Exception as e:
-            print(f"【エラー】測定値計算エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"測定値計算エラー: {str(e)}", details=traceback.format_exc())
 
     def on_distribution_changed(self, index):
         """分布の種類が変更されたときの処理"""
@@ -461,8 +452,7 @@ class VariablesTabHandlers:
                             pass
             
         except Exception as e:
-            print(f"【エラー】分布変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"分布変更エラー: {str(e)}", details=traceback.format_exc())
 
     def on_half_width_focus_lost(self, event):
         """半値幅の入力欄からフォーカスが外れたときの処理"""
@@ -497,8 +487,7 @@ class VariablesTabHandlers:
                 self.parent.type_b_widgets['standard_uncertainty'].setText(f"{standard_uncertainty:.15g}")
                 
         except Exception as e:
-            print(f"【エラー】半値幅フォーカスロスエラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"半値幅フォーカスロスエラー: {str(e)}", details=traceback.format_exc())
 
     def on_divisor_changed(self):
         """除数が変更されたときの処理"""
@@ -531,8 +520,7 @@ class VariablesTabHandlers:
                         pass
             
         except Exception as e:
-            print(f"【エラー】除数変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"除数変更エラー: {str(e)}", details=traceback.format_exc())
 
     def on_central_value_changed(self):
         """中央値が変更されたときの処理"""
@@ -548,8 +536,7 @@ class VariablesTabHandlers:
                 self.parent.parent.variable_values[self.current_variable]['values'][value_index]['central_value'] = central_value
                 
         except Exception as e:
-            print(f"【エラー】中央値変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"中央値変更エラー: {str(e)}", details=traceback.format_exc())
 
     def on_fixed_value_changed(self):
         """固定値の中央値が変更されたときの処理"""
@@ -567,8 +554,7 @@ class VariablesTabHandlers:
                 })
                 
         except Exception as e:
-            print(f"【エラー】固定値変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"固定値変更エラー: {str(e)}", details=traceback.format_exc())
 
     def on_degrees_of_freedom_changed(self):
         """自由度が変更されたときの処理"""
@@ -584,8 +570,7 @@ class VariablesTabHandlers:
                 self.parent.parent.variable_values[self.current_variable]['values'][value_index]['degrees_of_freedom'] = degrees_of_freedom
                 
         except Exception as e:
-            print(f"【エラー】自由度変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"自由度変更エラー: {str(e)}", details=traceback.format_exc())
 
     def on_description_changed(self):
         """詳細説明が変更されたときの処理"""
@@ -623,8 +608,7 @@ class VariablesTabHandlers:
             values[index]['description'] = description
             
         except Exception as e:
-            print(f"【エラー】詳細説明変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"詳細説明変更エラー: {str(e)}", details=traceback.format_exc())
 
     def on_calculation_formula_changed(self):
         """計算式が変更されたときの処理"""
@@ -646,8 +630,7 @@ class VariablesTabHandlers:
                 self.parent.parent.variable_values[self.current_variable]['values'][value_index]['calculation_formula'] = calculation_formula
                 
         except Exception as e:
-            print(f"【エラー】計算式変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"計算式変更エラー: {str(e)}", details=traceback.format_exc())
 
     def on_calculate_button_clicked(self):
         """計算ボタンがクリックされたときの処理"""
@@ -687,8 +670,7 @@ class VariablesTabHandlers:
                     self.parent.parent.variable_values[self.current_variable]['values'][value_index]['calculation_formula'] = calculation_formula
                 
         except Exception as e:
-            print(f"【エラー】計算ボタンクリックエラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"計算ボタンクリックエラー: {str(e)}", details=traceback.format_exc())
 
     def on_measurements_changed(self):
         """測定値が変更されたときの処理"""
@@ -704,8 +686,7 @@ class VariablesTabHandlers:
                 self.parent.parent.variable_values[self.current_variable]['values'][value_index]['measurements'] = measurements
                 
         except Exception as e:
-            print(f"【エラー】測定値変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"測定値変更エラー: {str(e)}", details=traceback.format_exc())
 
     def on_type_a_degrees_of_freedom_changed(self):
         """TypeAの自由度が変更されたときの処理"""
@@ -721,8 +702,7 @@ class VariablesTabHandlers:
                 self.parent.parent.variable_values[self.current_variable]['values'][value_index]['degrees_of_freedom'] = degrees_of_freedom
                 
         except Exception as e:
-            print(f"【エラー】TypeA自由度変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"TypeA自由度変更エラー: {str(e)}", details=traceback.format_exc())
 
     def on_type_a_central_value_changed(self):
         """TypeAの中央値が変更されたときの処理"""
@@ -738,8 +718,7 @@ class VariablesTabHandlers:
                 self.parent.parent.variable_values[self.current_variable]['values'][value_index]['central_value'] = central_value
                 
         except Exception as e:
-            print(f"【エラー】TypeA中央値変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"TypeA中央値変更エラー: {str(e)}", details=traceback.format_exc())
 
     def on_type_a_standard_uncertainty_changed(self):
         """TypeAの標準不確かさが変更されたときの処理"""
@@ -755,8 +734,7 @@ class VariablesTabHandlers:
                 self.parent.parent.variable_values[self.current_variable]['values'][value_index]['standard_uncertainty'] = standard_uncertainty
                 
         except Exception as e:
-            print(f"【エラー】TypeA標準不確かさ変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"TypeA標準不確かさ変更エラー: {str(e)}", details=traceback.format_exc())
 
     def on_type_a_description_changed(self):
         """TypeAの詳細説明が変更されたときの処理"""
@@ -772,8 +750,7 @@ class VariablesTabHandlers:
                 self.parent.parent.variable_values[self.current_variable]['values'][value_index]['description'] = description
                 
         except Exception as e:
-            print(f"【エラー】TypeA詳細説明変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"TypeA詳細説明変更エラー: {str(e)}", details=traceback.format_exc())
 
     def on_type_b_degrees_of_freedom_changed(self):
         """TypeBの自由度が変更されたときの処理"""
@@ -789,8 +766,7 @@ class VariablesTabHandlers:
                 self.parent.parent.variable_values[self.current_variable]['values'][value_index]['degrees_of_freedom'] = degrees_of_freedom
                 
         except Exception as e:
-            print(f"【エラー】TypeB自由度変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"TypeB自由度変更エラー: {str(e)}", details=traceback.format_exc())
 
     def on_type_b_central_value_changed(self):
         """TypeBの中央値が変更されたときの処理"""
@@ -806,8 +782,7 @@ class VariablesTabHandlers:
                 self.parent.parent.variable_values[self.current_variable]['values'][value_index]['central_value'] = central_value
                 
         except Exception as e:
-            print(f"【エラー】TypeB中央値変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"TypeB中央値変更エラー: {str(e)}", details=traceback.format_exc())
 
     def on_type_b_half_width_changed(self):
         """TypeBの半値幅が変更されたときの処理"""
@@ -823,8 +798,7 @@ class VariablesTabHandlers:
                 self.parent.parent.variable_values[self.current_variable]['values'][value_index]['half_width'] = half_width
                 
         except Exception as e:
-            print(f"【エラー】TypeB半値幅変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"TypeB半値幅変更エラー: {str(e)}", details=traceback.format_exc())
 
     def on_type_b_standard_uncertainty_changed(self):
         """TypeBの標準不確かさが変更されたときの処理"""
@@ -840,8 +814,7 @@ class VariablesTabHandlers:
                 self.parent.parent.variable_values[self.current_variable]['values'][value_index]['standard_uncertainty'] = standard_uncertainty
                 
         except Exception as e:
-            print(f"【エラー】TypeB標準不確かさ変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"TypeB標準不確かさ変更エラー: {str(e)}", details=traceback.format_exc())
 
     def on_type_b_description_changed(self):
         """TypeBの詳細説明が変更されたときの処理"""
@@ -857,8 +830,7 @@ class VariablesTabHandlers:
                 self.parent.parent.variable_values[self.current_variable]['values'][value_index]['description'] = description
                 
         except Exception as e:
-            print(f"【エラー】TypeB詳細説明変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"TypeB詳細説明変更エラー: {str(e)}", details=traceback.format_exc())
 
     def on_fixed_value_central_value_changed(self):
         """固定値の中央値が変更されたときの処理"""
@@ -876,8 +848,7 @@ class VariablesTabHandlers:
                 })
                 
         except Exception as e:
-            print(f"【エラー】固定値中央値変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"固定値中央値変更エラー: {str(e)}", details=traceback.format_exc())
 
     def on_fixed_value_description_changed(self):
         """固定値の詳細説明が変更されたときの処理"""
@@ -893,5 +864,4 @@ class VariablesTabHandlers:
                 self.parent.parent.variable_values[self.current_variable]['values'][value_index]['description'] = description
                 
         except Exception as e:
-            print(f"【エラー】固定値詳細説明変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"固定値詳細説明変更エラー: {str(e)}", details=traceback.format_exc())

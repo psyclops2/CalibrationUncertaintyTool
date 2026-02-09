@@ -17,6 +17,7 @@ from src.utils.translation_keys import *
 from src.utils.variable_utils import get_distribution_translation_key
 from src.utils.equation_formatter import EquationFormatter
 from src.utils.regression_utils import calculate_linear_regression_parameters
+from src.utils.app_logger import log_error
 
 class ReportTab(BaseTab):
     UNIT_PLACEHOLDER = '-'
@@ -150,8 +151,7 @@ class ReportTab(BaseTab):
             self.update_report()
             
         except Exception as e:
-            print(f"【エラー】変数リスト更新エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"変数リスト更新エラー: {str(e)}", details=traceback.format_exc())
             
     def on_result_changed(self, result_var):
         """計算結果が変更されたときの処理"""
@@ -161,8 +161,7 @@ class ReportTab(BaseTab):
         try:
             self.update_report()
         except Exception as e:
-            print(f"【エラー】計算結果変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"計算結果変更エラー: {str(e)}", details=traceback.format_exc())
             
     def generate_report(self):
         """レポートを生成して表示"""
@@ -189,8 +188,7 @@ class ReportTab(BaseTab):
 
             
         except Exception as e:
-            print(f"【エラー】レポート生成エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"レポート生成エラー: {str(e)}", details=traceback.format_exc())
             QMessageBox.warning(self, self.tr(SAVE_ERROR), self.tr(REPORT_SAVE_ERROR))
             
 
@@ -443,8 +441,7 @@ class ReportTab(BaseTab):
             return html
 
         except Exception as e:
-            print(f"【エラー】HTML生成エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"HTML生成エラー: {str(e)}", details=traceback.format_exc())
             return self.tr(HTML_GENERATION_ERROR)
 
     def get_revision_rows(self, document_info):
@@ -487,8 +484,7 @@ class ReportTab(BaseTab):
 
             QMessageBox.information(self, self.tr(SAVE_SUCCESS), self.tr(REPORT_SAVED))
         except Exception as e:
-            print(f"【エラー】ファイル保存エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"ファイル保存エラー: {str(e)}", details=traceback.format_exc())
             QMessageBox.warning(self, self.tr(SAVE_ERROR), self.tr(FILE_SAVE_ERROR))
 
     def get_uncertainty_type_display(self, type_code, var_name=None):

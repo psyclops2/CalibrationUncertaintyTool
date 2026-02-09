@@ -22,6 +22,7 @@ import math
 
 from src.tabs.base_tab import BaseTab
 from src.utils.translation_keys import *
+from src.utils.app_logger import log_error
 from src.utils.regression_utils import (
     calculate_linear_regression_parameters,
     calculate_significance_f,
@@ -619,7 +620,7 @@ class RegressionTab(BaseTab):
                 uy_average=uy_average_value,
             )
         except Exception as e:
-            print(f"【エラー】回帰計算結果更新エラー: {str(e)}")
+            log_error(f"回帰計算結果更新エラー: {str(e)}")
             self.intercept_display.setText("--")
             self.slope_display.setText("--")
             self.u_beta_display.setText("--")

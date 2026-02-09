@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QObject
 
 from src.tabs.base_tab import BaseTab
+from src.utils.app_logger import log_error
 from src.utils.translation_keys import (
     POINT_SETTINGS_TAB_INFO, POINT_NAME, ADD_POINT, REMOVE_POINT, INDEX,
     CALIBRATION_POINT_NAME
@@ -91,7 +92,7 @@ class PointSettingsTab(BaseTab):
             self.table.selectRow(current_count)
             
         except Exception as e:
-            print(f"【エラー】校正点追加エラー: {str(e)}")
+            log_error(f"校正点追加エラー: {str(e)}")
             QMessageBox.warning(self, "エラー", f"校正点の追加に失敗しました: {str(e)}")
 
     def remove_point(self):
@@ -134,7 +135,7 @@ class PointSettingsTab(BaseTab):
                     self.table.selectRow(self.table.rowCount() - 1)
                     
         except Exception as e:
-            print(f"【エラー】校正点削除エラー: {str(e)}")
+            log_error(f"校正点削除エラー: {str(e)}")
             QMessageBox.warning(self, "エラー", f"校正点の削除に失敗しました: {str(e)}")
 
     def on_item_changed(self, item):
@@ -159,7 +160,7 @@ class PointSettingsTab(BaseTab):
             self.points_changed.emit()
             
         except Exception as e:
-            print(f"【エラー】校正点名保存エラー: {str(e)}")
+            log_error(f"校正点名保存エラー: {str(e)}")
 
     def showEvent(self, event):
         """タブが表示されたときの処理"""

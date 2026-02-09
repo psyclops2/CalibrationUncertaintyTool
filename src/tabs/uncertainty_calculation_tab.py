@@ -19,6 +19,7 @@ from src.utils.number_formatter import (
 from src.tabs.base_tab import BaseTab
 from src.utils.translation_keys import *
 from src.utils.variable_utils import get_distribution_translation_key
+from src.utils.app_logger import log_error
 
 class UncertaintyCalculationTab(BaseTab):
     UNIT_PLACEHOLDER = '-'
@@ -157,8 +158,7 @@ class UncertaintyCalculationTab(BaseTab):
                         self._updating_table = False
                         
             except Exception as e:
-                print(f"【エラー】テーブル値更新エラー: {str(e)}")
-                print(traceback.format_exc())
+                log_error(f"テーブル値更新エラー: {str(e)}", details=traceback.format_exc())
             finally:
                 # Always unblock signals
                 self.calibration_table.blockSignals(False)
@@ -291,8 +291,7 @@ class UncertaintyCalculationTab(BaseTab):
 
                 
         except Exception as e:
-            print(f"【エラー】計算結果選択肢更新エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"計算結果選択肢更新エラー: {str(e)}", details=traceback.format_exc())
         
     def update_value_combo(self):
         """校正点の選択肢を更新"""
@@ -305,8 +304,7 @@ class UncertaintyCalculationTab(BaseTab):
                 self.value_combo.addItem(name)
                 
         except Exception as e:
-            print(f"【エラー】校正点選択肢更新エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"校正点選択肢更新エラー: {str(e)}", details=traceback.format_exc())
             
     def on_result_changed(self, result_var):
         """計算結果が変更されたときの処理"""
@@ -323,8 +321,7 @@ class UncertaintyCalculationTab(BaseTab):
             self.calculate_sensitivity_coefficients(equation)
             
         except Exception as e:
-            print(f"【エラー】計算結果変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"計算結果変更エラー: {str(e)}", details=traceback.format_exc())
             
     def on_value_changed(self, index):
         """校正点が変更されたときの処理"""
@@ -349,8 +346,7 @@ class UncertaintyCalculationTab(BaseTab):
             self.calculate_sensitivity_coefficients(equation)
             
         except Exception as e:
-            print(f"【エラー】校正点変更エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"校正点変更エラー: {str(e)}", details=traceback.format_exc())
             
 
     
@@ -544,12 +540,10 @@ class UncertaintyCalculationTab(BaseTab):
                 # --- ここまで ---
 
             except Exception as e:
-                print(f"【エラー】計算結果表示エラー: {str(e)}")
-                print(traceback.format_exc())
+                log_error(f"計算結果表示エラー: {str(e)}", details=traceback.format_exc())
                 
         except Exception as e:
-            print(f"【エラー】感度係数計算エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"感度係数計算エラー: {str(e)}", details=traceback.format_exc())
         finally:
             # Always reset the updating flag
             self._updating_table = False

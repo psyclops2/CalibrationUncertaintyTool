@@ -2,6 +2,7 @@ from PySide6.QtCore import Qt
 import traceback
 from decimal import Decimal, getcontext
 from .config_loader import ConfigLoader
+from .app_logger import log_error
 from .translation_keys import (
     NORMAL_DISTRIBUTION,
     RECTANGULAR_DISTRIBUTION,
@@ -40,8 +41,7 @@ def calculate_type_a_uncertainty(measurements_str):
         return degrees_of_freedom, central_value, standard_uncertainty, measurements_str
 
     except Exception as e:
-        print(f"【エラー】TypeA不確かさ計算エラー: {str(e)}")
-        print(traceback.format_exc())
+        log_error(f"TypeA不確かさ計算エラー: {str(e)}", details=traceback.format_exc())
         return None, None, None, None
 
 
@@ -65,11 +65,10 @@ def calculate_type_b_uncertainty(half_width_str, divisor_str):
         return half_width, standard_uncertainty
 
     except ValueError:
-        print("【エラー】数値変換エラー")
+        log_error("数値変換エラー")
         return None, None
     except Exception as e:
-        print(f"【エラー】TypeB不確かさ計算エラー: {str(e)}")
-        print(traceback.format_exc())
+        log_error(f"TypeB不確かさ計算エラー: {str(e)}", details=traceback.format_exc())
         return None, None
 
 

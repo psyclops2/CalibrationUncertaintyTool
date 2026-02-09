@@ -1,6 +1,7 @@
 import traceback
 import numpy as np
 from .config_loader import ConfigLoader
+from .app_logger import log_error
 
 class UncertaintyCalculator:
     def __init__(self, main_window):
@@ -31,8 +32,7 @@ class UncertaintyCalculator:
             total_contribution = sum(c ** 2 for c in contributions if c)
             return (total_contribution ** 0.5) if total_contribution > 0 else 0
         except Exception as e:
-            print(f"【エラー】合成標準不確かさ計算エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"合成標準不確かさ計算エラー: {str(e)}", details=traceback.format_exc())
             return 0
 
     def calculate_effective_degrees_of_freedom(self, result_standard_uncertainty, contributions, degrees_of_freedom_list):
@@ -53,8 +53,7 @@ class UncertaintyCalculator:
             return self._inf_replacement
 
         except Exception as e:
-            print(f"【エラー】有効自由度計算エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"有効自由度計算エラー: {str(e)}", details=traceback.format_exc())
             return self._inf_replacement
 
     def get_coverage_factor(self, effective_df):
@@ -64,8 +63,7 @@ class UncertaintyCalculator:
                 return 2.0
             return self.get_t_value(effective_df)
         except Exception as e:
-            print(f"【エラー】包含係数取得エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"包含係数取得エラー: {str(e)}", details=traceback.format_exc())
             return 2.0
 
     def get_t_value(self, degrees_of_freedom):
@@ -93,8 +91,7 @@ class UncertaintyCalculator:
             return t_table.get(float('inf'), 1.960)
             
         except Exception as e:
-            print(f"【エラー】t値取得エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"t値取得エラー: {str(e)}", details=traceback.format_exc())
             return 2.0  # エラー時はデフォルト値として2.0を返す
 
     def calculate_contribution_rates(self, contributions):
@@ -107,6 +104,5 @@ class UncertaintyCalculator:
             return [(c ** 2 / total_contribution) * 100 if c else 0 for c in contributions]
 
         except Exception as e:
-            print(f"【エラー】寄与率計算エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"寄与率計算エラー: {str(e)}", details=traceback.format_exc())
             return [0] * len(contributions) 

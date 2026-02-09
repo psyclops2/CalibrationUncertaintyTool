@@ -7,6 +7,8 @@ from PySide6.QtCore import Qt, QEvent, Slot
 import json
 import decimal
 
+from src.utils.app_logger import log_error as write_error_log
+
 from src.tabs.document_info_tab import DocumentInfoTab
 from src.tabs.model_equation_tab import ModelEquationTab
 from src.tabs.variables_tab import VariablesTab
@@ -330,8 +332,7 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, self.tr(MESSAGE_SUCCESS), self.tr(FILE_LOADED))
             
         except Exception as e:
-            print(f"【エラー】データ読み込みエラー: {str(e)}")
-            print(traceback.format_exc())
+            self.log_error(f"データ読み込みエラー: {str(e)}", "データ読み込みエラー", details=traceback.format_exc())
             QMessageBox.critical(self, self.tr(MESSAGE_ERROR), f"データの読み込みに失敗しました:\n{str(e)}")
 
     def _write_save_data_to_path(self, file_path):
@@ -355,8 +356,7 @@ class MainWindow(QMainWindow):
             self._write_save_data_to_path(self.current_file_path)
             QMessageBox.information(self, self.tr(MESSAGE_SUCCESS), self.tr(FILE_SAVED))
         except Exception as e:
-            print(f"【エラー】ファイル保存エラー: {str(e)}")
-            print(traceback.format_exc())
+            self.log_error(f"ファイル保存エラー: {str(e)}", "ファイル保存エラー", details=traceback.format_exc())
             QMessageBox.critical(self, self.tr(MESSAGE_ERROR), self.tr(FILE_SAVE_ERROR) + f"\n{str(e)}")
 
     def save_file_as(self):
@@ -379,8 +379,7 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, self.tr(MESSAGE_SUCCESS), self.tr(FILE_SAVED))
 
         except Exception as e:
-            print(f"【エラー】ファイル保存エラー: {str(e)}")
-            print(traceback.format_exc())
+            self.log_error(f"ファイル保存エラー: {str(e)}", "ファイル保存エラー", details=traceback.format_exc())
             QMessageBox.critical(self, self.tr(MESSAGE_ERROR), self.tr(FILE_SAVE_ERROR) + f"\n{str(e)}")
             
     def open_file(self):
@@ -406,8 +405,7 @@ class MainWindow(QMainWindow):
         except json.JSONDecodeError:
             QMessageBox.critical(self, self.tr(MESSAGE_ERROR), self.tr(INVALID_FILE_FORMAT))
         except Exception as e:
-            print(f"【エラー】ファイル読み込みエラー: {str(e)}")
-            print(traceback.format_exc())
+            self.log_error(f"ファイル読み込みエラー: {str(e)}", "ファイル読み込みエラー", details=traceback.format_exc())
             QMessageBox.critical(self, self.tr(MESSAGE_ERROR), self.tr(FILE_LOAD_ERROR) + f"\n{str(e)}")
             
     def on_tab_changed(self, index):
@@ -508,17 +506,16 @@ class MainWindow(QMainWindow):
                     self.result_variables
                 )
         except Exception as e:
-            print(f"【エラー】変数検出エラー: {str(e)}\n{traceback.format_exc()}")
-            self.log_error(f"変数の検出エラー: {str(e)}", "変数検出エラー")
-            
+            self.log_error(f"変数の検出エラー: {str(e)}", "変数検出エラー", details=traceback.format_exc())
+             
     def show_about_dialog(self):
         """Aboutダイアログを表示"""
         dialog = AboutDialog(self)
         dialog.exec_()
         
-    def log_error(self, message, error_type="エラー"):
+    def log_error(self, message, error_type="エラー", details=None):
         """エラーログの記録"""
-        print(f"{error_type}: {message}")
+        write_error_log(message, error_type, details=details)
         
     def change_language(self, language_code):
         """言語を動的に変更する"""

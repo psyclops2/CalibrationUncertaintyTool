@@ -3,6 +3,7 @@ import traceback
 from decimal import Decimal, InvalidOperation
 from .equation_normalizer import normalize_equation_text
 from .config_loader import ConfigLoader
+from .app_logger import log_error
 
 class EquationHandler:
     def __init__(self, main_window):
@@ -42,8 +43,7 @@ class EquationHandler:
             return None
             
         except Exception as e:
-            print(f"【エラー】式取得エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"式取得エラー: {str(e)}", details=traceback.format_exc())
             return None
 
     def resolve_equation(self, target_var, equations):
@@ -99,8 +99,7 @@ class EquationHandler:
             return f"{target_var} = {expanded_right}"
             
         except Exception as e:
-            print(f"【エラー】式の整理エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"式の整理エラー: {str(e)}", details=traceback.format_exc())
             return None
 
     def _to_sympy_number(self, value):
@@ -126,8 +125,7 @@ class EquationHandler:
             return list(dict.fromkeys(variables))
             
         except Exception as e:
-            print(f"【エラー】変数抽出エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"変数抽出エラー: {str(e)}", details=traceback.format_exc())
             return []
 
     def calculate_sensitivity(self, equation, target_var, variables, value_handler):
@@ -158,8 +156,7 @@ class EquationHandler:
             return derivative
             
         except Exception as e:
-            print(f"【エラー】感度係数計算エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"感度係数計算エラー: {str(e)}", details=traceback.format_exc())
             return ''
 
     def calculate_result_central_value(self, equation, variables, value_handler):
@@ -188,6 +185,5 @@ class EquationHandler:
             except (TypeError, ValueError):
                 return ''
         except Exception as e:
-            print(f"【エラー】中央値計算エラー: {str(e)}")
-            print(traceback.format_exc())
+            log_error(f"中央値計算エラー: {str(e)}", details=traceback.format_exc())
             return '' 
