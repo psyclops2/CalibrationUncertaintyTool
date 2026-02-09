@@ -15,4 +15,6 @@ popd
 
 REM Run the application
 echo Starting the application...
-python -m src
+REM Use pythonw to avoid keeping a console window open, and start it detached so this .bat can exit.
+start "" "%VIRTUAL_ENV%\Scripts\pythonw.exe" -m src
+exit /b 0
