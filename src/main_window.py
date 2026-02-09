@@ -14,6 +14,7 @@ from src.tabs.model_equation_tab import ModelEquationTab
 from src.tabs.variables_tab import VariablesTab
 from src.tabs.regression_tab import RegressionTab
 from src.tabs.uncertainty_calculation_tab import UncertaintyCalculationTab
+from src.tabs.monte_carlo_tab import MonteCarloTab
 from src.tabs.report_tab import ReportTab
 from src.tabs.partial_derivative_tab import PartialDerivativeTab
 from src.tabs.point_settings_tab import PointSettingsTab
@@ -90,6 +91,7 @@ class MainWindow(QMainWindow):
         self.point_settings_tab = PointSettingsTab(self)
         self.variables_tab = VariablesTab(self)
         self.uncertainty_calculation_tab = UncertaintyCalculationTab(self)
+        self.monte_carlo_tab = MonteCarloTab(self)
         self.partial_derivative_tab = PartialDerivativeTab(self)
         self.report_tab = ReportTab(self)
 
@@ -100,6 +102,7 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(self.point_settings_tab, self.tr(POINT_SETTINGS_TAB))
         self.tab_widget.addTab(self.variables_tab, self.tr(TAB_VARIABLES))
         self.tab_widget.addTab(self.uncertainty_calculation_tab, self.tr(TAB_CALCULATION))
+        self.tab_widget.addTab(self.monte_carlo_tab, self.tr(TAB_MONTE_CARLO))
         self.tab_widget.addTab(self.report_tab, self.tr(TAB_REPORT))
         self.tab_widget.addTab(self.partial_derivative_tab, self.tr(PARTIAL_DERIVATIVE))
         
@@ -125,6 +128,8 @@ class MainWindow(QMainWindow):
         self.sync_variable_values_with_points()
         self.variables_tab.update_value_combo()
         self.uncertainty_calculation_tab.update_value_combo()
+        if hasattr(self, 'monte_carlo_tab'):
+            self.monte_carlo_tab.refresh_controls()
         self.report_tab.update_report()
 
     def update_menu_bar_text(self):
@@ -325,6 +330,8 @@ class MainWindow(QMainWindow):
                 if self.uncertainty_calculation_tab.value_combo.count() > 0:
                     self.uncertainty_calculation_tab.value_combo.setCurrentIndex(0)
                     self.uncertainty_calculation_tab.on_value_changed(0)
+            if hasattr(self, 'monte_carlo_tab'):
+                self.monte_carlo_tab.refresh_controls()
             # レポートタブも必ずリフレッシュ
             if hasattr(self, 'report_tab'):
                 self.report_tab.update_variable_list(self.variables, self.result_variables)
@@ -413,6 +420,15 @@ class MainWindow(QMainWindow):
         if index == 5:  # 不確かさ計算タブ
             self.uncertainty_calculation_tab.update_result_combo()
             self.uncertainty_calculation_tab.update_value_combo()
+        elif index == 6:
+            if hasattr(self, 'monte_carlo_tab'):
+                self.monte_carlo_tab.refresh_controls()
+        elif index == 7:
+            if hasattr(self, 'report_tab'):
+                self.report_tab.update_variable_list(self.variables, self.result_variables)
+                self.report_tab.update_report()
+        elif index == 8:
+            self.partial_derivative_tab.update_equation_display()
         elif index == 6:  # レポートタブ
             if hasattr(self, 'report_tab'):
                 self.report_tab.update_variable_list(self.variables, self.result_variables)
@@ -500,6 +516,8 @@ class MainWindow(QMainWindow):
                 )
             if hasattr(self, 'uncertainty_calculation_tab'):
                 self.uncertainty_calculation_tab.update_result_combo()
+            if hasattr(self, 'monte_carlo_tab'):
+                self.monte_carlo_tab.refresh_controls()
             if hasattr(self, 'report_tab'):
                 self.report_tab.update_variable_list(
                     self.variables,
@@ -557,8 +575,9 @@ class MainWindow(QMainWindow):
         self.tab_widget.setTabText(3, self.tr(POINT_SETTINGS_TAB))
         self.tab_widget.setTabText(4, self.tr(TAB_VARIABLES))
         self.tab_widget.setTabText(5, self.tr(TAB_CALCULATION))
-        self.tab_widget.setTabText(6, self.tr(TAB_REPORT))
-        self.tab_widget.setTabText(7, self.tr(PARTIAL_DERIVATIVE))
+        self.tab_widget.setTabText(6, self.tr(TAB_MONTE_CARLO))
+        self.tab_widget.setTabText(7, self.tr(TAB_REPORT))
+        self.tab_widget.setTabText(8, self.tr(PARTIAL_DERIVATIVE))
 
         # 各タブのUIテキストを更新
         if hasattr(self, 'document_info_tab') and hasattr(self.document_info_tab, 'retranslate_ui'):
@@ -575,6 +594,9 @@ class MainWindow(QMainWindow):
             
         if hasattr(self, 'uncertainty_calculation_tab') and hasattr(self.uncertainty_calculation_tab, 'retranslate_ui'):
             self.uncertainty_calculation_tab.retranslate_ui()
+
+        if hasattr(self, 'monte_carlo_tab') and hasattr(self.monte_carlo_tab, 'retranslate_ui'):
+            self.monte_carlo_tab.retranslate_ui()
             
         if hasattr(self, 'partial_derivative_tab') and hasattr(self.partial_derivative_tab, 'retranslate_ui'):
             self.partial_derivative_tab.retranslate_ui()
@@ -599,6 +621,6 @@ class MainWindow(QMainWindow):
         
     def select_report_tab(self):
         """レポートタブを選択"""
-        self.tab_widget.setCurrentIndex(6)
+        self.tab_widget.setCurrentIndex(7)
 
     # ... existing code ... 

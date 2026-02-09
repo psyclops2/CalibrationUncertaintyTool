@@ -6,7 +6,7 @@ This software is a GUI application for calculating the uncertainty of measuremen
 
 It is based on JCGM 100 (Guide to the Expression of Uncertainty in Measurement, GUM).
 
-Monte Carlo propagation of distributions is **not yet implemented**.
+Monte Carlo propagation of distributions is implemented, and the **Monte Carlo** tab provides histogram visualization, normal-curve comparison, and interval comparison.
 
 From the mathematical model equation of the measurement, the program derives the propagation equation of uncertainty, allows the user to input the value for each quantity, calculates the combined standard uncertainty, and outputs a budget sheet.
 
@@ -20,6 +20,7 @@ The software also supports batch calculations of calibration uncertainty across 
 4. Automatic calculation of uncertainty propagation equations
 5. Display and export of budget sheets
 6. Linear regression tools for calibration data (model management, CSV import, inverse estimation)
+7. Monte Carlo simulation for result variables with distribution visualization and 95% interval comparison
 
 ## System Requirements
 

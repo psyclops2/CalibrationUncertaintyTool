@@ -5,7 +5,9 @@ from .app_logger import log_error, log_warning
 
 class ConfigLoader:
     def __init__(self, config_path: str = None):
-        self.config = configparser.ConfigParser()
+        # Support inline comments like: key = value  # comment
+        # This avoids accidentally treating commented values as literals.
+        self.config = configparser.ConfigParser(inline_comment_prefixes=("#", ";"))
         if config_path is None:
             config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'config.ini')
         self.config_path = config_path  # 設定ファイルのパスを保存
