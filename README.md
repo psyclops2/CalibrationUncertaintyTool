@@ -98,8 +98,11 @@ See the files within each directory for details.
 
 Based on the GUM, the following propagation equation is used:
 
-**Note:** Currently, the calculation of correlated uncertainties between two quantities is not implemented.
-Please prepare model equations where correlations can be ignored.
+**Note:** Correlations between input quantities are supported via the **Correlation** tab.
+Enter the correlation coefficient matrix `r(x_i, x_j)` (diagonal is fixed to 1, off-diagonal defaults to 0).
+The covariance term is handled as:
+
+`u(x_i, x_j) = u(x_i) u(x_j) r(x_i, x_j)`
 
 ```
 u²(y) = Σ(∂f/∂xᵢ)²u²(xᵢ) + 2ΣΣ(∂f/∂xᵢ)(∂f/∂xⱼ)u(xᵢ,xⱼ)
@@ -109,7 +112,7 @@ Where:
 
 * u(y): uncertainty of the result
 * ∂f/∂xᵢ: sensitivity coefficient
-* u(xᵢ): uncertainty of input quantity
+* u(xᵢ), u(xⱼ): uncertainty of input quantities
 * u(xᵢ,xⱼ): correlated uncertainty
 
 ### 2. Sensitivity Coefficients
@@ -209,15 +212,20 @@ For operational use, when ν\_eff is 10 or higher, the coverage factor is treate
    * Adjust the number of calibration points; each quantity can have multiple values.
    * Specify the uncertainty type, unit, and description for each quantity.
 
-4. **Partial Derivative**
+4. **Correlation**
+
+   * If input quantities are correlated, enter correlation coefficients `r(x_i, x_j)` in the matrix.
+   * Diagonal elements are fixed to `1.0`; by default, off-diagonal elements are `0.0` (independent).
+
+5. **Partial Derivative**
 
    * Review the partial derivatives calculated from the model equation for each variable.
 
-5. **Calculation Execution**
+6. **Calculation Execution**
 
    * The "Uncertainty Calculation" tab creates a budget sheet for a selected calibration point.
 
-6. **Regression**
+7. **Regression**
 
    * Create, copy, and delete regression models and edit descriptions and x/y units.
    * Enter calibration data in a table with `x`, `u(x)`, and `y`; add/remove rows as needed.
@@ -242,12 +250,12 @@ Inverse estimation: x₀ = (y₀ - ȳ)/β + x̄
 u(x₀) = √( ūy²/β² + (y₀ - ȳ)² u(β)² / β⁴ + ūx² )
 ```
 
-7. **Document Information**
+8. **Document Information**
 
    * The "Document Info" tab lets you record document metadata for reports, including document number, document name, version, and a description (Markdown supported).
    * Enter revision history as CSV rows (version, description, author, checker, approver, date) to include in generated reports.
 
-8. **Report**
+9. **Report**
 
    * The "Report" function generates a batch budget for all calibration points of a selected result quantity.
    * Export results as HTML files.
@@ -256,7 +264,7 @@ u(x₀) = √( ūy²/β² + (y₀ - ȳ)² u(β)² / β⁴ + ūx² )
 
 * Numeric display is rounded based on the `UncertaintyRounding` settings in `config.ini` and formatted with exponents in multiples of 3.
 * Calculations use `Decimal` with the precision configured under `[Calculation]` in `config.ini`.
-* Ensure model equations are structured to avoid correlations between quantities, as correlated uncertainty (covariance terms) is not yet supported.
+* If input quantities are correlated, enter correlation coefficients in the "Correlation" tab (default is independent: off-diagonal `0.0`).
 
 ## License
 

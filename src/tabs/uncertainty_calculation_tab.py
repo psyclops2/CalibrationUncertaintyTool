@@ -459,7 +459,11 @@ class UncertaintyCalculationTab(BaseTab):
                     contributions.append(0)
             
             # 合成標準不確かさの計算
-            result_standard_uncertainty = self.uncertainty_calculator.calculate_combined_uncertainty(contributions)
+            result_standard_uncertainty = self.uncertainty_calculator.calculate_combined_uncertainty_with_correlation(
+                contributions,
+                ordered_variables,
+                getattr(self.parent, "correlation_coefficients", {}),
+            )
             
             # 寄与率の計算と表示
             contribution_rates = self.uncertainty_calculator.calculate_contribution_rates(contributions)

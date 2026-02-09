@@ -35,6 +35,55 @@ class UncertaintyCalculator:
             log_error(f"合成標準不確かさ計算エラー: {str(e)}", details=traceback.format_exc())
             return 0
 
+    def calculate_combined_uncertainty_with_correlation(self, contributions, variables, correlation_coefficients):
+        """
+        Calculate combined standard uncertainty with correlation coefficients.
+
+        contributions: list of u(x_i) * c_i (same order as variables)
+        variables: list of variable names (x_i)
+        correlation_coefficients: dict-like matrix [var_i][var_j] = r_ij
+        """
+        try:
+            if not contributions or not variables or len(contributions) != len(variables):
+                return self.calculate_combined_uncertainty(contributions)
+
+            matrix = correlation_coefficients if isinstance(correlation_coefficients, dict) else {}
+
+            variance = 0.0
+            for c in contributions:
+                if c:
+                    variance += float(c) ** 2
+
+            for i, var_i in enumerate(variables):
+                ci = contributions[i]
+                if not ci:
+                    continue
+                for j in range(i + 1, len(variables)):
+                    cj = contributions[j]
+                    if not cj:
+                        continue
+                    var_j = variables[j]
+                    r = 0.0
+                    try:
+                        row = matrix.get(var_i, {})
+                        if isinstance(row, dict) and var_j in row:
+                            r = float(row.get(var_j, 0.0))
+                        else:
+                            row_rev = matrix.get(var_j, {})
+                            if isinstance(row_rev, dict):
+                                r = float(row_rev.get(var_i, 0.0))
+                    except (TypeError, ValueError):
+                        r = 0.0
+                    variance += 2.0 * float(ci) * float(cj) * r
+
+            return (variance ** 0.5) if variance > 0 else 0
+        except Exception as e:
+            log_error(
+                f"蜷域・讓呎ｺ紋ｸ咲｢ｺ縺九＆(相関)險育ｮ励お繝ｩ繝ｼ: {str(e)}",
+                details=traceback.format_exc(),
+            )
+            return 0
+
     def calculate_effective_degrees_of_freedom(self, result_standard_uncertainty, contributions, degrees_of_freedom_list):
         """有効自由度を計算（Welch-Satterthwaiteの式）"""
         try:
