@@ -2,6 +2,7 @@ import csv
 import io
 import os
 import traceback
+from pathlib import Path
 import sympy as sp
 import numpy as np
 import html as html_lib
@@ -21,10 +22,24 @@ from src.utils.app_logger import log_error
 
 class ReportTab(BaseTab):
     UNIT_PLACEHOLDER = '-'
+    _FALLBACK_REPORT_CSS = textwrap.dedent("""\
+        body { font-family: sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: auto; }
+        .title { font-size: 20px; font-weight: bold; margin-top: 20px; margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px;}
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .equation { font-family: 'Times New Roman', serif; font-size: 16px; padding: 10px; border: 1px solid #ccc; margin-bottom: 20px; }
+        .doc-table th { width: 180px; }
+        .subtitle { font-size: 20px; font-weight: bold; margin-top: 10px; margin-bottom: 6px; }
+        .description-body { border: 1px solid #ddd; padding: 10px; }
+        .revision-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .revision-table th, .revision-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    """).strip()
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent
+        self._last_generated_html = None
 
         
         # ユーティリティクラスの初期化
@@ -182,6 +197,7 @@ class ReportTab(BaseTab):
                 
             # レポートのHTMLを生成
             html = self.generate_report_html(equation)
+            self._last_generated_html = html
             
             # レポートを表示
             self.report_display.setHtml(html)
@@ -192,6 +208,37 @@ class ReportTab(BaseTab):
             QMessageBox.warning(self, self.tr(SAVE_ERROR), self.tr(REPORT_SAVE_ERROR))
             
 
+
+    def _get_css_dir(self):
+        """
+        Return the `css/` directory under the project root.
+        `report_tab.py` is under `src/tabs/`, so the project root is `.../src/..`.
+        """
+        try:
+            return Path(__file__).resolve().parents[2] / "css"
+        except Exception:
+            return None
+
+    @staticmethod
+    def _read_text_file(path):
+        try:
+            return Path(path).read_text(encoding="utf-8")
+        except FileNotFoundError:
+            return ""
+        except Exception as e:
+            log_error(f"CSS読込エラー: {str(e)}", details=traceback.format_exc())
+            return ""
+
+    def _get_report_css(self):
+        css_dir = self._get_css_dir()
+        if not css_dir:
+            return self._FALLBACK_REPORT_CSS
+
+        default_css = self._read_text_file(css_dir / "default.css").strip()
+        custom_css = self._read_text_file(css_dir / "custom.css").strip()
+
+        combined = "\n\n".join([part for part in [default_css, custom_css] if part]).strip()
+        return combined if combined else self._FALLBACK_REPORT_CSS
 
     def generate_report_html(self, equation):
         """レポートのHTMLを生成（変数名リスト＋詳細情報dictから情報を取得して表示、未設定は"-"で埋める）"""
@@ -210,23 +257,15 @@ class ReportTab(BaseTab):
             description_html = document_info.get('description_html', '') or ""
             description_display = description_html if description_html.strip() else "-"
             revision_rows = self.get_revision_rows(document_info)
+            report_css = self._get_report_css()
 
             html = textwrap.dedent(f"""
                 <html>
                 <head>
+                    <meta charset="utf-8">
                     <title>{self.tr(REPORT_TITLE_HTML)}</title>
                     <style>
-                        body {{ font-family: sans-serif; margin: 20px; }}
-                        .container {{ max-width: 800px; margin: auto; }}
-                        .title {{ font-size: 20px; font-weight: bold; margin-top: 20px; margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px;}}
-                        table {{ width: 100%; border-collapse: collapse; margin-bottom: 20px; }}
-                        th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-                        .equation {{ font-family: 'Times New Roman', serif; font-size: 16px; padding: 10px; border: 1px solid #ccc; margin-bottom: 20px; }}
-                        .doc-table th {{ width: 180px; }}
-                        .subtitle {{ font-size: 20px; font-weight: bold; margin-top: 10px; margin-bottom: 6px; }}
-                        .description-body {{ border: 1px solid #ddd; padding: 10px; }}
-                        .revision-table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
-                        .revision-table th, .revision-table td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+{report_css}
                     </style>
                 </head>
                 <body>
@@ -503,7 +542,7 @@ class ReportTab(BaseTab):
 
     def save_report(self):
         """現在表示中のレポートをファイルに保存する"""
-        html = self.report_display.toHtml()
+        html = self._last_generated_html or self.report_display.toHtml()
         file_name, _ = QFileDialog.getSaveFileName(self, self.tr(SAVE_REPORT_DIALOG_TITLE), "", "HTML File (*.html);;All Files (*)")
         if file_name:
             self.save_html_to_file(html, file_name)

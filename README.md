@@ -259,6 +259,7 @@ u(x₀) = √( ūy²/β² + (y₀ - ȳ)² u(β)² / β⁴ + ūx² )
 
    * The "Report" function generates a batch budget for all calibration points of a selected result quantity.
    * Export results as HTML files.
+   * Report styling can be customized via CSS: edit `css/custom.css` to override `css/default.css` and click **Generate Report** to re-render (CSS is reloaded on every generation). The exported HTML includes the CSS inline.
 
 ## Notes
 

@@ -1,0 +1,7 @@
+/* Custom styles for the HTML shown in the Report tab.
+   This file is loaded after `css/default.css`, so rules here override defaults.
+
+   Example:
+   .container { max-width: 1000px; }
+   body { font-family: "Meiryo UI", sans-serif; }
+*/
