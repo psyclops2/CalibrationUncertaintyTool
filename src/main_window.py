@@ -19,6 +19,7 @@ from src.tabs.monte_carlo_tab import MonteCarloTab
 from src.tabs.report_tab import ReportTab
 from src.tabs.partial_derivative_tab import PartialDerivativeTab
 from src.tabs.point_settings_tab import PointSettingsTab
+from src.tabs.unit_validation_tab import UnitValidationTab
 from src.dialogs.about_dialog import AboutDialog
 from src.dialogs.settings_dialog import SettingsDialog
 from src.utils.language_manager import LanguageManager
@@ -99,6 +100,7 @@ class MainWindow(QMainWindow):
         self.monte_carlo_tab = MonteCarloTab(self)
         self.partial_derivative_tab = PartialDerivativeTab(self)
         self.report_tab = ReportTab(self)
+        self.unit_validation_tab = UnitValidationTab(self)
 
         # タブの追加
         self.tab_widget.addTab(self.document_info_tab, self.tr(DOCUMENT_INFO_TAB))
@@ -111,6 +113,7 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(self.report_tab, self.tr(TAB_REPORT))
         self.tab_widget.addTab(self.partial_derivative_tab, self.tr(PARTIAL_DERIVATIVE))
         self.tab_widget.addTab(self.correlation_tab, self.tr(TAB_CORRELATION))
+        self.tab_widget.addTab(self.unit_validation_tab, self._unit_validation_tab_text())
         
         # タブ切り替え時のシグナル接続
         self.tab_widget.currentChanged.connect(self.on_tab_changed)
@@ -188,6 +191,9 @@ class MainWindow(QMainWindow):
 
     def _settings_action_text(self):
         return "設定..." if self.language_manager.current_language == 'ja' else "Settings..."
+
+    def _unit_validation_tab_text(self):
+        return "単位整合検証" if self.language_manager.current_language == 'ja' else "Unit Consistency"
         
     def get_save_data(self):
         """保存するデータを辞書にまとめる"""
@@ -438,6 +444,9 @@ class MainWindow(QMainWindow):
         elif index == 4:  # 変数タブ（indexはタブ順に応じて調整）
             if hasattr(self, 'variables_tab'):
                 self.variables_tab.restore_selection_state()
+        elif index == 10:
+            if hasattr(self, 'unit_validation_tab'):
+                self.unit_validation_tab.refresh()
             
     def add_variable(self, var_name):
         """変数を追加"""
@@ -624,6 +633,7 @@ class MainWindow(QMainWindow):
         self.tab_widget.setTabText(7, self.tr(TAB_REPORT))
         self.tab_widget.setTabText(8, self.tr(PARTIAL_DERIVATIVE))
         self.tab_widget.setTabText(9, self.tr(TAB_CORRELATION))
+        self.tab_widget.setTabText(10, self._unit_validation_tab_text())
 
         # 各タブのUIテキストを更新
         if hasattr(self, 'document_info_tab') and hasattr(self.document_info_tab, 'retranslate_ui'):
@@ -655,6 +665,9 @@ class MainWindow(QMainWindow):
 
         if hasattr(self, 'point_settings_tab') and hasattr(self.point_settings_tab, 'retranslate_ui'):
             self.point_settings_tab.retranslate_ui()
+
+        if hasattr(self, 'unit_validation_tab') and hasattr(self.unit_validation_tab, 'retranslate_ui'):
+            self.unit_validation_tab.retranslate_ui()
         
         # メニューバーの更新
         self.update_menu_bar_text()

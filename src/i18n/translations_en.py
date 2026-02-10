@@ -44,6 +44,7 @@ translations = {
         PARTIAL_DERIVATIVE: "Partial Derivative",
         POINT_SETTINGS_TAB: "Point Settings",
         DOCUMENT_INFO_TAB: "Document Info",
+        TAB_UNIT_VALIDATION: "Unit Consistency",
 
         # General buttons
         BUTTON_SAVE: "Save",
@@ -327,5 +328,19 @@ translations = {
         DERIVATIVE_CALCULATION_ERROR: "Differentiation Calculation Error",
         DERIVATIVE_CALCULATION_SUCCESS: "Differentiation Calculation Successful",
         DERIVATIVE_EXPRESSION: "Derivative Expression",
+    },
+    "UnitValidationTab": {
+        UNIT_VALIDATION_RUN: "Validate",
+        UNIT_VALIDATION_SUMMARY: "Summary: OK={ok_count}, WARN={warn_count}, ERROR={error_count}",
+        UNIT_VALIDATION_VARIABLES: "Variable Units",
+        UNIT_VALIDATION_EQUATIONS: "Equation Consistency",
+        UNIT_VALIDATION_COL_VARIABLE: "Variable",
+        UNIT_VALIDATION_COL_UNIT: "Unit",
+        UNIT_VALIDATION_COL_DIMENSION: "Dimension",
+        UNIT_VALIDATION_COL_STATUS: "Status",
+        UNIT_VALIDATION_COL_MESSAGE: "Message",
+        UNIT_VALIDATION_COL_EQUATION: "Equation",
+        UNIT_VALIDATION_COL_LHS_DIM: "LHS Dimension",
+        UNIT_VALIDATION_COL_RHS_DIM: "RHS Dimension",
     },
 }

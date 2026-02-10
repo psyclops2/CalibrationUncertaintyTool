@@ -7,10 +7,11 @@ except ImportError:
 
 
 def test_format_with_unit_placeholder():
-    # 値が存在する場合、単位が空ならプレースホルダーを付与する
+    # 蛟､縺悟ｭ伜惠縺吶ｋ蝣ｴ蜷医∝腰菴阪′遨ｺ縺ｪ繧峨・繝ｬ繝ｼ繧ｹ繝帙Ν繝繝ｼ繧剃ｻ倅ｸ弱☆繧・
     assert UncertaintyCalculationTab._format_with_unit("1.0", "") == f"1.0 {UncertaintyCalculationTab.UNIT_PLACEHOLDER}"
     assert UncertaintyCalculationTab._format_with_unit("2.5", "m") == "2.5 m"
 
-    # 値が空やプレースホルダーの場合はそのまま返す
+    # 蛟､縺檎ｩｺ繧・・繝ｬ繝ｼ繧ｹ繝帙Ν繝繝ｼ縺ｮ蝣ｴ蜷医・縺昴・縺ｾ縺ｾ霑斐☆
     assert UncertaintyCalculationTab._format_with_unit("", "m") == ""
     assert UncertaintyCalculationTab._format_with_unit("--", "") == "--"
+

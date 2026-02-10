@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import uuid
-import unittest
-from pathlib import Path
 import shutil
+import unittest
+import uuid
+from pathlib import Path
 
-from src.utils.config_loader import ConfigLoader
 import src.utils.number_formatter as number_formatter
+from src.utils.config_loader import ConfigLoader
 
 
 class TestUncertaintyRoundingConfig(unittest.TestCase):
@@ -42,3 +42,4 @@ class TestUncertaintyRoundingConfig(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
