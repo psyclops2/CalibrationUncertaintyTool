@@ -371,12 +371,15 @@ class VariablesTab(BaseTab):
             self.definition_input.setText(definition)
 
             # 不確かさ種類の設定
+            is_result = getattr(self.handlers, 'current_variable_is_result', False)
             uncertainty_type = var_info.get('type', 'A')
-            if uncertainty_type not in ('A', 'B', 'fixed'):
+            if is_result:
+                # 計算結果変数は常にresultとして扱い、誤ってA/B/fixedへ上書きしない
+                uncertainty_type = 'result'
+                var_info['type'] = 'result'
+            elif uncertainty_type not in ('A', 'B', 'fixed'):
                 uncertainty_type = 'A'
                 var_info['type'] = 'A'
-            if getattr(self.handlers, 'current_variable_is_result', False):
-                uncertainty_type = 'result'
             
             # 現在の校正点の値のソースを取得
             values = var_info.get('values', [])
@@ -451,10 +454,11 @@ class VariablesTab(BaseTab):
             if current_var not in self.parent.variable_values:
                 log_debug(f"[DEBUG] display_current_value: 変数の辞書が存在しないため作成 - {current_var}")
                 # 完全に新しい辞書を作成（前の変数の値の影響を受けないように）
+                is_result = getattr(self.handlers, 'current_variable_is_result', False)
                 self.parent.variable_values[current_var] = {
                     'values': [create_empty_value_dict()],
                     'unit': '',
-                    'type': 'A',
+                    'type': 'result' if is_result else 'A',
                     'definition': ''
                 }
                 

@@ -35,3 +35,14 @@ def test_validate_unit_consistency_mismatch_case():
     )
     assert any(item.status == STATUS_ERROR for item in report.equation_items)
 
+
+def test_validate_unit_consistency_celsius_alias_ok_case():
+    report = validate_unit_consistency(
+        "T = dT",
+        {
+            "T": "K",
+            "dT": "℃",
+        },
+    )
+    assert report.error_count == 0
+    assert any(item.status == STATUS_OK for item in report.equation_items)

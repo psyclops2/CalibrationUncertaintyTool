@@ -25,6 +25,8 @@ DERIVED_UNIT_EXPRESSIONS = {
     "Wb": "V*s",
     "lx": "lm/m^2",
     "lm": "cd",
+    "degC": "K",
+    "digC": "K",
 }
 
 DIMENSIONLESS_SYMBOLS = {"", "1", "-", "—"}
@@ -89,7 +91,13 @@ def _add_dimensions(left: Dimension, right: Dimension, sign: int = 1) -> Dimensi
 class _UnitExpressionParser:
     def __init__(self, text: str):
         self.original_text = text
-        normalized = text.replace("·", "*").replace("⋅", "*").replace(" ", "")
+        normalized = (
+            text.replace("℃", "degC")
+            .replace("°C", "degC")
+            .replace("·", "*")
+            .replace("⋅", "*")
+            .replace(" ", "")
+        )
         self.tokens = self._tokenize(normalized)
         self.index = 0
 

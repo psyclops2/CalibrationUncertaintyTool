@@ -30,6 +30,12 @@ def test_parse_derived_units_expand():
     assert parse_unit_expression("Ω") == parse_unit_expression("V/A")
 
 
+def test_parse_celsius_aliases_as_kelvin():
+    assert parse_unit_expression("degC") == parse_unit_expression("K")
+    assert parse_unit_expression("digC") == parse_unit_expression("K")
+    assert parse_unit_expression("℃") == parse_unit_expression("K")
+
+
 def test_parse_unknown_unit_raises():
     with pytest.raises(UnitParseError):
         parse_unit_expression("foobar")
@@ -43,4 +49,3 @@ def test_parse_unsupported_character_raises():
 
 def test_format_dimension_renders_dimensionless():
     assert format_dimension({}) == "1"
-

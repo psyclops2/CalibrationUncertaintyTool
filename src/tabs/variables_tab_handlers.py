@@ -654,8 +654,25 @@ class VariablesTabHandlers:
             if not calculation_formula:
                 return
                 
+            # 現在の校正点で利用可能な変数値を計算式へ渡す
+            value_index = self.parent.value_combo.currentIndex()
+            variables = {}
+            for var_name, var_data in self.parent.parent.variable_values.items():
+                if not isinstance(var_data, dict):
+                    continue
+                values = var_data.get('values', [])
+                if not isinstance(values, list) or not (0 <= value_index < len(values)):
+                    continue
+                value_info = values[value_index]
+                if not isinstance(value_info, dict):
+                    continue
+                central_value = value_info.get('central_value', '')
+                if central_value in ('', None):
+                    continue
+                variables[var_name] = central_value
+
             # 計算式を評価
-            result = evaluate_formula(calculation_formula)
+            result = evaluate_formula(calculation_formula, variables=variables)
             
             if result is not None:
                 # 半値幅の入力欄に結果を設定
