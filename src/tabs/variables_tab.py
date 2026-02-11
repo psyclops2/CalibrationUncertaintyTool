@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import (
+﻿from PySide6.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
     QComboBox, QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox,
     QGroupBox, QFormLayout, QSpinBox, QDoubleSpinBox, QCheckBox, QRadioButton,
@@ -209,14 +209,6 @@ class VariablesTab(BaseTab):
         self.detail_description_label_a = QLabel(self.tr(DETAIL_DESCRIPTION) + ":")
         settings_layout.addRow(self.detail_description_label_a, self.type_a_widgets['description'])
 
-        self.regression_widgets = {}
-
-        # 回帰モデル用のウィジェット
-
-        # xの取り方
-        # 将来拡張用: self.regression_widgets['x_mode'].addItem(self.tr(REGRESSION_X_MODE_VARIABLE), 'variable')
-
-        
         # TypeB用のウィジェット
         self.type_b_widgets = {}
         
@@ -522,10 +514,7 @@ class VariablesTab(BaseTab):
             )
             
             # 値をセット（ウィジェットの表示/非表示は既に設定済み）
-            if source == 'regression':
-                # 回帰式の場合の表示処理は既にupdate_widget_visibility_for_sourceで行われている
-                pass
-            elif uncertainty_type == 'A':
+            if uncertainty_type == 'A':
                 # 辞書から値を取得（読み取り専用）
                 measurements = value_info.get('measurements', '')
                 degrees_of_freedom = value_info.get('degrees_of_freedom', 0)
@@ -606,43 +595,6 @@ class VariablesTab(BaseTab):
                     f"[DEBUG] TypeB復元: central_value='{central_value}', half_width='{half_width}', degrees_of_freedom='{degrees_of_freedom}', description='{description}', divisor='{divisor}'"
                 )
 
-            # 値のソースが回帰式の場合
-            source = value_info.get('source', 'manual')
-            if source == 'regression':
-                regression_id = value_info.get('regression_id', '')
-                regression_x_mode = value_info.get('regression_x_mode', 'fixed')
-                regression_x_value = value_info.get('regression_x_value', '')
-                
-                self.update_regression_model_options()
-                model_index = self.regression_widgets['model'].findText(regression_id)
-                if model_index >= 0:
-                    self.regression_widgets['model'].setCurrentIndex(model_index)
-                else:
-                    self.regression_widgets['model'].setCurrentIndex(0)
-                
-                # xの取り方を設定
-                x_mode_index = self.regression_widgets['x_mode'].findData(regression_x_mode)
-                if x_mode_index >= 0:
-                    self.regression_widgets['x_mode'].setCurrentIndex(x_mode_index)
-                else:
-                    self.regression_widgets['x_mode'].setCurrentIndex(1)  # デフォルトは固定値
-                
-                # xの値を設定（固定値の場合のみ）
-                if regression_x_mode == 'fixed':
-                    self.regression_widgets['x_value'].setText(str(regression_x_value))
-                elif regression_x_mode == 'point_name':
-                    # 校正点名を数値として使う場合は、現在の校正点名を表示
-                    point_name = self.value_combo.currentText()
-                    try:
-                        point_value = float(point_name)
-                        self.regression_widgets['x_value'].setText(str(point_value))
-                    except ValueError:
-                        self.regression_widgets['x_value'].setText('')
-
-                log_debug(
-                    f"[DEBUG] Regression復元: id='{regression_id}', x_mode='{regression_x_mode}', x_value='{regression_x_value}'"
-                )
-
             elif uncertainty_type == 'fixed':  # fixed
                 # 辞書から値を取得（読み取り専用）
                 fixed_value = value_info.get('central_value', '')
@@ -684,22 +636,6 @@ class VariablesTab(BaseTab):
             
         except Exception as e:
             log_error(f"値の選択コンボボックス更新エラー: {str(e)}", details=traceback.format_exc())
-
-    def update_regression_model_options(self):
-        """回帰モデル選択肢を更新"""
-        if not hasattr(self, 'regression_widgets'):
-            return
-        model_combo = self.regression_widgets.get('model')
-        if not model_combo:
-            return
-        model_combo.blockSignals(True)
-        model_combo.clear()
-        model_combo.addItem("")
-        regressions = getattr(self.parent, 'regressions', {})
-        if isinstance(regressions, dict):
-            for name in regressions.keys():
-                model_combo.addItem(name)
-        model_combo.blockSignals(False)
 
     def update_form_layout(self):
         """フォームレイアウトを更新して、非表示のウィジェットを詰める"""

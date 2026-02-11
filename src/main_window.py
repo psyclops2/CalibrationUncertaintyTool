@@ -1,4 +1,4 @@
-import traceback
+﻿import traceback
 import copy
 import os
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTabWidget, QMessageBox, QFileDialog, QMenuBar, QMenu
@@ -210,9 +210,6 @@ class MainWindow(QMainWindow):
             if not isinstance(var_info, dict):
                 continue
             cleaned_info = copy.deepcopy(var_info)
-            # 互換性を考慮しない方針のため、use_regression は保存しない
-            cleaned_info.pop('use_regression', None)
-            cleaned_info.pop('nominal_value', None)
             values = cleaned_info.get('values', [])
             if not isinstance(values, list):
                 values = []
@@ -220,12 +217,13 @@ class MainWindow(QMainWindow):
                 values.extend(create_empty_value_dict() for _ in range(self.value_count - len(values)))
             else:
                 values = values[:self.value_count]
+
             cleaned_info['values'] = values
             save_variable_values[var_name] = cleaned_info
 
         # JSON出力の順序は「データを使用するタブの並び順」に合わせる。
         # ※ JSON仕様上、objectの順序は保証されないが、保存ファイルの可読性/差分を安定させる目的で整列する。
-        return {
+        save_data = {
             # DocumentInfoTab
             'document_info': self.document_info_tab.get_document_info()
             if hasattr(self, 'document_info_tab')
@@ -233,9 +231,6 @@ class MainWindow(QMainWindow):
 
             # ModelEquationTab
             'last_equation': self.last_equation,
-
-            # RegressionTab
-            'regressions': self.regressions,
 
             # PointSettingsTab / calibration points
             'value_count': self.value_count,
@@ -250,6 +245,9 @@ class MainWindow(QMainWindow):
             'last_selected_variable': last_selected_variable,
             'last_selected_value_index': last_selected_value_index,
         }
+        if hasattr(self, 'regression_tab') and hasattr(self.regression_tab, 'add_to_save_data'):
+            self.regression_tab.add_to_save_data(save_data)
+        return save_data
         
     def load_data(self, data):
         """読み込んだデータでアプリケーションの状態を更新"""
@@ -263,7 +261,6 @@ class MainWindow(QMainWindow):
             self.current_value_index = data.get('current_value_index', 0)
             self.value_names = data.get('value_names', [f"{self.tr(CALIBRATION_POINT_NAME)} {i+1}" for i in range(self.value_count)])
             self.value_count = max(1, len(self.value_names))
-            self.regressions = data.get('regressions', {})
             if self.current_value_index >= self.value_count:
                 self.current_value_index = self.value_count - 1
             self.document_info = data.get('document_info', self.document_info)
@@ -286,6 +283,8 @@ class MainWindow(QMainWindow):
             if hasattr(self, 'model_equation_tab'):
                 self.model_equation_tab.set_equation(self.last_equation)
             if hasattr(self, 'regression_tab'):
+                if hasattr(self.regression_tab, 'load_from_data'):
+                    self.regression_tab.load_from_data(data)
                 self.regression_tab.refresh_model_list()
 
             # 結果変数を含め、すべての変数に必須フィールドを補完
@@ -295,7 +294,6 @@ class MainWindow(QMainWindow):
                 if var not in self.result_variables:
                     self.ensure_variable_initialized(var)
             # 分布データを翻訳キーに正規化
-            # 既存のJSONファイルとの互換性のため、sourceフィールドを補完
             for var_name, var_data in self.variable_values.items():
                 if not isinstance(var_data, dict):
                     continue
@@ -304,7 +302,7 @@ class MainWindow(QMainWindow):
                     normalized = get_distribution_translation_key(distribution)
                     if normalized:
                         var_data['distribution'] = normalized
-                
+
                 # sourceフィールドの補完（既存データとの互換性）
                 values = var_data.get('values', [])
                 if isinstance(values, list):
@@ -314,15 +312,6 @@ class MainWindow(QMainWindow):
                         # sourceフィールドが存在しない場合は補完
                         if 'source' not in value_info:
                             value_info['source'] = 'manual'
-                        # regression_idが存在しない場合はregression_modelから補完
-                        if 'regression_id' not in value_info and 'regression_model' in value_info:
-                            value_info['regression_id'] = value_info['regression_model']
-                        # regression_x_modeが存在しない場合は'fixed'をデフォルト
-                        if 'regression_x_mode' not in value_info:
-                            value_info['regression_x_mode'] = 'fixed'
-                        # regression_x_valueが存在しない場合はregression_xから補完
-                        if 'regression_x_value' not in value_info and 'regression_x' in value_info:
-                            value_info['regression_x_value'] = value_info['regression_x']
             # 不確かさ計算タブの計算・テーブル再構築
             if hasattr(self, 'uncertainty_calculation_tab'):
                 self.uncertainty_calculation_tab.update_result_combo()

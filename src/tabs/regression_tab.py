@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import (
+﻿from PySide6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QLabel,
@@ -319,6 +319,24 @@ class RegressionTab(BaseTab):
         for name in self._get_model_names():
             self.model_list.addItem(name)
         self.model_list.blockSignals(False)
+
+    def add_to_save_data(self, save_data: dict):
+        """main_windowの保存データに回帰モデル情報を追加（回帰データの入出力はRegressionタブで完結させる）"""
+        if not isinstance(save_data, dict):
+            return
+        if not self.parent:
+            return
+        regressions = getattr(self.parent, "regressions", {})
+        save_data["regressions"] = regressions if isinstance(regressions, dict) else {}
+
+    def load_from_data(self, data: dict):
+        """読み込みデータから回帰モデル情報を反映（回帰データの入出力はRegressionタブで完結させる）"""
+        if not isinstance(data, dict):
+            return
+        if not self.parent:
+            return
+        regressions = data.get("regressions", {})
+        self.parent.regressions = regressions if isinstance(regressions, dict) else {}
 
     def _get_model_names(self):
         if not self.parent:
@@ -783,8 +801,8 @@ class RegressionTab(BaseTab):
         )
 
     def _notify_regressions_updated(self):
-        if hasattr(self.parent, "variables_tab"):
-            self.parent.variables_tab.update_regression_model_options()
+        # 回帰はRegressionタブ内で完結（Variablesタブへは通知しない）
+        return
 
     def copy_model(self):
         """回帰モデルを複製"""

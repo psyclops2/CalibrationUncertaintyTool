@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QMessageBox
+﻿from PySide6.QtWidgets import QMessageBox
 from PySide6.QtCore import Qt
 import traceback
 from ..utils.app_logger import log_error
@@ -44,9 +44,6 @@ class VariablesTabHandlers:
             for widget in self.parent.fixed_value_widgets.values():
                 widget.setVisible(False)
                 widget.setEnabled(False)
-            for widget in self.parent.regression_widgets.values():
-                widget.setVisible(False)
-                widget.setEnabled(False)
             self.parent.update_form_layout()
             return
 
@@ -63,9 +60,6 @@ class VariablesTabHandlers:
             for widget in self.parent.fixed_value_widgets.values():
                 widget.setVisible(False)
                 widget.setEnabled(False)
-            for widget in self.parent.regression_widgets.values():
-                widget.setVisible(False)
-                widget.setEnabled(False)
 
         elif uncertainty_type == 'B':
             # TypeA用のウィジェットを非表示・無効化
@@ -80,11 +74,6 @@ class VariablesTabHandlers:
             for widget in self.parent.fixed_value_widgets.values():
                 widget.setVisible(False)
                 widget.setEnabled(False)
-            for widget in self.parent.regression_widgets.values():
-                widget.setVisible(False)
-                widget.setEnabled(False)
-
-        # 回帰式の場合はupdate_widget_visibility_for_sourceで処理されるため、ここでは処理しない
 
         else:  # fixed
             # TypeA用のウィジェットを非表示・無効化
@@ -99,9 +88,6 @@ class VariablesTabHandlers:
             for widget in self.parent.fixed_value_widgets.values():
                 widget.setVisible(True)
                 widget.setEnabled(True)
-            for widget in self.parent.regression_widgets.values():
-                widget.setVisible(False)
-                widget.setEnabled(False)
 
         show_half_width = (not is_result) and uncertainty_type == 'B'
         if hasattr(self.parent, 'half_width_label'):
@@ -222,113 +208,15 @@ class VariablesTabHandlers:
             value_info = self._get_current_value_info()
             value_info['source'] = source
 
-            if source == 'regression':
-                # 回帰式の場合、回帰モデル関連のウィジェットを表示
-                self.parent.update_regression_model_options()
-                # 既存の値を復元
-                regression_id = value_info.get('regression_id', '')
-                if regression_id:
-                    model_index = self.parent.regression_widgets['model'].findText(regression_id)
-                    if model_index >= 0:
-                        self.parent.regression_widgets['model'].setCurrentIndex(model_index)
-                
-                regression_x_mode = value_info.get('regression_x_mode', 'fixed')
-                x_mode_index = self.parent.regression_widgets['x_mode'].findData(regression_x_mode)
-                if x_mode_index >= 0:
-                    self.parent.regression_widgets['x_mode'].setCurrentIndex(x_mode_index)
-                
-                # 不確かさ種類のラジオボタンを無効化
-                for radio in [self.parent.type_a_radio, self.parent.type_b_radio, self.parent.type_fixed_radio]:
-                    radio.setEnabled(False)
-            else:
-                # 手入力の場合、不確かさ種類のラジオボタンを有効化
-                for radio in [self.parent.type_a_radio, self.parent.type_b_radio, self.parent.type_fixed_radio]:
-                    radio.setEnabled(True)
-                # 現在の不確かさ種類に応じてウィジェットを表示
-                var_info = self.parent.parent.variable_values[self.current_variable]
-                uncertainty_type = var_info.get('type', 'A')
-                self.update_widget_visibility(uncertainty_type)
-
-            self.update_widget_visibility_for_source(source)
+            # Variablesタブでは回帰ソースを扱わない（回帰はRegressionタブ内で完結）
+            for radio in [self.parent.type_a_radio, self.parent.type_b_radio, self.parent.type_fixed_radio]:
+                radio.setEnabled(True)
+            var_info = self.parent.parent.variable_values[self.current_variable]
+            uncertainty_type = var_info.get('type', 'A')
+            self.update_widget_visibility(uncertainty_type)
             self.parent.update_form_layout()
         except Exception as e:
             log_error(f"値のソース変更エラー: {str(e)}", details=traceback.format_exc())
-
-    def update_widget_visibility_for_source(self, source):
-        """値のソースに応じてウィジェットの表示を更新"""
-        if source == 'regression':
-            # 回帰式の場合、回帰モデル関連のウィジェットを表示
-            for widget in self.parent.regression_widgets.values():
-                widget.setVisible(True)
-                widget.setEnabled(True)
-            # TypeA/B/Fixedのウィジェットを非表示
-            for widget in self.parent.type_a_widgets.values():
-                widget.setVisible(False)
-                widget.setEnabled(False)
-            for widget in self.parent.type_b_widgets.values():
-                widget.setVisible(False)
-                widget.setEnabled(False)
-            for widget in self.parent.fixed_value_widgets.values():
-                widget.setVisible(False)
-                widget.setEnabled(False)
-        else:
-            # 手入力の場合、回帰モデル関連のウィジェットを非表示
-            for widget in self.parent.regression_widgets.values():
-                widget.setVisible(False)
-                widget.setEnabled(False)
-
-    def on_regression_model_changed(self):
-        """回帰モデル選択変更"""
-        try:
-            if not self.current_variable:
-                return
-            value_info = self._get_current_value_info()
-            model_name = self.parent.regression_widgets['model'].currentText()
-            value_info['regression_id'] = model_name
-            value_info['regression_model'] = model_name  # 後方互換性のため
-        except Exception as e:
-            log_error(f"回帰モデル選択エラー: {str(e)}", details=traceback.format_exc())
-
-    def on_regression_x_mode_changed(self, index):
-        """回帰モデルのxの取り方変更"""
-        try:
-            if not self.current_variable:
-                return
-            value_info = self._get_current_value_info()
-            x_mode = self.parent.regression_widgets['x_mode'].currentData() or 'fixed'
-            value_info['regression_x_mode'] = x_mode
-            
-            # xの取り方に応じてx_valueの表示を更新
-            if x_mode == 'point_name':
-                # 校正点名を数値として使う場合
-                point_name = self.parent.value_combo.currentText()
-                try:
-                    point_value = float(point_name)
-                    self.parent.regression_widgets['x_value'].setText(str(point_value))
-                    self.parent.regression_widgets['x_value'].setReadOnly(True)
-                except ValueError:
-                    self.parent.regression_widgets['x_value'].setText('')
-                    self.parent.regression_widgets['x_value'].setReadOnly(True)
-            elif x_mode == 'fixed':
-                # 固定値を指定する場合
-                self.parent.regression_widgets['x_value'].setReadOnly(False)
-                regression_x_value = value_info.get('regression_x_value', '')
-                if regression_x_value:
-                    self.parent.regression_widgets['x_value'].setText(str(regression_x_value))
-        except Exception as e:
-            log_error(f"回帰モデルxの取り方変更エラー: {str(e)}", details=traceback.format_exc())
-
-    def on_regression_x_value_changed(self):
-        """回帰モデルのx値入力変更"""
-        try:
-            if not self.current_variable:
-                return
-            value_info = self._get_current_value_info()
-            x_value = self.parent.regression_widgets['x_value'].text()
-            value_info['regression_x_value'] = x_value
-            value_info['regression_x'] = x_value  # 後方互換性のため
-        except Exception as e:
-            log_error(f"回帰モデルx値変更エラー: {str(e)}", details=traceback.format_exc())
 
     def _get_current_value_info(self):
         """現在の値辞書を取得"""
