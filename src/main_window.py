@@ -120,7 +120,6 @@ class MainWindow(QMainWindow):
         
         # Connect signals
         self.point_settings_tab.points_changed.connect(self.on_points_changed)
-        self.document_info_tab.info_changed.connect(self.report_tab.update_report)
 
         layout.addWidget(self.tab_widget)
 

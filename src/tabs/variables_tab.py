@@ -118,10 +118,12 @@ class VariablesTab(BaseTab):
         variable_info_layout.addWidget(self.mode_display)
         var_list_layout.addLayout(variable_info_layout)
         self.variable_list = QListWidget()
+        self.variable_list.setMinimumHeight(260)
+        self.variable_list.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.variable_list.currentItemChanged.connect(self.handlers.on_variable_selected)
         var_list_layout.addWidget(self.variable_list)
         self.variable_list_group.setLayout(var_list_layout)
-        left_layout.addWidget(self.variable_list_group)
+        left_layout.addWidget(self.variable_list_group, 1)
         
         left_layout.addStretch()  # 下部に余白を追加
         

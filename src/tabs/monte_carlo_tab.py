@@ -296,6 +296,8 @@ class MonteCarloTab(BaseTab):
         self.parent = parent
         self.value_handler = ValueHandler(parent)
         self.equation_handler = EquationHandler(parent)
+        self._has_simulation_result = False
+        self._last_simulation_key = None
         self.setup_ui()
         self.refresh_controls()
 
@@ -391,12 +393,19 @@ class MonteCarloTab(BaseTab):
 
     def showEvent(self, event):
         self.refresh_controls()
+        self.run_simulation()
         super().showEvent(event)
 
     def refresh_controls(self):
+        previous_key = self._current_selection_key()
         self.update_value_combo()
         self.update_variable_combo()
-        self.run_simulation()
+        current_key = self._current_selection_key()
+        if current_key is None:
+            self._invalidate_results(clear_display=True)
+            return
+        if self._has_simulation_result and previous_key != current_key:
+            self._invalidate_results(clear_display=True)
 
     def update_value_combo(self):
         current_text = self.value_combo.currentText()
@@ -430,7 +439,21 @@ class MonteCarloTab(BaseTab):
         self.variable_combo.blockSignals(False)
 
     def on_selection_changed(self, *_):
-        self.run_simulation()
+        self._invalidate_results(clear_display=True)
+
+    def _current_selection_key(self):
+        result_variable = self.variable_combo.currentText().strip()
+        value_index = self.value_combo.currentIndex()
+        if not result_variable or value_index < 0:
+            return None
+        sample_count = int(self.samples_spin.value())
+        return (result_variable, value_index, sample_count)
+
+    def _invalidate_results(self, clear_display=True):
+        self._has_simulation_result = False
+        self._last_simulation_key = None
+        if clear_display:
+            self._clear_result()
 
     def _clear_result(self):
         self.mean_text.setText("--")
@@ -551,7 +574,7 @@ class MonteCarloTab(BaseTab):
             result_variable = self.variable_combo.currentText().strip()
             value_index = self.value_combo.currentIndex()
             if not result_variable or value_index < 0:
-                self._clear_result()
+                self._invalidate_results(clear_display=True)
                 return
 
             self.value_handler.current_value_index = value_index
@@ -560,7 +583,7 @@ class MonteCarloTab(BaseTab):
 
             finite_samples = samples[np.isfinite(samples)]
             if finite_samples.size == 0:
-                self._clear_result()
+                self._invalidate_results(clear_display=True)
                 return
 
             mean_value = float(np.mean(finite_samples))
@@ -590,9 +613,11 @@ class MonteCarloTab(BaseTab):
             )
             self.min_text.setText(self._format_number(float(np.min(finite_samples))))
             self.max_text.setText(self._format_number(float(np.max(finite_samples))))
+            self._has_simulation_result = True
+            self._last_simulation_key = (result_variable, value_index, sample_count)
 
         except Exception as e:
-            self._clear_result()
+            self._invalidate_results(clear_display=True)
             log_error(
                 f"Monte Carlo simulation error: {str(e)}",
                 details=traceback.format_exc(),

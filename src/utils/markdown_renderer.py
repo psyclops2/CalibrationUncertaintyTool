@@ -20,4 +20,5 @@ def render_markdown_to_html(text: str) -> str:
     if not stripped:
         return ""
 
-    return markdown.markdown(stripped, extensions=["extra"])
+    # Also treat plain newlines as <br> so line breaks in the editor are preserved.
+    return markdown.markdown(stripped, extensions=["extra", "nl2br"])

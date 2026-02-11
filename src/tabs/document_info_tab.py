@@ -1,6 +1,6 @@
 import csv
 import io
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QTimer, Signal
 from PySide6.QtWidgets import QFormLayout, QLabel, QLineEdit, QPlainTextEdit, QVBoxLayout
 
 from src.tabs.base_tab import BaseTab
@@ -25,6 +25,12 @@ class DocumentInfoTab(BaseTab):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent
+        self._update_delay_ms = 250
+        self._update_timer = QTimer(self)
+        self._update_timer.setSingleShot(True)
+        self._update_timer.timeout.connect(self._on_info_changed)
+        self._description_markdown_cache = None
+        self._description_html_cache = ""
         self.setup_ui()
 
     def setup_ui(self):
@@ -67,8 +73,8 @@ class DocumentInfoTab(BaseTab):
     def _connect_signals(self):
         for line_edit in (self.document_number_edit, self.document_name_edit, self.version_edit):
             line_edit.editingFinished.connect(self._on_info_changed)
-        self.description_edit.textChanged.connect(self._on_info_changed)
-        self.revision_edit.textChanged.connect(self._on_info_changed)
+        self.description_edit.textChanged.connect(self._on_description_text_changed)
+        self.revision_edit.textChanged.connect(self._schedule_info_update)
 
     def retranslate_ui(self):
         self.parent.tab_widget.setTabText(
@@ -108,6 +114,8 @@ class DocumentInfoTab(BaseTab):
         else:
             self.description_edit.setPlainText(info.get("description_html", ""))
         self.revision_edit.setPlainText(info.get("revision_history", ""))
+        self._description_markdown_cache = None
+        self._description_html_cache = ""
 
         self.document_number_edit.blockSignals(False)
         self.document_name_edit.blockSignals(False)
@@ -143,9 +151,25 @@ class DocumentInfoTab(BaseTab):
         return rows
 
     def _get_description_html(self):
-        return render_markdown_to_html(self.description_edit.toPlainText())
+        markdown_text = self.description_edit.toPlainText()
+        if markdown_text == self._description_markdown_cache:
+            return self._description_html_cache
+        rendered_html = render_markdown_to_html(markdown_text)
+        self._description_markdown_cache = markdown_text
+        self._description_html_cache = rendered_html
+        return rendered_html
+
+    def _on_description_text_changed(self):
+        self._description_markdown_cache = None
+        self._description_html_cache = ""
+        self._schedule_info_update()
+
+    def _schedule_info_update(self):
+        self._update_timer.start(self._update_delay_ms)
 
     def _on_info_changed(self):
+        if self._update_timer.isActive():
+            self._update_timer.stop()
         if hasattr(self.parent, "document_info"):
             self.parent.document_info = self.get_document_info()
         self.info_changed.emit()
