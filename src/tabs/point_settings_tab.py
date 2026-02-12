@@ -12,6 +12,7 @@ from PySide6.QtCore import Qt, Signal
 
 from src.tabs.base_tab import BaseTab
 from src.utils.app_logger import log_error
+from src.utils.variable_utils import create_empty_value_dict
 from src.utils.translation_keys import (
     POINT_SETTINGS_TAB_INFO,
     POINT_NAME,
@@ -46,6 +47,8 @@ class PointSettingsTab(BaseTab):
         self.table.setHorizontalHeaderLabels([self.tr(INDEX), self.tr(POINT_NAME)])
         self.add_button.setText(self.tr(ADD_POINT))
         self.remove_button.setText(self.tr(REMOVE_POINT))
+        self.move_up_button.setText("△")
+        self.move_down_button.setText("▽")
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
@@ -63,13 +66,19 @@ class PointSettingsTab(BaseTab):
         button_layout = QHBoxLayout()
         self.add_button = QPushButton(self.tr(ADD_POINT))
         self.remove_button = QPushButton(self.tr(REMOVE_POINT))
+        self.move_up_button = QPushButton("△")
+        self.move_down_button = QPushButton("▽")
         button_layout.addWidget(self.add_button)
         button_layout.addWidget(self.remove_button)
+        button_layout.addWidget(self.move_up_button)
+        button_layout.addWidget(self.move_down_button)
         button_layout.addStretch()
         layout.addLayout(button_layout)
 
         self.add_button.clicked.connect(self.add_point)
         self.remove_button.clicked.connect(self.remove_point)
+        self.move_up_button.clicked.connect(self.move_point_up)
+        self.move_down_button.clicked.connect(self.move_point_down)
 
     def update_display(self):
         self.table.blockSignals(True)
@@ -121,6 +130,7 @@ class PointSettingsTab(BaseTab):
             )
 
             if reply == QMessageBox.Yes:
+                self._remove_point_values(current_row)
                 del self.parent.value_names[current_row]
                 self.update_display()
                 self.points_changed.emit()
@@ -133,6 +143,63 @@ class PointSettingsTab(BaseTab):
         except Exception as e:
             log_error(f"Point remove error: {str(e)}")
             QMessageBox.warning(self, self.tr(MESSAGE_WARNING), f"{self.tr(POINT_REMOVE_FAILED)}: {str(e)}")
+
+    def move_point_up(self):
+        self._move_point(-1)
+
+    def move_point_down(self):
+        self._move_point(1)
+
+    def _move_point(self, step):
+        try:
+            current_row = self.table.currentRow()
+            if current_row < 0:
+                return
+
+            target_row = current_row + step
+            if target_row < 0 or target_row >= len(self.parent.value_names):
+                return
+
+            self.parent.value_names[current_row], self.parent.value_names[target_row] = (
+                self.parent.value_names[target_row],
+                self.parent.value_names[current_row],
+            )
+            self._swap_point_values(current_row, target_row)
+
+            self.update_display()
+            self.table.selectRow(target_row)
+            self.points_changed.emit()
+
+        except Exception as e:
+            log_error(f"Point move error: {str(e)}")
+
+    def _swap_point_values(self, idx_a, idx_b):
+        variable_values = getattr(self.parent, "variable_values", {})
+        if not isinstance(variable_values, dict):
+            return
+
+        required_len = max(len(self.parent.value_names), 1)
+        for var_info in variable_values.values():
+            if not isinstance(var_info, dict):
+                continue
+            values = var_info.get("values", [])
+            if not isinstance(values, list):
+                values = []
+            while len(values) < required_len:
+                values.append(create_empty_value_dict())
+            values[idx_a], values[idx_b] = values[idx_b], values[idx_a]
+            var_info["values"] = values
+
+    def _remove_point_values(self, remove_index):
+        variable_values = getattr(self.parent, "variable_values", {})
+        if not isinstance(variable_values, dict):
+            return
+        for var_info in variable_values.values():
+            if not isinstance(var_info, dict):
+                continue
+            values = var_info.get("values", [])
+            if isinstance(values, list) and 0 <= remove_index < len(values):
+                del values[remove_index]
 
     def on_item_changed(self, item):
         if item.column() == 1:
