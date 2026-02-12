@@ -27,11 +27,8 @@ class VariablesTabHandlers:
         is_result = self.current_variable_is_result
 
         # 計算結果変数は種類選択を無効化する
-        # 値のソースを取得
         for radio in [self.parent.type_a_radio, self.parent.type_b_radio, self.parent.type_fixed_radio]:
             radio.setEnabled(not is_result)
-        if hasattr(self.parent, 'value_source_combo'):
-            self.parent.value_source_combo.setEnabled(not is_result)
 
         if is_result:
             # 結果変数では入力系をすべて非表示・無効にする
@@ -175,7 +172,6 @@ class VariablesTabHandlers:
         try:
             if self.current_variable_is_result:
                 return
-            # 値のソースが回帰式の場合は変更を無視
             if self.parent.type_a_radio.isChecked():
                 uncertainty_type = 'A'
 
@@ -190,33 +186,15 @@ class VariablesTabHandlers:
                 # 量の不確かさ種類を更新
                 self.parent.parent.variable_values[self.current_variable]['type'] = uncertainty_type
 
+            # タイプ変更後、現在変数の値を画面へ再反映する。
+            # これを行わないと、直前に表示していた別変数の値が残って見える場合がある。
+            self.parent.display_current_value()
+
             # フォームレイアウトの更新
             self.parent.update_form_layout()
             
         except Exception as e:
             log_error(f"不確かさ種類変更エラー: {str(e)}", details=traceback.format_exc())
-
-    def on_value_source_changed(self, index):
-        """値のソース変更時の処理"""
-        try:
-            if self.current_variable_is_result:
-                return
-            if not self.current_variable:
-                return
-
-            source = 'manual'
-            value_info = self._get_current_value_info()
-            value_info['source'] = source
-
-            # Variablesタブでは回帰ソースを扱わない（回帰はRegressionタブ内で完結）
-            for radio in [self.parent.type_a_radio, self.parent.type_b_radio, self.parent.type_fixed_radio]:
-                radio.setEnabled(True)
-            var_info = self.parent.parent.variable_values[self.current_variable]
-            uncertainty_type = var_info.get('type', 'A')
-            self.update_widget_visibility(uncertainty_type)
-            self.parent.update_form_layout()
-        except Exception as e:
-            log_error(f"値のソース変更エラー: {str(e)}", details=traceback.format_exc())
 
     def _get_current_value_info(self):
         """現在の値辞書を取得"""
@@ -298,7 +276,7 @@ class VariablesTabHandlers:
                     values = var_info.get('values', [])
                     if isinstance(values, list) and 0 <= value_index < len(values):
                         divisor = values[value_index].get('divisor', '') or ''
-                    if not divisor:
+                    if distribution != NORMAL_DISTRIBUTION and not divisor:
                         divisor = var_info.get('divisor', '') or ''
 
             if distribution == NORMAL_DISTRIBUTION:
@@ -384,9 +362,6 @@ class VariablesTabHandlers:
                 return
                 
             divisor = self.parent.type_b_widgets['divisor'].text().strip()
-            if not divisor:
-                return
-                
             # 量の除数を更新
             self.parent.parent.variable_values[self.current_variable]['divisor'] = divisor
 
@@ -397,7 +372,7 @@ class VariablesTabHandlers:
                 value_info['divisor'] = divisor
                 half_width = value_info.get('half_width', '')
                 
-                if half_width:
+                if half_width and divisor:
                     try:
                         half_width = float(half_width)
                         divisor = float(divisor)

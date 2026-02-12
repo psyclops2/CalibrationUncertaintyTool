@@ -216,9 +216,23 @@ class MainWindow(QMainWindow):
                 values.extend(create_empty_value_dict() for _ in range(self.value_count - len(values)))
             else:
                 values = values[:self.value_count]
+            for value_info in values:
+                if isinstance(value_info, dict):
+                    value_info.pop('source', None)
 
             cleaned_info['values'] = values
-            save_variable_values[var_name] = cleaned_info
+
+            # 保存時の可読性と差分安定化のため、主要キーの順序を固定する。
+            preferred_key_order = ('unit', 'definition', 'type', 'distribution', 'divisor', 'values')
+            ordered_info = {}
+            for key in preferred_key_order:
+                if key in cleaned_info:
+                    ordered_info[key] = cleaned_info[key]
+            for key, value in cleaned_info.items():
+                if key not in ordered_info:
+                    ordered_info[key] = value
+
+            save_variable_values[var_name] = ordered_info
 
         # JSON出力の順序は「データを使用するタブの並び順」に合わせる。
         # ※ JSON仕様上、objectの順序は保証されないが、保存ファイルの可読性/差分を安定させる目的で整列する。
@@ -302,15 +316,6 @@ class MainWindow(QMainWindow):
                     if normalized:
                         var_data['distribution'] = normalized
 
-                # sourceフィールドの補完（既存データとの互換性）
-                values = var_data.get('values', [])
-                if isinstance(values, list):
-                    for value_info in values:
-                        if not isinstance(value_info, dict):
-                            continue
-                        # sourceフィールドが存在しない場合は補完
-                        if 'source' not in value_info:
-                            value_info['source'] = 'manual'
             # 不確かさ計算タブの計算・テーブル再構築
             if hasattr(self, 'uncertainty_calculation_tab'):
                 self.uncertainty_calculation_tab.update_result_combo()

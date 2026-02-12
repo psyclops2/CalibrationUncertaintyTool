@@ -110,7 +110,7 @@ def create_empty_value_dict():
     """空の値辞書を作成する。"""
     return {
         "measurements": "",
-        "degrees_of_freedom": 0,
+        "degrees_of_freedom": "",
         "central_value": "",
         "standard_uncertainty": "",
         "half_width": "",

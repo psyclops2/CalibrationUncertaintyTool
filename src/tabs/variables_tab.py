@@ -45,8 +45,6 @@ class VariablesTab(BaseTab):
         self.unit_label.setText(self.tr(LABEL_UNIT) + ":")
         self.definition_label.setText(self.tr(LABEL_DEFINITION) + ":")
         self.uncertainty_type_label.setText(self.tr(UNCERTAINTY_TYPE) + ":")
-        self.value_source_label.setText(self.tr(VALUE_SOURCE) + ":")
-        # value_source_comboの項目は既に設定済み
         
         # ラジオボタン
         self.type_a_radio.setText(self.tr(TYPE_A))
@@ -92,6 +90,11 @@ class VariablesTab(BaseTab):
         
         # 変数リストを更新
         self.update_variable_list(self.parent.variables, self.parent.result_variables)
+
+    @staticmethod
+    def _set_signals_blocked(widgets, blocked):
+        for widget in widgets:
+            widget.blockSignals(blocked)
 
     def setup_ui(self):
         main_layout = QHBoxLayout()  # メインレイアウトを水平方向に変更
@@ -161,13 +164,6 @@ class VariablesTab(BaseTab):
         self.uncertainty_type_label = QLabel(self.tr(UNCERTAINTY_TYPE) + ":")
         settings_layout.addRow(self.uncertainty_type_label, uncertainty_type_layout)
 
-        # 値のソース選択（校正点ごと）
-        self.value_source_label = QLabel(self.tr(VALUE_SOURCE) + ":")
-        self.value_source_combo = QComboBox()
-        self.value_source_combo.addItem(self.tr(SOURCE_MANUAL), 'manual')
-        self.value_source_combo.currentIndexChanged.connect(self.handlers.on_value_source_changed)
-        settings_layout.addRow(self.value_source_label, self.value_source_combo)
-        
         # 区切り線を追加
         separator = QFrame()
         separator.setFrameShape(QFrame.HLine)
@@ -374,31 +370,18 @@ class VariablesTab(BaseTab):
             elif uncertainty_type not in ('A', 'B', 'fixed'):
                 uncertainty_type = 'A'
                 var_info['type'] = 'A'
-            
-            # 現在の校正点の値のソースを取得
-            values = var_info.get('values', [])
-            value_index = self.value_combo.currentIndex()
-            if 0 <= value_index < len(values):
-                value_info = values[value_index]
-                source = value_info.get('source', 'manual')
-                self.value_source_combo.blockSignals(True)
-                index = self.value_source_combo.findData(source)
-                if index >= 0:
-                    self.value_source_combo.setCurrentIndex(index)
-                else:
-                    self.value_source_combo.setCurrentIndex(0)
-                self.value_source_combo.blockSignals(False)
-            else:
-                self.value_source_combo.blockSignals(True)
-                self.value_source_combo.setCurrentIndex(0)
-                self.value_source_combo.blockSignals(False)
 
-            if uncertainty_type == 'A':
-                self.type_a_radio.setChecked(True)
-            elif uncertainty_type == 'B':
-                self.type_b_radio.setChecked(True)
-            elif uncertainty_type == 'fixed':
-                self.type_fixed_radio.setChecked(True)
+            # 画面復元中に on_type_changed を発火させない
+            self._set_signals_blocked([self.type_a_radio, self.type_b_radio, self.type_fixed_radio], True)
+            try:
+                if uncertainty_type == 'A':
+                    self.type_a_radio.setChecked(True)
+                elif uncertainty_type == 'B':
+                    self.type_b_radio.setChecked(True)
+                elif uncertainty_type == 'fixed':
+                    self.type_fixed_radio.setChecked(True)
+            finally:
+                self._set_signals_blocked([self.type_a_radio, self.type_b_radio, self.type_fixed_radio], False)
 
             # TypeBの場合、分布と除数の設定
             if uncertainty_type == 'B':
@@ -420,9 +403,9 @@ class VariablesTab(BaseTab):
                 divisor = ''
                 if 0 <= value_index < len(values):
                     divisor = values[value_index].get('divisor', '')
-                if not divisor:
+                if distribution != NORMAL_DISTRIBUTION and not divisor:
                     divisor = var_info.get('divisor', '')
-                if not divisor:
+                if distribution != NORMAL_DISTRIBUTION and not divisor:
                     divisor = get_distribution_divisor(distribution)
 
                 self.type_b_widgets['divisor'].setText(divisor)
@@ -499,20 +482,14 @@ class VariablesTab(BaseTab):
                 self.handlers.update_widget_visibility('result')
                 return
 
-            # 値のソースを確認
-            source = value_info.get('source', 'manual') or 'manual'
-            if source != 'manual':
-                source = 'manual'
-                value_info['source'] = 'manual'
-            
             # 不確かさ種類を取得（デフォルトはA）
             uncertainty_type = var_info.get('type', 'A')
             
-            # 値のソースに応じてウィジェットの表示を更新
+            # 不確かさ種類に応じてウィジェットの表示を更新
             self.handlers.update_widget_visibility(uncertainty_type)
             
             log_debug(
-                f"[DEBUG] display_current_value: 復元開始 - 変数={current_var}, source={source}, type={uncertainty_type}, value_index={index}"
+                f"[DEBUG] display_current_value: 復元開始 - 変数={current_var}, type={uncertainty_type}, value_index={index}"
             )
             
             # 値をセット（ウィジェットの表示/非表示は既に設定済み）
@@ -557,40 +534,58 @@ class VariablesTab(BaseTab):
                 degrees_of_freedom = value_info.get('degrees_of_freedom', 0)
                 description = value_info.get('description', '')
                 calculation_formula = value_info.get('calculation_formula', '')
-                divisor = value_info.get('divisor', '')
-                if not divisor:
-                    divisor = var_info.get('divisor', '')
-                if not divisor:
-                    distribution = get_distribution_translation_key(
-                        var_info.get('distribution', NORMAL_DISTRIBUTION)
-                    ) or NORMAL_DISTRIBUTION
-                    var_info['distribution'] = distribution
-                    divisor = get_distribution_divisor(distribution)
-                if degrees_of_freedom == '' or degrees_of_freedom == 0:
-                    degrees_of_freedom = 'inf'
-                    value_info['degrees_of_freedom'] = degrees_of_freedom
-                
-                # ウィジェットに値を設定
-                if isinstance(central_value, (int, float)) or (isinstance(central_value, str) and central_value.replace('.', '', 1).isdigit()):
-                    central_value = f"{float(central_value):.15g}"
-                self.type_b_widgets['central_value'].setText(str(central_value))
-                
-                if isinstance(half_width, (int, float)) or (isinstance(half_width, str) and half_width.replace('.', '', 1).isdigit()):
-                    half_width = f"{float(half_width):.15g}"
-                self.type_b_widgets['half_width'].setText(str(half_width))
-                
-                if isinstance(standard_uncertainty, (int, float)) or (isinstance(standard_uncertainty, str) and standard_uncertainty.replace('.', '', 1).isdigit()):
-                    standard_uncertainty = f"{float(standard_uncertainty):.15g}"
-                self.type_b_widgets['standard_uncertainty'].setText(str(standard_uncertainty))
-                
-                self.type_b_widgets['degrees_of_freedom'].setText(str(degrees_of_freedom))
-                self.type_b_widgets['description'].setText(str(description))
-                self.type_b_widgets['calculation_formula'].setText(str(calculation_formula))
-                self.type_b_widgets['divisor'].setText(str(divisor))
                 distribution = get_distribution_translation_key(
                     var_info.get('distribution', NORMAL_DISTRIBUTION)
                 ) or NORMAL_DISTRIBUTION
                 var_info['distribution'] = distribution
+
+                divisor = value_info.get('divisor', '')
+                if distribution != NORMAL_DISTRIBUTION and not divisor:
+                    divisor = var_info.get('divisor', '')
+                if distribution != NORMAL_DISTRIBUTION and not divisor:
+                    divisor = get_distribution_divisor(distribution)
+                if degrees_of_freedom in ('', None, 0, '0', '0.0'):
+                    degrees_of_freedom = 'inf'
+                    value_info['degrees_of_freedom'] = degrees_of_freedom
+
+                self.type_b_widgets['distribution'].blockSignals(True)
+                distribution_index = self.type_b_widgets['distribution'].findData(distribution)
+                if distribution_index >= 0:
+                    self.type_b_widgets['distribution'].setCurrentIndex(distribution_index)
+                self.type_b_widgets['distribution'].blockSignals(False)
+
+                # 画面復元時の textChanged 副作用で値が上書きされないように抑止
+                type_b_signal_widgets = [
+                    self.type_b_widgets['central_value'],
+                    self.type_b_widgets['half_width'],
+                    self.type_b_widgets['standard_uncertainty'],
+                    self.type_b_widgets['degrees_of_freedom'],
+                    self.type_b_widgets['description'],
+                    self.type_b_widgets['calculation_formula'],
+                    self.type_b_widgets['divisor'],
+                ]
+                self._set_signals_blocked(type_b_signal_widgets, True)
+                try:
+                    # ウィジェットに値を設定
+                    if isinstance(central_value, (int, float)) or (isinstance(central_value, str) and central_value.replace('.', '', 1).isdigit()):
+                        central_value = f"{float(central_value):.15g}"
+                    self.type_b_widgets['central_value'].setText(str(central_value))
+
+                    if isinstance(half_width, (int, float)) or (isinstance(half_width, str) and half_width.replace('.', '', 1).isdigit()):
+                        half_width = f"{float(half_width):.15g}"
+                    self.type_b_widgets['half_width'].setText(str(half_width))
+
+                    if isinstance(standard_uncertainty, (int, float)) or (isinstance(standard_uncertainty, str) and standard_uncertainty.replace('.', '', 1).isdigit()):
+                        standard_uncertainty = f"{float(standard_uncertainty):.15g}"
+                    self.type_b_widgets['standard_uncertainty'].setText(str(standard_uncertainty))
+
+                    self.type_b_widgets['degrees_of_freedom'].setText(str(degrees_of_freedom))
+                    self.type_b_widgets['description'].setText(str(description))
+                    self.type_b_widgets['calculation_formula'].setText(str(calculation_formula))
+                    self.type_b_widgets['divisor'].setText(str(divisor))
+                finally:
+                    self._set_signals_blocked(type_b_signal_widgets, False)
+
                 self.type_b_widgets['divisor'].setReadOnly(distribution != NORMAL_DISTRIBUTION)
                 
                 log_debug(
