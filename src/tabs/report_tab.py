@@ -1,4 +1,4 @@
-import csv
+﻿import csv
 import io
 import os
 import traceback
@@ -7,6 +7,7 @@ import sympy as sp
 import numpy as np
 import html as html_lib
 import textwrap
+import re
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QComboBox, 
                              QPushButton, QFileDialog, QTextEdit, QLabel, QMessageBox)
 from PySide6.QtCore import Qt, Signal, Slot
@@ -41,7 +42,7 @@ class ReportTab(BaseTab):
         self._last_generated_html = None
 
         
-        # ユーティリティクラスの初期化
+        # 繝ｦ繝ｼ繝・ぅ繝ｪ繝・ぅ繧ｯ繝ｩ繧ｹ縺ｮ蛻晄悄蛹・
         self.equation_handler = EquationHandler(parent)
         self.value_handler = ValueHandler(parent)
         self.uncertainty_calculator = UncertaintyCalculator(parent)
@@ -50,7 +51,7 @@ class ReportTab(BaseTab):
         self.setup_ui()
 
     def _get_unit(self, var_name):
-        """変数の単位を取得（校正点ごとの単位があればそれも参照）"""
+        """Get unit for a variable."""
         try:
             if not self.parent:
                 return ''
@@ -72,7 +73,7 @@ class ReportTab(BaseTab):
 
     @staticmethod
     def _format_with_unit(value_text, unit):
-        """値に単位を付与して表示用文字列を返す（値や単位が空の場合はそのまま）"""
+        """Append a unit to value text for display."""
         if not value_text or value_text in ['--', '-']:
             return value_text
 
@@ -88,7 +89,7 @@ class ReportTab(BaseTab):
 
     @staticmethod
     def _format_multiline_cell(text, placeholder='-'):
-        """HTMLのセル表示用に改行を保持してエスケープする。"""
+        """Escape multiline text for HTML table cells."""
         if text is None:
             return placeholder
         raw_text = str(text)
@@ -98,35 +99,68 @@ class ReportTab(BaseTab):
         escaped = html_lib.escape(normalized)
         return escaped.replace('\n', '<br>')
 
+    @staticmethod
+    def _to_display_text(value, placeholder='-'):
+        if value is None:
+            return placeholder
+        text = str(value).strip()
+        return text if text else placeholder
+
+    def _format_measurements_table(self, measurements):
+        raw = self._to_display_text(measurements, '')
+        if not raw:
+            return "<div>-</div>"
+        normalized = raw.replace('，', ',').replace('\r', '\n')
+        items = [part for part in re.split(r'[\s,\n]+', normalized) if part.strip()]
+        if not items:
+            return "<div>-</div>"
+        header = (
+            f"<tr><th>{html_lib.escape(self.tr(REPORT_MEASUREMENT_NUMBER))}</th>"
+            f"<th>{html_lib.escape(self.tr(REPORT_VALUE))}</th></tr>"
+        )
+        rows = "".join(
+            f"<tr><td>{idx + 1}</td><td>{html_lib.escape(item)}</td></tr>"
+            for idx, item in enumerate(items)
+        )
+        return f"<table><tbody>{header}{rows}</tbody></table>"
+
+    @staticmethod
+    def _format_two_row_table(headers, values):
+        if not headers or not values or len(headers) != len(values):
+            return "<div>-</div>"
+        header_html = "".join(f"<th>{html_lib.escape(str(h))}</th>" for h in headers)
+        value_html = "".join(f"<td>{html_lib.escape(str(v))}</td>" for v in values)
+        return f"<table><tbody><tr>{header_html}</tr><tr>{value_html}</tr></tbody></table>"
+
     def retranslate_ui(self):
-        """UIのテキストを現在の言語で更新"""
+        """Retranslate UI text."""
         self.result_label.setText(self.tr(RESULT_VARIABLE) + ":")
         self.generate_button.setText(self.tr(GENERATE_REPORT))
         self.save_button.setText(self.tr(SAVE_REPORT))
-        # レポートを再生成して表示を更新
+        # 繝ｬ繝昴・繝医ｒ蜀咲函謌舌＠縺ｦ陦ｨ遉ｺ繧呈峩譁ｰ
         self.generate_report()
         
     def setup_ui(self):
-        """UIの設定"""
+        """Set up UI widgets."""
 
         main_layout = QVBoxLayout()
         
-        # 選択部分のレイアウト
+        # 驕ｸ謚樣Κ蛻・・繝ｬ繧､繧｢繧ｦ繝・
         selection_layout = QHBoxLayout()
         
-        # 計算結果選択
+        # 險育ｮ礼ｵ先棡驕ｸ謚・
         self.result_combo = QComboBox()
         self.result_combo.currentTextChanged.connect(self.on_result_changed)
         self.result_label = QLabel(self.tr(RESULT_VARIABLE) + ":")
         selection_layout.addWidget(self.result_label)
         selection_layout.addWidget(self.result_combo)
         
-        # レポート生成ボタン
+        # 繝ｬ繝昴・繝育函謌舌・繧ｿ繝ｳ
         self.generate_button = QPushButton(self.tr(GENERATE_REPORT))
         self.generate_button.clicked.connect(self.generate_report)
         selection_layout.addWidget(self.generate_button)
         
-        # レポート保存ボタン
+        # 繝ｬ繝昴・繝井ｿ晏ｭ倥・繧ｿ繝ｳ
         self.save_button = QPushButton(self.tr(SAVE_REPORT))
         self.save_button.clicked.connect(self.save_report)
         selection_layout.addWidget(self.save_button)
@@ -134,7 +168,7 @@ class ReportTab(BaseTab):
         selection_layout.addStretch()
         main_layout.addLayout(selection_layout)
         
-        # レポート表示部分
+        # 繝ｬ繝昴・繝郁｡ｨ遉ｺ驛ｨ蛻・
         self.report_display = QTextEdit()
         self.report_display.setReadOnly(True)
         main_layout.addWidget(self.report_display)
@@ -143,16 +177,16 @@ class ReportTab(BaseTab):
 
         
     def update_variable_list(self, variables=None, result_variables=None):
-        """変数リストの更新（メインウィンドウからの呼び出し用）"""
+        """Refresh result variable list."""
         try:
 
             self.result_combo.clear()
             
-            # 引数で渡された場合はそれを使用
+            # 蠑墓焚縺ｧ貂｡縺輔ｌ縺溷ｴ蜷医・縺昴ｌ繧剃ｽｿ逕ｨ
             if result_variables:
 
                 self.result_combo.addItems(result_variables)
-            # 親ウィンドウから計算結果変数を取得
+            # 隕ｪ繧ｦ繧｣繝ｳ繝峨え縺九ｉ險育ｮ礼ｵ先棡螟画焚繧貞叙蠕・
             elif hasattr(self.parent, 'result_variables'):
                 result_vars = self.parent.result_variables
 
@@ -161,49 +195,49 @@ class ReportTab(BaseTab):
                 pass
 
                 
-            # レポートの更新
+            # 繝ｬ繝昴・繝医・譖ｴ譁ｰ
             self.update_report()
             
         except Exception as e:
-            log_error(f"変数リスト更新エラー: {str(e)}", details=traceback.format_exc())
+            log_error(f"螟画焚繝ｪ繧ｹ繝域峩譁ｰ繧ｨ繝ｩ繝ｼ: {str(e)}", details=traceback.format_exc())
             
     def on_result_changed(self, result_var):
-        """計算結果が変更されたときの処理"""
+        """Handle result variable change."""
         if not result_var:
             return
             
         try:
             self.update_report()
         except Exception as e:
-            log_error(f"計算結果変更エラー: {str(e)}", details=traceback.format_exc())
+            log_error(f"險育ｮ礼ｵ先棡螟画峩繧ｨ繝ｩ繝ｼ: {str(e)}", details=traceback.format_exc())
             
     def generate_report(self):
-        """レポートを生成して表示"""
+        """Generate and display report HTML."""
         try:
 
             
-            # 選択された計算結果変数を取得
+            # 驕ｸ謚槭＆繧後◆險育ｮ礼ｵ先棡螟画焚繧貞叙蠕・
             result_var = self.result_combo.currentText()
             if not result_var:
 
                 return
                 
-            # 選択された計算結果変数の式を取得
+            # 驕ｸ謚槭＆繧後◆險育ｮ礼ｵ先棡螟画焚縺ｮ蠑上ｒ蜿門ｾ・
             equation = self.equation_handler.get_target_equation(result_var)
             if not equation:
 
                 return
                 
-            # レポートのHTMLを生成
+            # 繝ｬ繝昴・繝医・HTML繧堤函謌・
             html = self.generate_report_html(equation)
             self._last_generated_html = html
             
-            # レポートを表示
+            # 繝ｬ繝昴・繝医ｒ陦ｨ遉ｺ
             self.report_display.setHtml(html)
 
             
         except Exception as e:
-            log_error(f"レポート生成エラー: {str(e)}", details=traceback.format_exc())
+            log_error(f"繝ｬ繝昴・繝育函謌舌お繝ｩ繝ｼ: {str(e)}", details=traceback.format_exc())
             QMessageBox.warning(self, self.tr(SAVE_ERROR), self.tr(REPORT_SAVE_ERROR))
             
 
@@ -225,7 +259,7 @@ class ReportTab(BaseTab):
         except FileNotFoundError:
             return ""
         except Exception as e:
-            log_error(f"CSS読込エラー: {str(e)}", details=traceback.format_exc())
+            log_error(f"CSS隱ｭ霎ｼ繧ｨ繝ｩ繝ｼ: {str(e)}", details=traceback.format_exc())
             return ""
 
     def _get_report_css(self):
@@ -239,8 +273,15 @@ class ReportTab(BaseTab):
         combined = "\n\n".join([part for part in [default_css, custom_css] if part]).strip()
         return combined if combined else self._FALLBACK_REPORT_CSS
 
+    def _get_model_equation_text(self):
+        """Return the model equation text before dependency resolution."""
+        equation_text = getattr(self.parent, 'last_equation', '') if self.parent else ''
+        if not equation_text and self.parent and hasattr(self.parent, 'model_equation_tab'):
+            equation_text = self.parent.model_equation_tab.equation_input.toPlainText().strip()
+        return equation_text
+
     def generate_report_html(self, equation):
-        """レポートのHTMLを生成（変数名リスト＋詳細情報dictから情報を取得して表示、未設定は"-"で埋める）"""
+        """Build report HTML content."""
         try:
             result_var = self.result_combo.currentText()
             if not result_var or not equation:
@@ -257,6 +298,7 @@ class ReportTab(BaseTab):
             description_display = description_html if description_html.strip() else "-"
             revision_rows = self.get_revision_rows(document_info)
             report_css = self._get_report_css()
+            model_equation = self._get_model_equation_text() or equation
 
             html = textwrap.dedent(f"""
                 <html>
@@ -278,10 +320,10 @@ class ReportTab(BaseTab):
                     <div class="subtitle">{self.tr(DESCRIPTION_LABEL)}</div>
                     <div class="description-body">{description_display}</div>
                     <div class="title">{self.tr(REPORT_MODEL_EQUATION)}</div>
-                    <div class="equation">{self.equation_formatter.format_equation(equation)}</div>
+                    <div class="equation">{self.equation_formatter.format_equation(model_equation)}</div>
                 """).strip()
 
-            # 変数一覧テーブル
+            # 螟画焚荳隕ｧ繝・・繝悶Ν
             html += f"""
             <div class="title">{self.tr(REPORT_VARIABLE_LIST)}</div>
             <table>
@@ -293,7 +335,7 @@ class ReportTab(BaseTab):
                 </tr>
             """
             variables = getattr(self.parent, 'variables', [])
-            # variables はリストまたは辞書を想定するが、どちらでも安全に扱えるよう正規化
+            # variables 縺ｯ繝ｪ繧ｹ繝医∪縺溘・霎樊嶌繧呈Φ螳壹☆繧九′縲√←縺｡繧峨〒繧ょｮ牙・縺ｫ謇ｱ縺医ｋ繧医≧豁｣隕丞喧
             if isinstance(variables, dict):
                 variable_names = list(variables.keys())
             elif isinstance(variables, (list, tuple)):
@@ -326,7 +368,7 @@ class ReportTab(BaseTab):
                 """
             html += "</table>"
 
-            # 回帰モデル一覧セクション
+            # 蝗槫ｸｰ繝｢繝・Ν荳隕ｧ繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ
             point_names = getattr(self.parent, 'value_names', [])
             calc_tab = getattr(self.parent, 'uncertainty_calculation_tab', None)
 
@@ -334,44 +376,61 @@ class ReportTab(BaseTab):
                 self.value_handler.current_value_index = idx
                 html += f'<div class="title">{self.tr(REPORT_CALIBRATION_POINT)}: {point_name}</div>'
 
-                # 各変数の詳細
-                html += f'<h4>{self.tr(REPORT_VARIABLE_DETAILS)}</h4>'
+                # 蜷・､画焚縺ｮ隧ｳ邏ｰ
                 for var_name in variable_names:
                     if var_name in self.parent.result_variables:
                         continue
                     try:
                         var_data = get_variable_data(var_name)
-                        html += f"<h5>{var_name}</h5>"
+                        safe_var_name = html_lib.escape(str(var_name))
+                        html += f"<div><strong>{safe_var_name}</strong></div>"
                         uncertainty_type = var_data.get('type', '')
                         values_list = var_data.get('values', [])
                         if not isinstance(values_list, list):
                             values_list = []
                         value_item = values_list[idx] if idx < len(values_list) else None
+                        if not isinstance(value_item, dict):
+                            value_item = {}
+
+                        unit = self._to_display_text(var_data.get('unit', ''), self.UNIT_PLACEHOLDER)
+                        central_value = self._to_display_text(value_item.get('central_value', '-'))
+                        central_with_unit = f"{html_lib.escape(central_value)} {html_lib.escape(unit)}"
+
                         if uncertainty_type == 'A':
-                            if value_item:
-                                description = value_item.get('description', '-')
-                                html += f"<div>{self.tr(DETAIL_DESCRIPTION)}: {description}</div>"
-                            else:
-                                html += f"<div>{self.tr(DETAIL_DESCRIPTION)}: -</div>"
+                            standard_uncertainty = self._to_display_text(value_item.get('standard_uncertainty', '-'))
+                            degrees_of_freedom = self._to_display_text(value_item.get('degrees_of_freedom', '-'))
+                            html += self._format_two_row_table(
+                                [self.tr(REPORT_CENTRAL_VALUE), self.tr(REPORT_UNIT), self.tr(REPORT_STANDARD_UNCERTAINTY), self.tr(REPORT_DOF)],
+                                [central_value, unit, standard_uncertainty, degrees_of_freedom],
+                            )
+                            html += self._format_measurements_table(value_item.get('measurements', ''))
+                            description = self._format_multiline_cell(value_item.get('description', ''), '-')
+                            html += self._format_two_row_table([self.tr(DETAIL_DESCRIPTION)], [description])
                         elif uncertainty_type == 'B':
-                            half_width = var_data.get('half_width', '-')
-                            distribution = var_data.get('distribution', '-')
+                            half_width = self._to_display_text(value_item.get('half_width', '-'))
+                            distribution = var_data.get('distribution', '')
                             distribution_key = get_distribution_translation_key(distribution)
-                            distribution_label = self.tr(distribution_key) if distribution_key else distribution
-                            html += f"<div>{self.tr(HALF_WIDTH)}: {half_width}, {self.tr(DISTRIBUTION)}: {distribution_label}</div>"
-                            description = value_item.get('description', '-') if value_item else '-'
-                            html += f"<div>{self.tr(DETAIL_DESCRIPTION)}: {description}</div>"
+                            distribution_label = self.tr(distribution_key) if distribution_key else self._to_display_text(distribution, '-')
+                            divisor = self._to_display_text(value_item.get('divisor', var_data.get('divisor', '-')))
+                            degrees_of_freedom = self._to_display_text(value_item.get('degrees_of_freedom', '-'))
+                            html += self._format_two_row_table(
+                                [self.tr(REPORT_CENTRAL_VALUE), self.tr(REPORT_UNIT), self.tr(HALF_WIDTH), self.tr(REPORT_DISTRIBUTION), self.tr(DIVISOR), self.tr(REPORT_DOF)],
+                                [central_value, unit, half_width, distribution_label, divisor, degrees_of_freedom],
+                            )
+                            description = self._format_multiline_cell(value_item.get('description', ''), '-')
+                            html += self._format_two_row_table([self.tr(DETAIL_DESCRIPTION)], [description])
                         elif uncertainty_type == 'fixed':
-                            fixed_value = value_item.get('central_value', '-') if value_item else '-'
-                            html += f"<div>{self.tr(FIXED_VALUE)}: {fixed_value}</div>"
-                            description = value_item.get('description', '-') if value_item else '-'
-                            html += f"<div>{self.tr(DETAIL_DESCRIPTION)}: {description}</div>"
+                            description = self._format_multiline_cell(value_item.get('description', ''), '-')
+                            html += self._format_two_row_table(
+                                [self.tr(REPORT_CENTRAL_VALUE), self.tr(REPORT_UNIT), self.tr(DETAIL_DESCRIPTION)],
+                                [central_value, unit, description],
+                            )
                         else:
-                            html += f"<div>{self.tr(DETAIL_DESCRIPTION)}: -</div>"
+                            html += "<div>-</div>"
                     except Exception:
                         html += f"<div>-</div>"
 
-                # 不確かさのバジェット（計算タブから取得）
+                # 荳咲｢ｺ縺九＆縺ｮ繝舌ず繧ｧ繝・ヨ・郁ｨ育ｮ励ち繝悶°繧牙叙蠕暦ｼ・
                 html += f'<h4>{self.tr(REPORT_UNCERTAINTY_BUDGET)}</h4>'
                 if calc_tab:
                     value_idx = calc_tab.value_combo.findText(point_name)
@@ -430,7 +489,7 @@ class ReportTab(BaseTab):
                                 """
                             html += "</table>"
 
-                        # 計算結果
+                        # 險育ｮ礼ｵ先棡
                         html += f"<h4>{self.tr(REPORT_CALCULATION_RESULT)}</h4>"
                         html += f"<table>"
                         html += f"<tr><th>{self.tr(REPORT_ITEM)}</th><th>{self.tr(REPORT_VALUE)}</th></tr>"
@@ -474,11 +533,11 @@ class ReportTab(BaseTab):
             return html
 
         except Exception as e:
-            log_error(f"HTML生成エラー: {str(e)}", details=traceback.format_exc())
+            log_error(f"HTML逕滓・繧ｨ繝ｩ繝ｼ: {str(e)}", details=traceback.format_exc())
             return self.tr(HTML_GENERATION_ERROR)
 
     def get_revision_rows(self, document_info):
-        """改訂履歴の入力内容をパースしてリストで返却"""
+        """Get parsed revision rows."""
         if hasattr(self.parent, 'document_info_tab'):
             return self.parent.document_info_tab.parse_revision_history()
         if isinstance(document_info, dict):
@@ -505,24 +564,24 @@ class ReportTab(BaseTab):
         return rows
 
     def update_report(self):
-        """レポートを更新するための外部インターフェース"""
+        """Refresh report when selection is available."""
         if self.result_combo.count() > 0:
             self.generate_report()
 
     def save_html_to_file(self, html, file_name):
-        """HTMLをファイルに保存"""
+        """Save report HTML to file."""
         try:
             with open(file_name, 'w', encoding='utf-8') as f:
                 f.write(html)
 
             QMessageBox.information(self, self.tr(SAVE_SUCCESS), self.tr(REPORT_SAVED))
         except Exception as e:
-            log_error(f"ファイル保存エラー: {str(e)}", details=traceback.format_exc())
+            log_error(f"繝輔ぃ繧､繝ｫ菫晏ｭ倥お繝ｩ繝ｼ: {str(e)}", details=traceback.format_exc())
             QMessageBox.warning(self, self.tr(SAVE_ERROR), self.tr(FILE_SAVE_ERROR))
 
     def get_uncertainty_type_display(self, type_code, var_name=None):
-        """不確かさの種類のコードを表示用の文字列に変換"""
-        # 計算結果変数の場合は「計算結果」と表示
+        """Convert uncertainty type code to display text."""
+        # 險育ｮ礼ｵ先棡螟画焚縺ｮ蝣ｴ蜷医・縲瑚ｨ育ｮ礼ｵ先棡縲阪→陦ｨ遉ｺ
         if var_name and hasattr(self.parent, 'result_variables') and var_name in self.parent.result_variables:
             return self.tr(CALCULATION_RESULT_DISPLAY)
             
@@ -534,8 +593,9 @@ class ReportTab(BaseTab):
         return type_map.get(type_code, self.tr(UNKNOWN_TYPE))
 
     def save_report(self):
-        """現在表示中のレポートをファイルに保存する"""
+        """Save current report HTML."""
         html = self._last_generated_html or self.report_display.toHtml()
         file_name, _ = QFileDialog.getSaveFileName(self, self.tr(SAVE_REPORT_DIALOG_TITLE), "", "HTML File (*.html);;All Files (*)")
         if file_name:
             self.save_html_to_file(html, file_name)
+

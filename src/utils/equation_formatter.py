@@ -1,3 +1,7 @@
+﻿import html
+import re
+
+
 class EquationFormatter:
     def __init__(self, parent=None):
         self.parent = parent
@@ -8,184 +12,155 @@ class EquationFormatter:
                 .operator { color: #000000; }
                 .number { color: #000000; }
                 sub { font-size: 0.8em; vertical-align: sub; }
+                sup { font-size: 0.8em; vertical-align: super; }
             </style>
         """
-        
+        self._operator_tokens = {"+", "-", "*", "/", "(", ")", ",", "="}
+
     def format_equation(self, equation):
-        """方程式をHTML形式で表示"""
-        try:
+        """Format equation text as HTML."""
+        equations = [eq.strip() for eq in (equation or "").split(',') if eq.strip()]
+        formatted_parts = []
+        result_vars = set()
+        parsed_equations = []
 
-            # 方程式を分割
-            equations = [eq.strip() for eq in equation.split(',')]
-            formatted_parts = []
-            
-            # 計算結果の変数を収集（左辺の変数）
-            result_vars = set()
-            for eq in equations:
-                if '=' not in eq:
-                    continue
-                left_side = eq.split('=', 1)[0].strip()
-                result_vars.add(left_side)
-            
+        for eq in equations:
+            if '=' not in eq:
+                continue
+            left_side, right_side = eq.split('=', 1)
+            left_side = left_side.strip()
+            right_side = right_side.strip()
+            parsed_equations.append((left_side, right_side))
+            result_token = self._first_identifier_token(left_side)
+            if result_token:
+                result_vars.add(result_token)
 
-            
-            for eq in equations:
-                if '=' not in eq:
-                    continue
-                    
-                left_side, right_side = eq.split('=', 1)
-                left_side = left_side.strip()
-                right_side = right_side.strip()
+        for left_side, right_side in parsed_equations:
+            left_html = self._format_side(left_side, result_vars, force_result=True)
+            right_html = self._format_side(right_side, result_vars, force_result=False)
+            formatted_parts.append(f"{left_html} = {right_html}")
 
-                
-                # 右辺のトークン化（下付き文字に対応）
-                tokens = []
-                current_token = ''
-                i = 0
-                while i < len(right_side):
-                    char = right_side[i]
-                    if char in '+-*/^()':
-                        if current_token:
-                            tokens.append(current_token)
-                            current_token = ''
-                        tokens.append(char)
-                        i += 1
-                    elif char == '_':
-                        # 下付き文字の処理
-                        if current_token:
-                            tokens.append(current_token)
-                            current_token = ''
-                        tokens.append('_')
-                        i += 1
-                    else:
-                        current_token += char
-                        i += 1
-                if current_token:
-                    tokens.append(current_token)
-                
+        return '<br>'.join(formatted_parts)
 
-                
-                # トークンをHTMLに変換
-                html_parts = []
-                i = 0
-                while i < len(tokens):
-                    token = tokens[i]
-                    if token == '_' and i + 1 < len(tokens):
-                        # 下付き文字の処理
-                        base_var = html_parts[-1].split('>')[1].split('<')[0]  # 直前の変数名を取得
-                        html_parts[-1] = f'<span class="{"result-variable" if base_var in result_vars else "input-variable"}">{base_var}</span>'
-                        html_parts.append(f'<sub>{tokens[i+1]}</sub>')
-                        i += 2
-                        continue
-                    elif token in '+-*/^()':
-                        html_parts.append(f'<span class="operator">{token}</span>')
-                    elif token.replace('.', '').isdigit():
-                        html_parts.append(f'<span class="number">{token}</span>')
-                    else:
-                        # 変数の処理（計算結果かどうかで色を変える）
-                        var_class = "result-variable" if token in result_vars else "input-variable"
-                        html_parts.append(f'<span class="{var_class}">{token}</span>')
-                    i += 1
-                
-                # 左辺の処理（常に計算結果変数）
-                left_tokens = []
-                current_token = ''
-                i = 0
-                while i < len(left_side):
-                    char = left_side[i]
-                    if char == '_':
-                        if current_token:
-                            left_tokens.append(current_token)
-                            current_token = ''
-                        left_tokens.append('_')
-                        i += 1
-                    else:
-                        current_token += char
-                        i += 1
-                if current_token:
-                    left_tokens.append(current_token)
-                
-                # 左辺のHTML変換
-                left_html = []
-                i = 0
-                while i < len(left_tokens):
-                    token = left_tokens[i]
-                    if token == '_' and i + 1 < len(left_tokens):
-                        left_html.append(f'<sub>{left_tokens[i+1]}</sub>')
-                        i += 2
-                        continue
-                    else:
-                        # 左辺は常に計算結果変数
-                        left_html.append(f'<span class="result-variable">{token}</span>')
-                    i += 1
-                
-                formatted_parts.append(f"{''.join(left_html)} = {''.join(html_parts)}")
-            
-            html_content = '<br>'.join(formatted_parts)
+    def _tokenize_side(self, text):
+        tokens = []
+        current = ''
+        delimiters = set("+-*/^()_=,")
+        for char in text:
+            if char.isspace():
+                if current:
+                    tokens.append(current)
+                    current = ''
+                continue
+            if char in delimiters:
+                if current:
+                    tokens.append(current)
+                    current = ''
+                tokens.append(char)
+                continue
+            current += char
+        if current:
+            tokens.append(current)
+        return tokens
 
-            return html_content
-            
-        except Exception as e:
+    def _first_identifier_token(self, text):
+        for token in self._tokenize_side(text):
+            if token in self._operator_tokens or token in {'^', '_'}:
+                continue
+            if self._is_number(token):
+                continue
+            return token
+        return ''
 
-            raise
-            
+    def _is_number(self, token):
+        return bool(re.fullmatch(r'\d+(\.\d+)?', token or ''))
+
+    def _format_side(self, text, result_vars, force_result=False):
+        tokens = self._tokenize_side(text)
+        html_parts = []
+        i = 0
+        while i < len(tokens):
+            token = tokens[i]
+            if token in self._operator_tokens:
+                html_parts.append(f'<span class="operator">{html.escape(token)}</span>')
+                i += 1
+                continue
+            if token in {'^', '_'}:
+                html_parts.append(f'<span class="operator">{token}</span>')
+                i += 1
+                continue
+
+            html_parts.append(self._format_atom(token, result_vars, force_result))
+            i += 1
+
+            while i < len(tokens) and tokens[i] == '_':
+                sub_text, i = self._consume_marker_expression(tokens, i + 1)
+                if sub_text:
+                    html_parts.append(f'<sub>{sub_text}</sub>')
+
+            if i < len(tokens) and tokens[i] == '^':
+                sup_text, i = self._consume_marker_expression(tokens, i + 1)
+                if sup_text:
+                    html_parts.append(f'<sup>{sup_text}</sup>')
+
+        return ''.join(html_parts)
+
+    def _consume_marker_expression(self, tokens, start_index):
+        if start_index >= len(tokens):
+            return '', start_index
+
+        token = tokens[start_index]
+        if token != '(':
+            return html.escape(token), start_index + 1
+
+        # Parenthesized group: keep as plain text inside sub/sup.
+        depth = 0
+        parts = []
+        i = start_index
+        while i < len(tokens):
+            current = tokens[i]
+            parts.append(html.escape(current))
+            if current == '(':
+                depth += 1
+            elif current == ')':
+                depth -= 1
+                if depth == 0:
+                    return ''.join(parts), i + 1
+            i += 1
+        return ''.join(parts), i
+
+    def _format_atom(self, token, result_vars, force_result=False):
+        escaped = html.escape(token)
+        if self._is_number(token):
+            return f'<span class="number">{escaped}</span>'
+        var_class = 'result-variable' if force_result or token in result_vars else 'input-variable'
+        return f'<span class="{var_class}">{escaped}</span>'
+
     def _format_variables(self, text):
-        """変数をイタリック体に"""
-        # 単一の文字を変数として扱う
+        """Backward-compatible helper."""
         words = text.split()
         formatted_words = []
-        
         for word in words:
             if len(word) == 1 and word.isalpha():
                 formatted_words.append(f'<span class="variable">{word}</span>')
             else:
                 formatted_words.append(word)
-                
         return ' '.join(formatted_words)
-        
+
     def _format_operators(self, text):
-        """演算子を太字に"""
-        # 既にフォーマットされた部分を保護
-        protected_parts = []
-        current_pos = 0
-        
-        # 既存のHTMLタグを保護
-        while True:
-            start = text.find('<', current_pos)
-            if start == -1:
-                break
-            end = text.find('>', start)
-            if end == -1:
-                break
-            protected_parts.append((start, end + 1))
-            current_pos = end + 1
-            
-        # 保護された部分を一時的に置換
-        for i, (start, end) in enumerate(protected_parts):
-            placeholder = f'__PROTECTED_{i}__'
-            text = text[:start] + placeholder + text[end:]
-            
-        # 演算子をフォーマット
+        """Backward-compatible helper."""
         operators = ['+', '-', '*', '/', '^']
         for op in operators:
             text = text.replace(op, f'<span class="operator">{op}</span>')
-            
-        # 保護された部分を元に戻す
-        for i, (start, end) in enumerate(protected_parts):
-            placeholder = f'__PROTECTED_{i}__'
-            text = text.replace(placeholder, text[start:end])
-            
         return text
-        
+
     def _format_numbers(self, text):
-        """数値を青色に"""
-        import re
-        # 数値（小数点を含む）を検出
+        """Backward-compatible helper."""
         numbers = re.findall(r'\d+\.?\d*', text)
         for num in numbers:
             text = text.replace(num, f'<span class="number">{num}</span>')
         return text
-        
+
     def get_style_sheet(self):
-        """スタイルシートを取得"""
-        return self.style_sheet 
+        """Return style sheet."""
+        return self.style_sheet
