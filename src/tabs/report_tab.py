@@ -570,6 +570,9 @@ class ReportTab(BaseTab):
         """Refresh report when selection is available."""
         if self.result_combo.count() > 0:
             self.generate_report()
+        else:
+            self._last_generated_html = ""
+            self.report_display.clear()
 
     def save_html_to_file(self, html, file_name):
         """Save report HTML to file."""

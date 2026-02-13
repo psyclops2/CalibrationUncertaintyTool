@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                              QComboBox, QTableWidget, QTableWidgetItem, QHeaderView,
-                             QGroupBox, QFormLayout, QDoubleSpinBox, QMessageBox,
+                             QGroupBox, QFormLayout, QDoubleSpinBox,
                              QAbstractItemView)
 from PySide6.QtCore import Qt, Signal, Slot
 import traceback
@@ -20,6 +20,12 @@ from src.tabs.base_tab import BaseTab
 from src.utils.translation_keys import *
 from src.utils.variable_utils import get_distribution_translation_key
 from src.utils.app_logger import log_error
+from src.utils.budget_error_utils import (
+    to_budget_float,
+    summarize_budget_issues,
+    detect_zero_denominator_terms,
+    build_zero_denominator_hint,
+)
 
 class UncertaintyCalculationTab(BaseTab):
     UNIT_PLACEHOLDER = '-'
@@ -28,6 +34,7 @@ class UncertaintyCalculationTab(BaseTab):
         super().__init__(parent)
         self.parent = parent
         self._updating_table = False  # Flag to prevent recursive updates
+        self._last_budget_error_message = None
 
         if self.parent:
             pass
@@ -94,6 +101,21 @@ class UncertaintyCalculationTab(BaseTab):
         self.effective_degrees_of_freedom_label.setText('--')
         self.coverage_factor_label.setText('--')
         self.expanded_uncertainty_label.setText('--')
+        self.warning_label.clear()
+        self.warning_label.hide()
+
+    def _show_budget_error_message(self, issues):
+        message = summarize_budget_issues(issues)
+        if not message:
+            self._last_budget_error_message = None
+            self.warning_label.clear()
+            self.warning_label.hide()
+            return
+        if message == self._last_budget_error_message:
+            return
+        self._last_budget_error_message = message
+        self.warning_label.setText(message)
+        self.warning_label.show()
 
     def retranslate_ui(self):
         """UIのテキストを現在の言語で更新"""
@@ -268,6 +290,11 @@ class UncertaintyCalculationTab(BaseTab):
         result_display_layout.addRow(self.expanded_uncertainty_text, self.expanded_uncertainty_label)
         
         self.result_display_group.setLayout(result_display_layout)
+        self.warning_label = QLabel("")
+        self.warning_label.setWordWrap(True)
+        self.warning_label.setStyleSheet("color: #c62828;")
+        self.warning_label.hide()
+        right_layout.addWidget(self.warning_label)
         right_layout.addWidget(self.result_display_group)
         
         # メインレイアウトに左右のレイアウトを追加
@@ -283,7 +310,7 @@ class UncertaintyCalculationTab(BaseTab):
     def update_result_combo(self):
         """計算結果の選択肢を更新"""
         try:
-
+            self.result_combo.blockSignals(True)
             self.result_combo.clear()
             
             # 親ウィンドウから計算結果変数を取得
@@ -295,9 +322,12 @@ class UncertaintyCalculationTab(BaseTab):
                 for var in self.parent.variables:
                     if var in result_vars:
                         self.result_combo.addItem(var)
+                if self.result_combo.count() == 0:
+                    self._clear_calculation_display()
             else:
-                pass
+                self._clear_calculation_display()
 
+            self.result_combo.blockSignals(False)
                 
         except Exception as e:
             log_error(f"計算結果選択肢更新エラー: {str(e)}", details=traceback.format_exc())
@@ -305,12 +335,19 @@ class UncertaintyCalculationTab(BaseTab):
     def update_value_combo(self):
         """校正点の選択肢を更新"""
         try:
-
+            self.value_combo.blockSignals(True)
             self.value_combo.clear()
             
             value_names = getattr(self.parent, 'value_names', [])
             for name in value_names:
                 self.value_combo.addItem(name)
+
+            current_index = getattr(self.parent, 'current_value_index', 0)
+            if isinstance(current_index, int) and 0 <= current_index < len(value_names):
+                self.value_combo.setCurrentIndex(current_index)
+            elif self.value_combo.count() > 0:
+                self.value_combo.setCurrentIndex(0)
+            self.value_combo.blockSignals(False)
                 
         except Exception as e:
             log_error(f"校正点選択肢更新エラー: {str(e)}", details=traceback.format_exc())
@@ -340,6 +377,8 @@ class UncertaintyCalculationTab(BaseTab):
         try:
             # ValueHandlerの現在の校正点インデックスを更新
             self.value_handler.current_value_index = index
+            if self.parent:
+                self.parent.current_value_index = index
             
             # 現在選択されている計算結果変数を取得
             result_var = self.result_combo.currentText()
@@ -393,6 +432,12 @@ class UncertaintyCalculationTab(BaseTab):
             # 各変数について処理
             contributions = []  # 寄与不確かさを保存するリスト
             degrees_of_freedom_list = []
+            budget_issues = []
+            point_name = self.value_combo.currentText() or f"index={self.value_handler.current_value_index}"
+            zero_denominator_terms = detect_zero_denominator_terms(
+                right_side, variables, self.value_handler
+            )
+            zero_denominator_hint = build_zero_denominator_hint(zero_denominator_terms)
 
             for i, var in enumerate(ordered_variables):
 
@@ -452,12 +497,30 @@ class UncertaintyCalculationTab(BaseTab):
                 
                 # 感度係数
                 sensitivity = self.equation_handler.calculate_sensitivity(right_side, var, variables, self.value_handler)
-                self.calibration_table.setItem(i, 5, QTableWidgetItem(format_number_str(float(sensitivity))))
+                sensitivity_float, sensitivity_issue = to_budget_float(
+                    sensitivity,
+                    field_name="Sensitivity",
+                    variable_name=var,
+                    point_name=point_name,
+                )
+                if sensitivity_issue:
+                    if zero_denominator_hint and (
+                        "0除算" in sensitivity_issue.reason
+                        or "無限大" in sensitivity_issue.reason
+                        or "複素無限大" in sensitivity_issue.reason
+                    ):
+                        sensitivity_issue.hint = zero_denominator_hint
+                    budget_issues.append(sensitivity_issue)
+                    self.calibration_table.setItem(i, 5, QTableWidgetItem('--'))
+                    self._set_display_only_item(i, 6, "--", result_unit)
+                    contributions.append(0)
+                    continue
+                self.calibration_table.setItem(i, 5, QTableWidgetItem(format_number_str(sensitivity_float)))
                 
                 # 寄与不確かさ
                 try:
-                    if standard_uncertainty and sensitivity:
-                        contribution = float(standard_uncertainty) * float(sensitivity)
+                    if standard_uncertainty and sensitivity_float:
+                        contribution = float(standard_uncertainty) * sensitivity_float
                         contribution_display = format_standard_uncertainty(contribution)
                         self._set_display_only_item(i, 6, contribution_display, result_unit)
                         contributions.append(contribution)
@@ -483,15 +546,29 @@ class UncertaintyCalculationTab(BaseTab):
             # 計算結果を表示
             try:
                 # 中央値の計算
-                result_central_value = self.equation_handler.calculate_result_central_value(right_side, variables, self.value_handler)
-                try:
-                    result_central_value = float(result_central_value)
-                except (ValueError, TypeError):
+                result_central_value = self.equation_handler.calculate_result_central_value(
+                    right_side, variables, self.value_handler
+                )
+                result_central_value, result_issue = to_budget_float(
+                    result_central_value,
+                    field_name="Result central value",
+                    variable_name=result_var,
+                    point_name=point_name,
+                )
+                if result_issue:
+                    if zero_denominator_hint and (
+                        "0除算" in result_issue.reason
+                        or "無限大" in result_issue.reason
+                        or "複素無限大" in result_issue.reason
+                    ):
+                        result_issue.hint = zero_denominator_hint
+                    budget_issues.append(result_issue)
                     self.central_value_label.setText('--')
                     self.standard_uncertainty_label.setText('--')
                     self.effective_degrees_of_freedom_label.setText('--')
                     self.coverage_factor_label.setText('--')
                     self.expanded_uncertainty_label.setText('--')
+                    self._show_budget_error_message(budget_issues)
                     return
 
                 result_unit = self._get_unit(result_var)
@@ -553,6 +630,7 @@ class UncertaintyCalculationTab(BaseTab):
                 }
                 # --- ここまで ---
 
+                self._show_budget_error_message(budget_issues)
             except Exception as e:
                 log_error(f"計算結果表示エラー: {str(e)}", details=traceback.format_exc())
                 

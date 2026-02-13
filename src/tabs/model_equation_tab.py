@@ -615,11 +615,11 @@ class ModelEquationTab(BaseTab):
     def set_equation(self, equation):
         """方程式を設定する"""
         try:
-            if equation:
-                self.equation_input.setText(equation)
-                self.update_html_display(equation)
-                # 変数リストを更新
-                self.update_variable_list()
+            normalized_equation = equation or ""
+            self.equation_input.setText(normalized_equation)
+            self.update_html_display(normalized_equation)
+            # 変数リストを更新
+            self.update_variable_list()
         except Exception as e:
             self.parent.log_error(
                 f"方程式の設定エラー: {str(e)}",

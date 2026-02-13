@@ -1,7 +1,7 @@
 import sys
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QPainter, QPixmap
+from PySide6.QtGui import QColor, QFont, QPainter, QPixmap
 from PySide6.QtWidgets import QApplication, QSplashScreen
 
 from src.utils.language_manager import LanguageManager
@@ -13,8 +13,18 @@ def _create_startup_splash(app: QApplication) -> QSplashScreen:
 
     painter = QPainter(pixmap)
     painter.setPen(QColor("#333333"))
-    painter.drawText(20, 44, "Calibration Uncertainty Tool")
-    painter.drawText(20, 78, "Starting application...")
+    base_font = painter.font()
+    title_font = QFont(base_font)
+    title_font.setBold(True)
+    if base_font.pointSizeF() > 0:
+        title_font.setPointSizeF(base_font.pointSizeF() * 2.5)
+    elif base_font.pixelSize() > 0:
+        title_font.setPixelSize(int(base_font.pixelSize() * 2.5))
+
+    painter.setFont(title_font)
+    painter.drawText(20, 56, "Calibration Uncertainty Tool")
+    painter.setFont(base_font)
+    painter.drawText(20, 96, "Starting application...")
     painter.end()
 
     splash = QSplashScreen(pixmap)

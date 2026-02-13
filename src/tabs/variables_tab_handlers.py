@@ -49,6 +49,7 @@ class VariablesTabHandlers:
             for widget in self.parent.type_a_widgets.values():
                 widget.setVisible(True)
                 widget.setEnabled(True)
+            self.parent.apply_type_a_measurement_mode_visibility()
             # TypeB用のウィジェットを非表示・無効化
             for widget in self.parent.type_b_widgets.values():
                 widget.setVisible(False)

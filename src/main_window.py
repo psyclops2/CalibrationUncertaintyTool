@@ -143,6 +143,7 @@ class MainWindow(QMainWindow):
     def update_menu_bar_text(self):
         """メニューバーのテキストを現在の言語で更新"""
         self.file_menu.setTitle(self.tr(MENU_FILE))
+        self.new_action.setText(self.tr(FILE_NEW))
         self.save_action.setText(self.tr(FILE_SAVE))
         self.save_as_action.setText(self.tr(FILE_SAVE_AS))
         self.open_action.setText(self.tr(FILE_OPEN))
@@ -159,6 +160,11 @@ class MainWindow(QMainWindow):
         self.help_menu = menubar.addMenu(self.tr(MENU_HELP))
         
         # ファイルメニュー
+        self.new_action = QAction(self.tr(FILE_NEW), self)
+        self.new_action.triggered.connect(self.new_file)
+        self.new_action.setShortcut("Ctrl+N")
+        self.file_menu.addAction(self.new_action)
+
         self.save_action = QAction(self.tr(FILE_SAVE), self)
         self.save_action.triggered.connect(self.save_file)
         self.save_action.setShortcut("Ctrl+S")
@@ -189,10 +195,16 @@ class MainWindow(QMainWindow):
         self.help_menu.addAction(self.about_action)
 
     def _settings_action_text(self):
-        return "設定..." if self.language_manager.current_language == 'ja' else "Settings..."
+        return self.tr(SETTINGS_ACTION_TEXT)
+
+    def _new_file_confirm_title(self):
+        return self.tr(NEW_FILE_CONFIRM_TITLE)
+
+    def _new_file_confirm_text(self):
+        return self.tr(NEW_FILE_CONFIRM_TEXT)
 
     def _unit_validation_tab_text(self):
-        return "単位整合検証" if self.language_manager.current_language == 'ja' else "Unit Consistency"
+        return self.tr(UNIT_VALIDATION_TAB_TEXT)
         
     def get_save_data(self):
         """保存するデータを辞書にまとめる"""
@@ -262,7 +274,7 @@ class MainWindow(QMainWindow):
             self.regression_tab.add_to_save_data(save_data)
         return save_data
         
-    def load_data(self, data):
+    def load_data(self, data, show_message=True):
         """読み込んだデータでアプリケーションの状態を更新"""
         try:
             self.variables = data.get('variables', [])
@@ -335,11 +347,49 @@ class MainWindow(QMainWindow):
             if hasattr(self, 'report_tab'):
                 self.report_tab.update_variable_list(self.variables, self.result_variables)
                 self.report_tab.update_report()
-            QMessageBox.information(self, self.tr(MESSAGE_SUCCESS), self.tr(FILE_LOADED))
-            
+            if show_message:
+                QMessageBox.information(self, self.tr(MESSAGE_SUCCESS), self.tr(FILE_LOADED))
+             
         except Exception as e:
             self.log_error(f"データ読み込みエラー: {str(e)}", "データ読み込みエラー", details=traceback.format_exc())
             QMessageBox.critical(self, self.tr(MESSAGE_ERROR), f"データの読み込みに失敗しました:\n{str(e)}")
+
+    def new_file(self):
+        """新規ドキュメントを作成して初期状態に戻す"""
+        if self.current_file_path:
+            reply = QMessageBox.question(
+                self,
+                self._new_file_confirm_title(),
+                self._new_file_confirm_text(),
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No,
+            )
+            if reply != QMessageBox.Yes:
+                return
+
+        empty_data = {
+            'document_info': {
+                'document_number': '',
+                'document_name': '',
+                'version_info': '',
+                'description_markdown': '',
+                'description_html': '',
+                'revision_history': '',
+            },
+            'last_equation': '',
+            'value_count': 1,
+            'current_value_index': 0,
+            'value_names': [f"{self.tr(CALIBRATION_POINT_NAME)} 1"],
+            'variables': [],
+            'result_variables': [],
+            'correlation_coefficients': {},
+            'variable_values': {},
+            'last_selected_variable': None,
+            'last_selected_value_index': 0,
+            'regressions': {},
+        }
+        self.load_data(empty_data, show_message=False)
+        self.set_current_file_path(None)
 
     def _write_save_data_to_path(self, file_path):
         save_data = self.get_save_data()

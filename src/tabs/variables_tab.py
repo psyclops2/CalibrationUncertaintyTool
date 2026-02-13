@@ -3,7 +3,7 @@
     QComboBox, QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox,
     QGroupBox, QFormLayout, QSpinBox, QDoubleSpinBox, QCheckBox, QRadioButton,
     QButtonGroup, QSplitter, QFrame, QScrollArea, QGridLayout, QSizePolicy,
-    QListWidget, QListWidgetItem, QTextEdit
+    QListWidget, QListWidgetItem, QTextEdit, QWidget
 )
 from PySide6.QtCore import Qt, Signal, Slot
 from ..utils.config_loader import ConfigLoader
@@ -28,6 +28,7 @@ class VariablesTab(BaseTab):
         super().__init__(parent)
         self.parent = parent
         self.handlers = VariablesTabHandlers(self)
+        self._syncing_measurements = False
         self.setup_ui()
 
     def retranslate_ui(self):
@@ -53,6 +54,12 @@ class VariablesTab(BaseTab):
         
         # TypeA用ウィジェット
         self.type_a_widgets['measurements'].setPlaceholderText(self.tr(MEASUREMENT_VALUES_PLACEHOLDER))
+        self.type_a_measurement_mode_label.setText(self.tr(TYPE_A_INPUT_MODE) + ":")
+        self.type_a_measurement_mode_combo.setItemText(0, self.tr(TYPE_A_INPUT_MODE_CSV))
+        self.type_a_measurement_mode_combo.setItemText(1, self.tr(TYPE_A_INPUT_MODE_TABLE))
+        self.type_a_add_measurement_row_button.setToolTip(self.tr(TYPE_A_ADD_MEASUREMENT))
+        self.type_a_remove_measurement_row_button.setToolTip(self.tr(TYPE_A_REMOVE_MEASUREMENT))
+        self.type_a_measurements_table.setHorizontalHeaderLabels([self.tr(MEASUREMENT_VALUES)])
         self.measurement_values_label.setText(self.tr(MEASUREMENT_VALUES) + ":")
         self.degrees_of_freedom_label_a.setText(self.tr(DEGREES_OF_FREEDOM) + ":")
         self.central_value_label_a.setText(self.tr(CENTRAL_VALUE) + ":")
@@ -174,13 +181,56 @@ class VariablesTab(BaseTab):
         
         # TypeA用のウィジェット
         self.type_a_widgets = {}
-        
+
+        self.type_a_measurements_container = QWidget()
+        type_a_measurements_container_layout = QVBoxLayout(self.type_a_measurements_container)
+        type_a_measurements_container_layout.setContentsMargins(0, 0, 0, 0)
+        type_a_measurements_container_layout.setSpacing(6)
+
+        type_a_measurement_mode_layout = QHBoxLayout()
+        self.type_a_measurement_mode_label = QLabel(self.tr(TYPE_A_INPUT_MODE) + ":")
+        self.type_a_measurement_mode_combo = QComboBox()
+        self.type_a_measurement_mode_combo.addItem(self.tr(TYPE_A_INPUT_MODE_CSV), "csv")
+        self.type_a_measurement_mode_combo.addItem(self.tr(TYPE_A_INPUT_MODE_TABLE), "table")
+        self.type_a_measurement_mode_combo.currentIndexChanged.connect(self.on_type_a_measurement_mode_changed)
+        self.type_a_add_measurement_row_button = QPushButton("+")
+        self.type_a_add_measurement_row_button.setToolTip(self.tr(TYPE_A_ADD_MEASUREMENT))
+        self.type_a_add_measurement_row_button.clicked.connect(self.on_type_a_add_measurement_row)
+        self.type_a_add_measurement_row_button.setVisible(False)
+        self.type_a_remove_measurement_row_button = QPushButton("-")
+        self.type_a_remove_measurement_row_button.setToolTip(self.tr(TYPE_A_REMOVE_MEASUREMENT))
+        self.type_a_remove_measurement_row_button.clicked.connect(self.on_type_a_remove_measurement_row)
+        self.type_a_remove_measurement_row_button.setVisible(False)
+        type_a_measurement_mode_layout.addWidget(self.type_a_measurement_mode_label)
+        type_a_measurement_mode_layout.addWidget(self.type_a_measurement_mode_combo)
+        type_a_measurement_mode_layout.addWidget(self.type_a_add_measurement_row_button)
+        type_a_measurement_mode_layout.addWidget(self.type_a_remove_measurement_row_button)
+        type_a_measurement_mode_layout.addStretch()
+        type_a_measurements_container_layout.addLayout(type_a_measurement_mode_layout)
+
         self.type_a_widgets['measurements'] = QLineEdit()
         self.type_a_widgets['measurements'].setPlaceholderText(self.tr(MEASUREMENT_VALUES_PLACEHOLDER))
         self.type_a_widgets['measurements'].focusOutEvent = lambda e: self.handlers.on_measurements_focus_lost(e)
-        self.type_a_widgets['measurements'].textChanged.connect(self.handlers.on_measurements_changed)
+        self.type_a_widgets['measurements'].textChanged.connect(self.on_type_a_measurements_text_changed)
+        type_a_measurements_container_layout.addWidget(self.type_a_widgets['measurements'])
+
+        self.type_a_measurements_table = QTableWidget()
+        self.type_a_measurements_table.setColumnCount(1)
+        self.type_a_measurements_table.setHorizontalHeaderLabels([self.tr(MEASUREMENT_VALUES)])
+        self.type_a_measurements_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.type_a_measurements_table.verticalHeader().setVisible(False)
+        self.type_a_measurements_table.setVisible(False)
+        self.type_a_measurements_table.itemChanged.connect(self.on_type_a_measurements_table_changed)
+        type_a_measurements_container_layout.addWidget(self.type_a_measurements_table)
+
+        self.type_a_widgets['measurements_container'] = self.type_a_measurements_container
+        self.type_a_widgets['measurement_mode_label'] = self.type_a_measurement_mode_label
+        self.type_a_widgets['measurement_mode'] = self.type_a_measurement_mode_combo
+        self.type_a_widgets['measurements_table'] = self.type_a_measurements_table
+        self.type_a_widgets['measurement_add'] = self.type_a_add_measurement_row_button
+        self.type_a_widgets['measurement_remove'] = self.type_a_remove_measurement_row_button
         self.measurement_values_label = QLabel(self.tr(MEASUREMENT_VALUES) + ":")
-        settings_layout.addRow(self.measurement_values_label, self.type_a_widgets['measurements'])
+        settings_layout.addRow(self.measurement_values_label, self.type_a_measurements_container)
         
         self.type_a_widgets['degrees_of_freedom'] = QLineEdit()
         self.type_a_widgets['degrees_of_freedom'].setReadOnly(True)
@@ -309,6 +359,72 @@ class VariablesTab(BaseTab):
         for widget in self.fixed_value_widgets.values():
             widget.setVisible(False)
             widget.setEnabled(False)
+        self.apply_type_a_measurement_mode_visibility()
+        self._sync_type_a_measurements_table_from_text(self.type_a_widgets['measurements'].text())
+
+    def on_type_a_measurement_mode_changed(self, *_args):
+        self.apply_type_a_measurement_mode_visibility()
+
+    def apply_type_a_measurement_mode_visibility(self):
+        mode = self.type_a_measurement_mode_combo.currentData()
+        show_table = mode == "table"
+        self.type_a_widgets['measurements'].setVisible(not show_table)
+        self.type_a_measurements_table.setVisible(show_table)
+        self.type_a_add_measurement_row_button.setVisible(show_table)
+        self.type_a_remove_measurement_row_button.setVisible(show_table)
+
+    def _sync_type_a_measurements_table_from_text(self, measurements_text):
+        measurements = []
+        if measurements_text:
+            measurements = [value.strip() for value in str(measurements_text).split(",") if value.strip()]
+
+        self.type_a_measurements_table.blockSignals(True)
+        try:
+            self.type_a_measurements_table.setRowCount(len(measurements))
+            for row, value in enumerate(measurements):
+                self.type_a_measurements_table.setItem(row, 0, QTableWidgetItem(value))
+        finally:
+            self.type_a_measurements_table.blockSignals(False)
+
+    def _update_type_a_measurements_text_from_table(self, trigger_calculation=False):
+        values = []
+        for row in range(self.type_a_measurements_table.rowCount()):
+            item = self.type_a_measurements_table.item(row, 0)
+            text = item.text().strip() if item else ""
+            if text:
+                values.append(text)
+
+        measurements_text = ",".join(values)
+        self._syncing_measurements = True
+        try:
+            self.type_a_widgets['measurements'].setText(measurements_text)
+        finally:
+            self._syncing_measurements = False
+
+        if trigger_calculation and measurements_text:
+            self.handlers.on_measurements_focus_lost(None)
+
+    def on_type_a_measurements_text_changed(self):
+        self.handlers.on_measurements_changed()
+        if self._syncing_measurements:
+            return
+        self._sync_type_a_measurements_table_from_text(self.type_a_widgets['measurements'].text())
+
+    def on_type_a_measurements_table_changed(self, _item):
+        self._update_type_a_measurements_text_from_table(trigger_calculation=True)
+
+    def on_type_a_add_measurement_row(self):
+        next_row = self.type_a_measurements_table.rowCount()
+        self.type_a_measurements_table.insertRow(next_row)
+        self.type_a_measurements_table.setCurrentCell(next_row, 0)
+
+    def on_type_a_remove_measurement_row(self):
+        row = self.type_a_measurements_table.currentRow()
+        if row >= 0:
+            self.type_a_measurements_table.removeRow(row)
+        elif self.type_a_measurements_table.rowCount() > 0:
+            self.type_a_measurements_table.removeRow(self.type_a_measurements_table.rowCount() - 1)
+        self._update_type_a_measurements_text_from_table(trigger_calculation=True)
         
     def update_variable_list(self, variables, result_variables):
         """変数リストを更新"""
