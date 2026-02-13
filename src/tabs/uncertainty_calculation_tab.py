@@ -86,6 +86,15 @@ class UncertaintyCalculationTab(BaseTab):
         item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
         self.calibration_table.setItem(row, column, item)
 
+    def _clear_calculation_display(self):
+        """Clear table/result labels to avoid showing stale values."""
+        self.calibration_table.setRowCount(0)
+        self.central_value_label.setText('--')
+        self.standard_uncertainty_label.setText('--')
+        self.effective_degrees_of_freedom_label.setText('--')
+        self.coverage_factor_label.setText('--')
+        self.expanded_uncertainty_label.setText('--')
+
     def retranslate_ui(self):
         """UIのテキストを現在の言語で更新"""
         self.result_group.setTitle(self.tr(RESULT_SELECTION))
@@ -359,6 +368,7 @@ class UncertaintyCalculationTab(BaseTab):
         try:
             # Set updating flag
             self._updating_table = True
+            self._clear_calculation_display()
 
             # 式を解析
             left_side, right_side = equation.split('=', 1)
@@ -548,6 +558,7 @@ class UncertaintyCalculationTab(BaseTab):
                 
         except Exception as e:
             log_error(f"感度係数計算エラー: {str(e)}", details=traceback.format_exc())
+            self._clear_calculation_display()
         finally:
             # Always reset the updating flag
             self._updating_table = False
