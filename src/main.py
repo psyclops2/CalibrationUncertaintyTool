@@ -1,4 +1,5 @@
 import sys
+from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPixmap
@@ -8,8 +9,8 @@ from src.utils.language_manager import LanguageManager
 
 
 def _create_startup_splash(app: QApplication) -> QSplashScreen:
-    pixmap = QPixmap(440, 120)
-    pixmap.fill(QColor("#f4f4f4"))
+    pixmap = QPixmap(560, 200)
+    pixmap.fill(QColor("#cfeeee"))
 
     painter = QPainter(pixmap)
     painter.setPen(QColor("#333333"))
@@ -20,6 +21,14 @@ def _create_startup_splash(app: QApplication) -> QSplashScreen:
         title_font.setPointSizeF(base_font.pointSizeF() * 2.5)
     elif base_font.pixelSize() > 0:
         title_font.setPixelSize(int(base_font.pixelSize() * 2.5))
+
+    logo_path = Path(__file__).resolve().parents[1] / "img" / "logo.png"
+    logo = QPixmap(str(logo_path))
+    if not logo.isNull():
+        scaled_logo = logo.scaled(150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        x = pixmap.width() - scaled_logo.width() - 12
+        y = pixmap.height() - scaled_logo.height() - 12
+        painter.drawPixmap(x, y, scaled_logo)
 
     painter.setFont(title_font)
     painter.drawText(20, 56, "Calibration Uncertainty Tool")
@@ -61,3 +70,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

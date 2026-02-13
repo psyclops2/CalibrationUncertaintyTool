@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Tuple
 
 import sympy as sp
 
-from src.utils.equation_normalizer import normalize_equation_text
+from src.utils.equation_normalizer import normalize_equation_text, normalize_variable_name
 from src.utils.unit_parser import Dimension, UnitParseError, format_dimension, parse_unit_expression
 
 
@@ -70,7 +70,7 @@ def validate_main_window_units(main_window) -> UnitValidationReport:
         unit_text = ""
         if isinstance(value, dict):
             unit_text = str(value.get("unit", "")).strip()
-        variable_units[name] = unit_text
+        variable_units[normalize_variable_name(name)] = unit_text
 
     equation_text = getattr(main_window, "last_equation", "")
     if not equation_text and hasattr(main_window, "model_equation_tab"):
@@ -172,7 +172,7 @@ def _validate_equations(equation_text: str, dimensions: Dict[str, Optional[Dimen
             continue
 
         lhs_text, rhs_text = equation.split("=", 1)
-        lhs_name = lhs_text.strip()
+        lhs_name = normalize_variable_name(lhs_text.strip())
         rhs_expr = rhs_text.strip()
         lhs_dimension = dimensions.get(lhs_name)
 
