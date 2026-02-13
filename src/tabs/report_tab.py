@@ -132,6 +132,11 @@ class ReportTab(BaseTab):
         value_html = "".join(f"<td>{html_lib.escape(str(v))}</td>" for v in values)
         return f"<table><tbody><tr>{header_html}</tr><tr>{value_html}</tr></tbody></table>"
 
+    @staticmethod
+    def _format_description_block(text):
+        body = ReportTab._format_multiline_cell(text, '-')
+        return f'<div class="description-body">{body}</div>'
+
     def retranslate_ui(self):
         """Retranslate UI text."""
         self.result_label.setText(self.tr(RESULT_VARIABLE) + ":")
@@ -404,8 +409,7 @@ class ReportTab(BaseTab):
                                 [central_value, unit, standard_uncertainty, degrees_of_freedom],
                             )
                             html += self._format_measurements_table(value_item.get('measurements', ''))
-                            description = self._format_multiline_cell(value_item.get('description', ''), '-')
-                            html += self._format_two_row_table([self.tr(DETAIL_DESCRIPTION)], [description])
+                            html += self._format_description_block(value_item.get('description', ''))
                         elif uncertainty_type == 'B':
                             half_width = self._to_display_text(value_item.get('half_width', '-'))
                             distribution = var_data.get('distribution', '')
@@ -417,14 +421,13 @@ class ReportTab(BaseTab):
                                 [self.tr(REPORT_CENTRAL_VALUE), self.tr(REPORT_UNIT), self.tr(HALF_WIDTH), self.tr(REPORT_DISTRIBUTION), self.tr(DIVISOR), self.tr(REPORT_DOF)],
                                 [central_value, unit, half_width, distribution_label, divisor, degrees_of_freedom],
                             )
-                            description = self._format_multiline_cell(value_item.get('description', ''), '-')
-                            html += self._format_two_row_table([self.tr(DETAIL_DESCRIPTION)], [description])
+                            html += self._format_description_block(value_item.get('description', ''))
                         elif uncertainty_type == 'fixed':
-                            description = self._format_multiline_cell(value_item.get('description', ''), '-')
                             html += self._format_two_row_table(
-                                [self.tr(REPORT_CENTRAL_VALUE), self.tr(REPORT_UNIT), self.tr(DETAIL_DESCRIPTION)],
-                                [central_value, unit, description],
+                                [self.tr(REPORT_CENTRAL_VALUE), self.tr(REPORT_UNIT)],
+                                [central_value, unit],
                             )
+                            html += self._format_description_block(value_item.get('description', ''))
                         else:
                             html += "<div>-</div>"
                     except Exception:

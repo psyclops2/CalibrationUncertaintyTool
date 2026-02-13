@@ -103,7 +103,7 @@ def test_report_tab_variable_detail_layout_type_a_and_b(qapp):
     html = tab.generate_report_html("Y=XA+XB")
 
     assert "REPORT_VARIABLE_DETAILS" not in html
-    assert "DETAIL_DESCRIPTION" in html
+    assert "DETAIL_DESCRIPTION" not in html
     assert "<strong>XA</strong>" in html
     assert "<strong>XB</strong>" in html
     assert "REPORT_CENTRAL_VALUE" in html
@@ -116,3 +116,47 @@ def test_report_tab_variable_detail_layout_type_a_and_b(qapp):
     assert "DIVISOR" in html
     assert "<td>1.732</td>" in html
     assert "<td>50</td>" in html
+    assert "TypeA detail" in html
+    assert "TypeB detail" in html
+
+
+def test_report_tab_variable_detail_layout_fixed_uses_plain_description(qapp):
+    class DummyParent:
+        pass
+
+    parent = DummyParent()
+    parent.last_equation = "Y=XF"
+    parent.document_info = {}
+    parent.variables = ["Y", "XF"]
+    parent.result_variables = ["Y"]
+    parent.value_names = ["P1"]
+    parent.variable_values = {
+        "XF": {
+            "unit": "V",
+            "type": "fixed",
+            "values": [
+                {
+                    "central_value": "5",
+                    "description": "Fixed detail",
+                }
+            ],
+        },
+        "Y": {
+            "unit": "V",
+            "type": "result",
+            "values": [{"central_value": "5"}],
+        },
+    }
+
+    tab = ReportTab()
+    tab.parent = parent
+    tab.result_combo.addItem("Y")
+    tab.result_combo.setCurrentIndex(0)
+
+    html = tab.generate_report_html("Y=XF")
+
+    assert "<strong>XF</strong>" in html
+    assert "DETAIL_DESCRIPTION" not in html
+    assert "Fixed detail" in html
+    assert "<th>REPORT_CENTRAL_VALUE</th><th>REPORT_UNIT</th>" in html
+    assert "<th>DETAIL_DESCRIPTION</th>" not in html
