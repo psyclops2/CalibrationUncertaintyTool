@@ -22,6 +22,7 @@ from src.tabs.point_settings_tab import PointSettingsTab
 from src.tabs.unit_validation_tab import UnitValidationTab
 from src.dialogs.about_dialog import AboutDialog
 from src.dialogs.settings_dialog import SettingsDialog
+from src.dialogs.bulk_input_dialog import BulkInputDialog
 from src.utils.language_manager import LanguageManager
 from src.utils.config_loader import ConfigLoader
 
@@ -143,10 +144,12 @@ class MainWindow(QMainWindow):
     def update_menu_bar_text(self):
         """メニューバーのテキストを現在の言語で更新"""
         self.file_menu.setTitle(self.tr(MENU_FILE))
+        self.tools_menu.setTitle(self.tr(MENU_TOOLS))
         self.new_action.setText(self.tr(FILE_NEW))
         self.save_action.setText(self.tr(FILE_SAVE))
         self.save_as_action.setText(self.tr(FILE_SAVE_AS))
         self.open_action.setText(self.tr(FILE_OPEN))
+        self.bulk_input_action.setText(self._bulk_input_action_text())
         self.settings_action.setText(self._settings_action_text())
         self.exit_action.setText(self.tr(FILE_EXIT))
         self.help_menu.setTitle(self.tr(MENU_HELP))
@@ -157,6 +160,7 @@ class MainWindow(QMainWindow):
         """メニューバーの作成"""
         menubar = self.menuBar()
         self.file_menu = menubar.addMenu(self.tr(MENU_FILE))
+        self.tools_menu = menubar.addMenu(self.tr(MENU_TOOLS))
         self.help_menu = menubar.addMenu(self.tr(MENU_HELP))
         
         # ファイルメニュー
@@ -180,6 +184,10 @@ class MainWindow(QMainWindow):
         self.open_action.setShortcut("Ctrl+O")
         self.file_menu.addAction(self.open_action)
 
+        self.bulk_input_action = QAction(self._bulk_input_action_text(), self)
+        self.bulk_input_action.triggered.connect(self.open_bulk_input_dialog)
+        self.tools_menu.addAction(self.bulk_input_action)
+
         self.file_menu.addSeparator()
         self.settings_action = QAction(self._settings_action_text(), self)
         self.settings_action.triggered.connect(self.open_settings_dialog)
@@ -197,6 +205,9 @@ class MainWindow(QMainWindow):
     def _settings_action_text(self):
         return self.tr(SETTINGS_ACTION_TEXT)
 
+    def _bulk_input_action_text(self):
+        return self.tr(BULK_INPUT_ACTION_TEXT)
+
     def _new_file_confirm_title(self):
         return self.tr(NEW_FILE_CONFIRM_TITLE)
 
@@ -205,6 +216,21 @@ class MainWindow(QMainWindow):
 
     def _unit_validation_tab_text(self):
         return self.tr(UNIT_VALIDATION_TAB_TEXT)
+
+    def open_bulk_input_dialog(self):
+        """一括入力モードダイアログを表示"""
+        dialog = BulkInputDialog(self, self)
+        if dialog.exec_() != BulkInputDialog.Accepted:
+            return
+
+        # 値反映後に関連タブを更新
+        self.sync_variable_values_with_points()
+        if hasattr(self, 'variables_tab'):
+            self.variables_tab.restore_selection_state()
+        if hasattr(self, 'uncertainty_calculation_tab'):
+            self.uncertainty_calculation_tab.update_value_combo()
+        if hasattr(self, 'report_tab'):
+            self.report_tab.update_report()
         
     def get_save_data(self):
         """保存するデータを辞書にまとめる"""
@@ -469,6 +495,11 @@ class MainWindow(QMainWindow):
         if index == 5:  # 不確かさ計算タブ
             self.uncertainty_calculation_tab.update_result_combo()
             self.uncertainty_calculation_tab.update_value_combo()
+            result_var = self.uncertainty_calculation_tab.result_combo.currentText()
+            if result_var:
+                equation = self.uncertainty_calculation_tab.equation_handler.get_target_equation(result_var)
+                if equation:
+                    self.uncertainty_calculation_tab.calculate_sensitivity_coefficients(equation)
         elif index == 6:
             if hasattr(self, 'monte_carlo_tab'):
                 self.monte_carlo_tab.refresh_controls()

@@ -1,290 +1,164 @@
-# Uncertainty Calculation Support Software
+﻿# Calibration Uncertainty Tool
 
 ## Overview
+Calibration Uncertainty Tool is a desktop GUI application for uncertainty evaluation based on GUM (JCGM 100).
 
-This software is a GUI application for calculating the uncertainty of measurement results.
+It supports model-equation based uncertainty budgets, multiple calibration points, correlation handling, regression support, Monte Carlo simulation, and HTML report export.
 
-It is based on JCGM 100 (Guide to the Expression of Uncertainty in Measurement, GUM).
+## Current Features (from code)
+- Model equation input (single or multiple equations separated by commas)
+- Automatic detection of input/result variables from equations
+- Variable order management by drag-and-drop
+- Variable settings per calibration point:
+  - Type A uncertainty (measurement list -> mean, standard uncertainty, degrees of freedom)
+  - Type B uncertainty (distribution, divisor, half-width, formula-assisted entry)
+  - Fixed values
+- Calibration point management (add/remove/rename/reorder)
+- Batch input dialog for B-type and fixed-value rows across all calibration points
+- Correlation matrix editing for input variables
+- Uncertainty budget calculation per selected result variable and calibration point:
+  - Sensitivity coefficients
+  - Contribution uncertainty and contribution rates
+  - Effective degrees of freedom
+  - Coverage factor and expanded uncertainty
+- Monte Carlo tab:
+  - Sampling from normal/rectangular/triangular/U-shaped distributions
+  - Histogram, normal-curve overlay, 95% interval, empirical 95% interval, median line
+- Regression tab:
+  - Multiple model management
+  - x/u(x)/y data table
+  - CSV text import (`x, u(x), y` or `x, y`)
+  - Linear regression metrics and inverse estimation (`y0 -> x0, u(x0)`)
+- Partial derivative tab (symbolic derivatives from equation)
+- Unit validation tab (variable units and equation dimensional consistency)
+- Document info tab (document metadata, Markdown description, CSV-based revision history)
+- Report tab:
+  - Budget + calculation summary for all calibration points
+  - HTML export
+  - CSS customization via `css/default.css` + `css/custom.css`
+- Japanese/English UI switching and system-locale option
+- JSON save/load of project data
+- Startup splash screen and file-aware window title
 
-Monte Carlo propagation of distributions is implemented, and the **Monte Carlo** tab provides histogram visualization, normal-curve comparison, and interval comparison.
+## Batch Input Dialog Behavior
+The batch input dialog (Tools -> Bulk Input) applies values across calibration points for non-result variables.
 
-From the mathematical model equation of the measurement, the program derives the propagation equation of uncertainty, allows the user to input the value for each quantity, calculates the combined standard uncertainty, and outputs a budget sheet.
+- Target rows:
+  - Type B variables: `central_value`, `half_width`, `distribution`
+  - Fixed variables: `central_value`
+  - Type A and result variables are not included.
+- Empty cells are ignored (existing value is kept).
+- Number validation uses `Decimal`; invalid input blocks apply and shows a warning.
+- When a Type B `distribution` is changed:
+  - `degrees_of_freedom` is automatically set to `"inf"`.
+  - `divisor` is auto-set:
+    - Normal distribution: `"2"`
+    - Other distributions: value from configured distribution divisor.
+- When a Type B numeric value (`central_value` or `half_width`) is changed:
+  - `degrees_of_freedom` is automatically set to `"inf"`.
+  - `divisor` is auto-set by distribution (same rules as above).
+  - If both `half_width` and `divisor` are valid and divisor is not zero:
+    - `standard_uncertainty = half_width / divisor` is auto-calculated.
 
-The software also supports batch calculations of calibration uncertainty across multiple calibration points following the same model equation.
+## Regression Tab Behavior
+- Regression data is managed per model (add/copy/remove).
+- Each model stores description, `x` unit, and `y` unit.
+- Data table columns are `x`, `u(x)`, and `y`.
+- CSV paste import is supported:
+  - `x, u(x), y` or `x, y`
+  - Fails when fewer than 2 valid points are provided
+- Column-header click toggles ascending/descending sort.
+- Main computed outputs:
+  - intercept, slope, Significance F, residual standard deviation, `u(beta)`, and averages for `x`, `y`, `u(x)`, `u(y)`
+- Inverse estimation table:
+  - input column: `y0`
+  - auto-calculated columns: `x0`, `u(x0)`
+  - `x0` and `u(x0)` update when `y0` changes
 
-## Main Features
+## Correlation Matrix Editing Constraints
+- Matrix is built only for input variables (result variables are excluded).
+- Diagonal cells are always `1` and read-only.
+- Only upper-triangle cells are editable.
+- Lower-triangle cells mirror upper-triangle values and are read-only.
+- Off-diagonal defaults are `0` (independent inputs).
+- Values greater than `1` are rejected with a warning and reverted.
 
-1. Input and management of model equations and quantities
-2. Input of measured values and their uncertainties
-3. Automatic calculation of sensitivity coefficients
-4. Automatic calculation of uncertainty propagation equations
-5. Display and export of budget sheets
-6. Linear regression tools for calibration data (model management, CSV import, inverse estimation)
-7. Monte Carlo simulation for result variables with distribution visualization and 95% interval comparison
+## Requirements
+- Python 3.8+
+- PySide6
+- numpy
+- sympy
+- markdown
 
-## System Requirements
+See `requirements.txt` for the install list.
 
-* Python 3.8 or higher
-* PySide6 (LGPLv3 license)
-* NumPy (BSD license)
-* SymPy (BSD license)
-* Markdown (BSD license)
-
-## Installation
-
-1. Clone the repository:
-
+## Setup
 ```bash
-git clone [repository-url]
-```
-
-2. Install dependencies:
-
-```bash
+python -m venv venv
+venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-3. Launch the application:
+Or use:
+- `setup.bat`
 
+## Run
 ```bash
-python src/main.py
+python -m src
 ```
 
-## Configuration (config.ini)
+Or use:
+- `run.bat`
 
-Application settings are stored in [`config.ini`](./config.ini). Key options include:
+## Configuration
+Main settings are in `config.ini`.
 
-* **[Calculation]**
-  * `precision`: Decimal precision used for calculation results.
-* **[Defaults]**
-  * `value_count`: Default number of values (calibration points) created per quantity.
-  * `current_value_index`: Initially selected value index when editing quantities.
-* **[CalibrationPoints]**
-  * `min_count`, `max_count`: Minimum and maximum number of calibration points the UI allows.
-* **[UncertaintyRounding]**
-  * `significant_digits`: Significant digits shown for uncertainty values.
-  * `rounding_mode`: Rounding strategy (`round_up` or `5_percent`).
-* **[Language]**
-  * `current`: UI language (`ja` or `en`).
-  * `use_system_locale`: Whether to prefer the system locale over the configured language.
-* **[Messages]**
-  * `equation_change`: Message template displayed when the model equation requires variable updates.
-* **[Distribution]**
-  * `normal_distribution`, `rectangular_distribution`, `triangular_distribution`, `u_distribution`: Divisors used to convert interval values into standard uncertainties for each distribution type.
-* **[TValues]**
-  * A lookup table for coverage factors based on degrees of freedom (use `infinity` for infinite degrees of freedom).
-* **[Version]**
-  * `version`: Application version string shown in the UI and reports.
+Important sections:
+- `[Calculation]`:
+  - `precision`
+- `[CalibrationPoints]`:
+  - `min_count`, `max_count`
+- `[UncertaintyRounding]`:
+  - `significant_digits`, `rounding_mode`
+- `[Language]`:
+  - `current`, `use_system_locale`
+- `[Distribution]`:
+  - distribution divisors used in Type B conversion
+- `[TValues]`:
+  - coverage-factor lookup table
+
+## Data Save Format
+Project files are saved as JSON and include:
+- document info
+- equations
+- calibration points (`value_names`, selected index)
+- variables and result variables
+- correlation coefficients
+- variable values
+- regression models
 
 ## Project Structure
-
-```
-src/
-├── __main__.py         # Main entry point
-├── main.py             # Main application
-├── main_window.py      # Main window implementation
-├── dialogs/            # Dialog window implementations
-├── models/             # Data models
-├── tabs/               # Tab-related modules
-├── utils/              # Utility modules
-└── widgets/            # Custom widgets
-```
-
-See the files within each directory for details.
-
-## Calculation Background and Basis
-
-### 1. Law of Propagation of Uncertainty
-
-Based on the GUM, the following propagation equation is used:
-
-**Note:** Correlations between input quantities are supported via the **Correlation** tab.
-Enter the correlation coefficient matrix `r(x_i, x_j)` (diagonal is fixed to 1, off-diagonal defaults to 0).
-The covariance term is handled as:
-
-`u(x_i, x_j) = u(x_i) u(x_j) r(x_i, x_j)`
-
-```
-u²(y) = Σ(∂f/∂xᵢ)²u²(xᵢ) + 2ΣΣ(∂f/∂xᵢ)(∂f/∂xⱼ)u(xᵢ,xⱼ)
-```
-
-Where:
-
-* u(y): uncertainty of the result
-* ∂f/∂xᵢ: sensitivity coefficient
-* u(xᵢ), u(xⱼ): uncertainty of input quantities
-* u(xᵢ,xⱼ): correlated uncertainty
-
-### 2. Sensitivity Coefficients
-
-Sensitivity coefficients are calculated as the partial derivative of the model equation with respect to each input quantity:
-
-```
-∂f/∂xᵢ = lim(Δxᵢ→0) [f(x₁,...,xᵢ+Δxᵢ,...,xₙ) - f(x₁,...,xᵢ,...,xₙ)] / Δxᵢ
-```
-
-For coupled equations, the chain rule is used.
-
-### 3. Types of Uncertainty
-
-#### A-Type (Evaluated by Statistical Methods)
-
-Based on repeated measurements:
-
-1. Standard uncertainty (experimental standard deviation of the mean):
-
-```
-u = sqrt( (1 / (n * (n - 1))) * Σ(xᵢ - x̄)² )
-```
-
-2. Degrees of freedom:
-
-```
-ν = n - 1
-```
-
-#### B-Type (Evaluated by Other Means)
-
-Based on non-statistical information (certificates, specs, literature, prior experience):
-
-1. Rectangular distribution:
-
-```
-u = a / sqrt(3)
-```
-
-2. Triangular distribution:
-
-```
-u = a / sqrt(6)
-```
-
-3. Normal distribution:
-
-```
-u = a / k
-```
-
-where `a` is the confidence limit and `k` is the coverage factor (e.g., for 95% confidence, k ≈ 2).
-
-### 4. Effective Degrees of Freedom
-
-Welch-Satterthwaite formula:
-
-```
-ν_eff = u⁴(y) / Σ[u⁴(xᵢ) / νᵢ]
-```
-
-### 5. Expanded Uncertainty
-
-Expanded using the coverage factor `k` (typically k = 2):
-
-```
-U = k * u(y)
-```
-
-Reference k values (approximate, from t-distribution):
-
-| ν\_eff | 1     | 2    | 3    | 4    | 5    | 6    | 7    | 8    | 9    | 10   | 20   | 50   | ∞    |
-| ------ | ----- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
-| k      | 12.71 | 4.30 | 3.18 | 2.78 | 2.57 | 2.45 | 2.36 | 2.31 | 2.26 | 2.23 | 2.09 | 2.01 | 1.96 |
-
-For operational use, when ν\_eff is 10 or higher, the coverage factor is treated as 2.
-
-## Usage
-
-1. **Model Equation Input Tab**
-
-   * Input the model equation (e.g., `W = V * I / R`).
-   * Use `^` for exponentiation and `_` for subscripts.
-   * Left-hand side is treated as the calculated result and is excluded from direct input.
-   * Quantities are automatically parsed from the equation.
-   * Multiple equations can be input, separated by commas (`,`). Newlines after commas are acceptable.
-   * You can drag-and-drop quantities in the list to reorder the budget sheet display.
-
-2. **Point Settings**
-
-   * Set the name for each calibration point and add or remove calibration points as needed.
-
-3. **Quantity Settings**
-
-   * Input values for each quantity.
-   * Adjust the number of calibration points; each quantity can have multiple values.
-   * Specify the uncertainty type, unit, and description for each quantity.
-
-4. **Correlation**
-
-   * If input quantities are correlated, enter correlation coefficients `r(x_i, x_j)` in the matrix.
-   * Diagonal elements are fixed to `1.0`; by default, off-diagonal elements are `0.0` (independent).
-
-5. **Partial Derivative**
-
-   * Review the partial derivatives calculated from the model equation for each variable.
-
-6. **Calculation Execution**
-
-   * The "Uncertainty Calculation" tab creates a budget sheet for a selected calibration point.
-
-7. **Regression**
-
-   * Create, copy, and delete regression models and edit descriptions and x/y units.
-   * Enter calibration data in a table with `x`, `u(x)`, and `y`; add/remove rows as needed.
-   * Import CSV data by pasting text (`x, u(x), y` or `x, y` format; requires at least two points).
-   * Review computed results: intercept, slope, Significance F (p-value), residual variance, means, and uncertainty terms.
-   * Perform inverse estimation: input `y0` values and read back estimated `x0` and `u(x0)`; add/remove rows.
-   * Formulas used in the calculations:
-
 ```text
-Linear model: y = βx + α
-Mean values: x̄ = (1/n) Σ xᵢ, ȳ = (1/n) Σ yᵢ
-Sxx = Σ (xᵢ - x̄)²
-β = Σ[(xᵢ - x̄)(yᵢ - ȳ)] / Sxx
-α = ȳ - β x̄
-Residuals: rᵢ = yᵢ - (β xᵢ + α)
-Residual variance: s² = Σ rᵢ² / (n - 2)  (n ≥ 3), s = √s²
-Significance F: SSR = Σ(ŷᵢ - ȳ)², SSE = Σ rᵢ², MSE = SSE/(n-2), F = SSR/MSE
-u(β) = √(s² / Sxx)
-ūx = (1/n) Σ u(xᵢ)
-ūy = √(s² / n)
-Inverse estimation: x₀ = (y₀ - ȳ)/β + x̄
-u(x₀) = √( ūy²/β² + (y₀ - ȳ)² u(β)² / β⁴ + ūx² )
+src/
+  __main__.py
+  main.py
+  main_window.py
+  tabs/
+  dialogs/
+  utils/
+  i18n/
+css/
+  default.css
+  custom.css
+tests/
 ```
 
-8. **Document Information**
-
-   * The "Document Info" tab lets you record document metadata for reports, including document number, document name, version, and a description (Markdown supported).
-   * Enter revision history as CSV rows (version, description, author, checker, approver, date) to include in generated reports.
-
-9. **Report**
-
-   * The "Report" function generates a batch budget for all calibration points of a selected result quantity.
-   * Export results as HTML files.
-   * Report styling can be customized via CSS: edit `css/custom.css` to override `css/default.css` and click **Generate Report** to re-render (CSS is reloaded on every generation). The exported HTML includes the CSS inline.
-
-## Notes
-
-* Numeric display is rounded based on the `UncertaintyRounding` settings in `config.ini` and formatted with exponents in multiples of 3.
-* Calculations use `Decimal` with the precision configured under `[Calculation]` in `config.ini`.
-* If input quantities are correlated, enter correlation coefficients in the "Correlation" tab (default is independent: off-diagonal `0.0`).
+## Tests
+```bash
+pytest
+```
 
 ## License
+MIT License. See `LICENSE`.
 
-This software is released under the **MIT License**.
-You are free to use, copy, modify, and redistribute it, provided the original copyright notice and license text are included.
-
-For details, see the included [`LICENSE`](./LICENSE) file.
-
-### Third-Party Libraries and Licenses
-
-This software depends on the following external libraries (not included in the distribution; users must install via `pip` or similar):
-
-| Library | License                   | URL                                                                                                     |
-| ------- | ------------------------- | ------------------------------------------------------------------------------------------------------- |
-| PySide6 | LGPLv3 (© The Qt Company) | [Qt for Python](https://www.qt.io/qt-for-python) / [LGPLv3](https://www.gnu.org/licenses/lgpl-3.0.html) |
-| NumPy   | BSD 3-Clause              | [NumPy](https://numpy.org/) / [BSD License](https://opensource.org/licenses/BSD-3-Clause)               |
-| SymPy   | BSD 3-Clause              | [SymPy](https://www.sympy.org/) / [BSD License](https://opensource.org/licenses/BSD-3-Clause)           |
-| Markdown (Python-Markdown) | BSD 3-Clause | [Python-Markdown](https://python-markdown.github.io/) / [BSD License](https://opensource.org/licenses/BSD-3-Clause) |
-
-The Python standard library (e.g., json, decimal, re, math, traceback) is used under the [Python Software Foundation License](https://docs.python.org/3/license.html).
-
-For detailed license terms, refer to the official sites or PyPI pages of each library.
+Third-party dependency licenses are documented in `THIRD_PARTY_LICENSES.md`.
