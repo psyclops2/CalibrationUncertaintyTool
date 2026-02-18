@@ -5,7 +5,11 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPixmap
 from PySide6.QtWidgets import QApplication, QSplashScreen
 
-from src.utils.language_manager import LanguageManager
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from src.utils.language_manager import LanguageManager
+else:
+    from .utils.language_manager import LanguageManager
 
 
 def _create_startup_splash(app: QApplication) -> QSplashScreen:
@@ -59,7 +63,10 @@ def main():
 
     splash.showMessage("Creating main window...", Qt.AlignBottom | Qt.AlignLeft, QColor("#333333"))
     app.processEvents()
-    from src.main_window import MainWindow
+    if __package__ in (None, ""):
+        from src.main_window import MainWindow
+    else:
+        from .main_window import MainWindow
 
     window = MainWindow(language_manager)
     window.show()
