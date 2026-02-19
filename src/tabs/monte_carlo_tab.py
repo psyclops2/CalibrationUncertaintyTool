@@ -1,4 +1,5 @@
 import traceback
+import math
 
 import numpy as np
 import sympy as sp
@@ -290,6 +291,8 @@ class HistogramWidget(QWidget):
 
 class MonteCarloTab(BaseTab):
     DEFAULT_SAMPLE_COUNT = 100000
+    _SQRT2 = math.sqrt(2.0)
+    _EPSILON = 1e-12
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -513,6 +516,108 @@ class MonteCarloTab(BaseTab):
 
         return np.random.normal(central, standard_uncertainty, sample_count)
 
+    def _read_correlation_value(self, matrix, var_i, var_j):
+        if not isinstance(matrix, dict):
+            return 0.0
+        try:
+            row = matrix.get(var_i, {})
+            if isinstance(row, dict) and var_j in row:
+                return float(row.get(var_j, 0.0))
+            reverse_row = matrix.get(var_j, {})
+            if isinstance(reverse_row, dict):
+                return float(reverse_row.get(var_i, 0.0))
+        except (TypeError, ValueError):
+            return 0.0
+        return 0.0
+
+    def _build_correlation_matrix(self, variables):
+        size = len(variables)
+        correlation_matrix = np.eye(size, dtype=float)
+        matrix = getattr(self.parent, "correlation_coefficients", {})
+
+        for row_index in range(size):
+            for col_index in range(row_index + 1, size):
+                value = self._read_correlation_value(
+                    matrix,
+                    variables[row_index],
+                    variables[col_index],
+                )
+                value = float(np.clip(value, -1.0, 1.0))
+                correlation_matrix[row_index, col_index] = value
+                correlation_matrix[col_index, row_index] = value
+        return correlation_matrix
+
+    def _normalize_to_correlation_matrix(self, matrix):
+        sym_matrix = 0.5 * (matrix + matrix.T)
+        eigenvalues, eigenvectors = np.linalg.eigh(sym_matrix)
+        clipped = np.clip(eigenvalues, self._EPSILON, None)
+        psd_matrix = eigenvectors @ np.diag(clipped) @ eigenvectors.T
+
+        diagonal = np.sqrt(np.clip(np.diag(psd_matrix), self._EPSILON, None))
+        normalized = psd_matrix / np.outer(diagonal, diagonal)
+        np.fill_diagonal(normalized, 1.0)
+        return normalized
+
+    def _generate_correlated_normal_scores(self, correlation_matrix, sample_count):
+        matrix = correlation_matrix
+        try:
+            cholesky = np.linalg.cholesky(matrix)
+        except np.linalg.LinAlgError:
+            matrix = self._normalize_to_correlation_matrix(matrix)
+            try:
+                cholesky = np.linalg.cholesky(matrix)
+            except np.linalg.LinAlgError:
+                eigenvalues, eigenvectors = np.linalg.eigh(matrix)
+                clipped = np.clip(eigenvalues, self._EPSILON, None)
+                transform = eigenvectors @ np.diag(np.sqrt(clipped))
+                independent = np.random.normal(size=(sample_count, len(matrix)))
+                return independent @ transform.T
+
+        independent = np.random.normal(size=(sample_count, matrix.shape[0]))
+        return independent @ cholesky.T
+
+    @staticmethod
+    def _standard_normal_cdf(values):
+        flat = np.asarray(values, dtype=float).reshape(-1)
+        cdf_flat = np.fromiter(
+            (0.5 * (1.0 + math.erf(float(value) / MonteCarloTab._SQRT2)) for value in flat),
+            dtype=float,
+            count=flat.size,
+        )
+        return cdf_flat.reshape(np.asarray(values).shape)
+
+    def _transform_from_normal_scores(
+        self,
+        normal_scores,
+        central,
+        standard_uncertainty,
+        distribution_key,
+    ):
+        if standard_uncertainty == 0:
+            return np.full(normal_scores.shape[0], central, dtype=float)
+
+        key = get_distribution_translation_key(distribution_key) or distribution_key
+        probabilities = np.clip(self._standard_normal_cdf(normal_scores), self._EPSILON, 1.0 - self._EPSILON)
+
+        if key == RECTANGULAR_DISTRIBUTION:
+            half_width = standard_uncertainty * np.sqrt(3.0)
+            return central + (2.0 * probabilities - 1.0) * half_width
+
+        if key == TRIANGULAR_DISTRIBUTION:
+            half_width = standard_uncertainty * np.sqrt(6.0)
+            triangular = np.where(
+                probabilities < 0.5,
+                np.sqrt(2.0 * probabilities) - 1.0,
+                1.0 - np.sqrt(2.0 * (1.0 - probabilities)),
+            )
+            return central + triangular * half_width
+
+        if key == U_DISTRIBUTION:
+            half_width = standard_uncertainty * np.sqrt(2.0)
+            return central + half_width * np.sin(np.pi * (probabilities - 0.5))
+
+        return central + standard_uncertainty * normal_scores
+
     def _sample_input_variable(self, variable, sample_count):
         central_raw = self.value_handler.get_central_value(variable)
         uncertainty_raw = self.value_handler.get_standard_uncertainty(variable)
@@ -544,6 +649,58 @@ class MonteCarloTab(BaseTab):
             sample_count=sample_count,
         )
 
+    def _sample_input_variables(self, variables, sample_count):
+        if not variables:
+            return []
+
+        if len(variables) == 1:
+            return [self._sample_input_variable(variables[0], sample_count)]
+
+        sampled_info = []
+        for variable in variables:
+            central_raw = self.value_handler.get_central_value(variable)
+            uncertainty_raw = self.value_handler.get_standard_uncertainty(variable)
+
+            if central_raw in ("", None):
+                raise ValueError(f"Missing central value: {variable}")
+            try:
+                central = float(central_raw)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"Invalid central value: {variable}") from exc
+
+            if uncertainty_raw in ("", None):
+                standard_uncertainty = 0.0
+            else:
+                try:
+                    standard_uncertainty = float(uncertainty_raw)
+                except (TypeError, ValueError) as exc:
+                    raise ValueError(f"Invalid uncertainty: {variable}") from exc
+            if standard_uncertainty < 0:
+                raise ValueError(self.tr(MONTE_CARLO_INVALID_INPUT))
+
+            sampled_info.append(
+                (
+                    central,
+                    standard_uncertainty,
+                    self._resolve_distribution_key(variable),
+                )
+            )
+
+        correlation_matrix = self._build_correlation_matrix(variables)
+        normal_scores = self._generate_correlated_normal_scores(correlation_matrix, sample_count)
+
+        sampled_values = []
+        for index, (central, standard_uncertainty, distribution_key) in enumerate(sampled_info):
+            sampled_values.append(
+                self._transform_from_normal_scores(
+                    normal_scores[:, index],
+                    central=central,
+                    standard_uncertainty=standard_uncertainty,
+                    distribution_key=distribution_key,
+                )
+            )
+        return sampled_values
+
     def _evaluate_result_samples(self, result_variable, sample_count):
         equation = self.equation_handler.get_target_equation(result_variable)
         if not equation or "=" not in equation:
@@ -560,7 +717,7 @@ class MonteCarloTab(BaseTab):
         sympy_expr = sp.sympify(expression, locals=symbols)
         ordered_symbols = [symbols[var] for var in variables]
 
-        sampled_values = [self._sample_input_variable(var, sample_count) for var in variables]
+        sampled_values = self._sample_input_variables(variables, sample_count)
         evaluator = sp.lambdify(ordered_symbols, sympy_expr, modules="numpy")
         result = evaluator(*sampled_values)
 

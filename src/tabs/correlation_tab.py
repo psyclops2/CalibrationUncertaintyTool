@@ -171,7 +171,7 @@ class CorrelationTab(BaseTab):
                 item.setText(f"{float(value):g}")
                 return
 
-            if value > 1:
+            if value > 1 or value < -1:
                 previous_value = matrix.get(row_var, {}).get(col_var, 0.0)
                 QMessageBox.warning(
                     self,

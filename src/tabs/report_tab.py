@@ -285,6 +285,74 @@ class ReportTab(BaseTab):
             equation_text = self.parent.model_equation_tab.equation_input.toPlainText().strip()
         return equation_text
 
+    def _get_input_variable_names(self):
+        variables = getattr(self.parent, 'variables', [])
+        result_variables = getattr(self.parent, 'result_variables', [])
+        if isinstance(variables, dict):
+            variable_names = list(variables.keys())
+        elif isinstance(variables, (list, tuple)):
+            variable_names = list(variables)
+        else:
+            variable_names = []
+        return [name for name in variable_names if name not in result_variables]
+
+    @staticmethod
+    def _read_correlation_value(matrix, row_var, col_var):
+        if not isinstance(matrix, dict):
+            return 0.0
+        row_data = matrix.get(row_var, {})
+        if not isinstance(row_data, dict):
+            row_data = {}
+        raw = row_data.get(col_var, None)
+        if raw is None:
+            reverse_row = matrix.get(col_var, {})
+            if isinstance(reverse_row, dict):
+                raw = reverse_row.get(row_var, 0.0)
+            else:
+                raw = 0.0
+        try:
+            return float(raw)
+        except Exception:
+            return 0.0
+
+    @staticmethod
+    def _format_matrix_number(value):
+        return format(float(value), ".12g")
+
+    def _build_correlation_matrix_html(self):
+        input_variables = self._get_input_variable_names()
+        if len(input_variables) < 2:
+            return ""
+
+        matrix = getattr(self.parent, 'correlation_coefficients', {})
+        has_non_default_off_diagonal = False
+
+        header_cells = "".join(
+            f"<th>{html_lib.escape(str(var_name))}</th>"
+            for var_name in input_variables
+        )
+        rows = []
+        for row_index, row_var in enumerate(input_variables):
+            data_cells = []
+            for col_index, col_var in enumerate(input_variables):
+                if row_index == col_index:
+                    value = 1.0
+                else:
+                    value = self._read_correlation_value(matrix, row_var, col_var)
+                    if not np.isclose(value, 0.0):
+                        has_non_default_off_diagonal = True
+                data_cells.append(f"<td>{self._format_matrix_number(value)}</td>")
+            row_label = html_lib.escape(str(row_var))
+            rows.append(f"<tr><th>{row_label}</th>{''.join(data_cells)}</tr>")
+
+        if not has_non_default_off_diagonal:
+            return ""
+
+        return (
+            f'<div class="subtitle">{self.tr(CORRELATION_MATRIX_INPUT)}</div>'
+            f"<table><tbody><tr><th></th>{header_cells}</tr>{''.join(rows)}</tbody></table>"
+        )
+
     def generate_report_html(self, equation):
         """Build report HTML content."""
         try:
@@ -327,6 +395,8 @@ class ReportTab(BaseTab):
                     <div class="title">{self.tr(REPORT_MODEL_EQUATION)}</div>
                     <div class="equation">{self.equation_formatter.format_equation(model_equation)}</div>
                 """).strip()
+
+            html += self._build_correlation_matrix_html()
 
             # 螟画焚荳隕ｧ繝・・繝悶Ν
             html += f"""

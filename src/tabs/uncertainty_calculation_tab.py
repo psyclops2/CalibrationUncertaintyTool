@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+﻿from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                              QComboBox, QTableWidget, QTableWidgetItem, QHeaderView,
                              QGroupBox, QFormLayout, QDoubleSpinBox,
                              QAbstractItemView)
@@ -563,11 +563,7 @@ class UncertaintyCalculationTab(BaseTab):
                     ):
                         result_issue.hint = zero_denominator_hint
                     budget_issues.append(result_issue)
-                    self.central_value_label.setText('--')
-                    self.standard_uncertainty_label.setText('--')
-                    self.effective_degrees_of_freedom_label.setText('--')
-                    self.coverage_factor_label.setText('--')
-                    self.expanded_uncertainty_label.setText('--')
+                    self._clear_calculation_display()
                     self._show_budget_error_message(budget_issues)
                     return
 

@@ -160,3 +160,58 @@ def test_report_tab_variable_detail_layout_fixed_uses_plain_description(qapp):
     assert "Fixed detail" in html
     assert "<th>REPORT_CENTRAL_VALUE</th><th>REPORT_UNIT</th>" in html
     assert "<th>DETAIL_DESCRIPTION</th>" not in html
+
+
+def test_report_tab_shows_correlation_matrix_when_non_default(qapp):
+    class DummyParent:
+        pass
+
+    parent = DummyParent()
+    parent.last_equation = "Y=X1+X2"
+    parent.document_info = {}
+    parent.variables = ["Y", "X1", "X2"]
+    parent.result_variables = ["Y"]
+    parent.variable_values = {}
+    parent.value_names = []
+    parent.correlation_coefficients = {
+        "X1": {"X1": 1.0, "X2": 0.35},
+        "X2": {"X1": 0.35, "X2": 1.0},
+    }
+
+    tab = ReportTab()
+    tab.parent = parent
+    tab.result_combo.addItem("Y")
+    tab.result_combo.setCurrentIndex(0)
+
+    html = tab.generate_report_html("Y=X1+X2")
+
+    assert "CORRELATION_MATRIX_INPUT" in html
+    assert "<th>X1</th>" in html
+    assert "<th>X2</th>" in html
+    assert "<td>0.35</td>" in html
+
+
+def test_report_tab_hides_correlation_matrix_when_off_diagonal_is_all_zero(qapp):
+    class DummyParent:
+        pass
+
+    parent = DummyParent()
+    parent.last_equation = "Y=X1+X2"
+    parent.document_info = {}
+    parent.variables = ["Y", "X1", "X2"]
+    parent.result_variables = ["Y"]
+    parent.variable_values = {}
+    parent.value_names = []
+    parent.correlation_coefficients = {
+        "X1": {"X1": 1.0, "X2": 0.0},
+        "X2": {"X1": 0.0, "X2": 1.0},
+    }
+
+    tab = ReportTab()
+    tab.parent = parent
+    tab.result_combo.addItem("Y")
+    tab.result_combo.setCurrentIndex(0)
+
+    html = tab.generate_report_html("Y=X1+X2")
+
+    assert "CORRELATION_MATRIX_INPUT" not in html
