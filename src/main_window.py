@@ -30,6 +30,25 @@ from src.utils.translation_keys import *
 from src.utils.variable_utils import create_empty_value_dict, get_distribution_translation_key
 
 class MainWindow(QMainWindow):
+    _SAVE_ALLOWED_VAR_KEYS = {
+        'A': ('unit', 'definition', 'type', 'values'),
+        'B': ('unit', 'definition', 'type', 'distribution', 'divisor', 'values'),
+        'fixed': ('unit', 'definition', 'type', 'values'),
+    }
+    _SAVE_ALLOWED_VALUE_KEYS = {
+        'A': ('measurements', 'degrees_of_freedom', 'central_value', 'standard_uncertainty', 'description'),
+        'B': (
+            'central_value',
+            'half_width',
+            'standard_uncertainty',
+            'degrees_of_freedom',
+            'description',
+            'calculation_formula',
+            'divisor',
+        ),
+        'fixed': ('central_value', 'description'),
+    }
+
     def __init__(self, language_manager=None):
         super().__init__()
         
@@ -246,19 +265,7 @@ class MainWindow(QMainWindow):
             var_info = self.variable_values.get(var_name)
             if not isinstance(var_info, dict):
                 continue
-            cleaned_info = copy.deepcopy(var_info)
-            values = cleaned_info.get('values', [])
-            if not isinstance(values, list):
-                values = []
-            if len(values) < self.value_count:
-                values.extend(create_empty_value_dict() for _ in range(self.value_count - len(values)))
-            else:
-                values = values[:self.value_count]
-            for value_info in values:
-                if isinstance(value_info, dict):
-                    value_info.pop('source', None)
-
-            cleaned_info['values'] = values
+            cleaned_info = self._normalize_variable_for_save(var_info)
 
             # 保存時の可読性と差分安定化のため、主要キーの順序を固定する。
             preferred_key_order = ('unit', 'definition', 'type', 'distribution', 'divisor', 'values')
@@ -299,6 +306,49 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'regression_tab') and hasattr(self.regression_tab, 'add_to_save_data'):
             self.regression_tab.add_to_save_data(save_data)
         return save_data
+
+    def _normalize_value_entry_for_save(self, value_info, allowed_keys):
+        """保存時に校正点データを type に応じて正規化する"""
+        normalized_value = create_empty_value_dict()
+        if isinstance(value_info, dict):
+            for key in allowed_keys:
+                normalized_value[key] = value_info.get(key, normalized_value.get(key, ""))
+        for key in list(normalized_value.keys()):
+            if key not in allowed_keys:
+                normalized_value.pop(key, None)
+        return normalized_value
+
+    def _normalize_variable_for_save(self, var_info):
+        """保存時に type ごとの不要データを除去したコピーを返す"""
+        cleaned_info = copy.deepcopy(var_info)
+        var_type = cleaned_info.get('type', 'A')
+
+        values = cleaned_info.get('values', [])
+        if not isinstance(values, list):
+            values = []
+        if len(values) < self.value_count:
+            values.extend(create_empty_value_dict() for _ in range(self.value_count - len(values)))
+        else:
+            values = values[:self.value_count]
+
+        if var_type in self._SAVE_ALLOWED_VAR_KEYS:
+            allowed_value_keys = self._SAVE_ALLOWED_VALUE_KEYS[var_type]
+            normalized_info = {}
+            for key in self._SAVE_ALLOWED_VAR_KEYS[var_type]:
+                if key == 'values':
+                    normalized_info['values'] = [
+                        self._normalize_value_entry_for_save(value_info, allowed_value_keys)
+                        for value_info in values
+                    ]
+                else:
+                    normalized_info[key] = cleaned_info.get(key, '')
+            return normalized_info
+
+        for value_info in values:
+            if isinstance(value_info, dict):
+                value_info.pop('source', None)
+        cleaned_info['values'] = values
+        return cleaned_info
         
     def load_data(self, data, show_message=True):
         """読み込んだデータでアプリケーションの状態を更新"""
