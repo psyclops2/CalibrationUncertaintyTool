@@ -258,4 +258,5 @@ translations = {'CorrelationTab': {'MESSAGE_WARNING': 'Warning',
                   'CALCULATION_FORMULA': 'Calculation Formula',
                   'CALCULATE': 'Calculate',
                   'VALUE_SOURCE': 'Value source',
-                  'SOURCE_MANUAL': 'Manual input'}}
+                  'SOURCE_MANUAL': 'Manual input',
+                  'TYPE_CHANGE_DATA_RESET_WARNING': 'Changing type will clear current inputs for all calibration points. Continue?'}}

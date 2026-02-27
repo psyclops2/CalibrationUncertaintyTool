@@ -9,7 +9,7 @@ from ..utils.variable_utils import (
     create_empty_value_dict,
     find_variable_item
 )
-from ..utils.translation_keys import NORMAL_DISTRIBUTION
+from ..utils.translation_keys import NORMAL_DISTRIBUTION, MESSAGE_CONFIRM, TYPE_CHANGE_DATA_RESET_WARNING
 from ..utils.calculation_utils import evaluate_formula
 
 class VariablesTabHandlers:
@@ -165,6 +165,89 @@ class VariablesTabHandlers:
         except Exception as e:
             log_error(f"量選択エラー: {str(e)}", details=traceback.format_exc())
 
+    @staticmethod
+    def _has_non_empty_value(value):
+        """確認ダイアログ要否判定のため、値が実質的に入力済みかを判定"""
+        if value is None:
+            return False
+        if isinstance(value, str):
+            return value.strip() != ""
+        return True
+
+    def _set_uncertainty_type_radio(self, uncertainty_type):
+        """シグナル再発火を抑止しつつタイプラジオを指定状態へ戻す"""
+        radios = [self.parent.type_a_radio, self.parent.type_b_radio, self.parent.type_fixed_radio]
+        for radio in radios:
+            radio.blockSignals(True)
+        try:
+            self.parent.type_a_radio.setChecked(uncertainty_type == 'A')
+            self.parent.type_b_radio.setChecked(uncertainty_type == 'B')
+            self.parent.type_fixed_radio.setChecked(uncertainty_type == 'fixed')
+        finally:
+            for radio in radios:
+                radio.blockSignals(False)
+
+    def _has_data_loss_on_type_change(self, var_info, target_type):
+        """Type変更時に入力済みデータが削除されるかを判定"""
+        if not isinstance(var_info, dict):
+            return False
+
+        if target_type not in ('A', 'B', 'fixed'):
+            return False
+
+        # unit/definition/type/values は保持。その他は削除対象として判定する。
+        for key in var_info:
+            if key in ('unit', 'definition', 'type', 'values'):
+                continue
+            if key in var_info and self._has_non_empty_value(var_info.get(key)):
+                return True
+
+        values = var_info.get('values', [])
+        if not isinstance(values, list):
+            return False
+        for value_info in values:
+            if not isinstance(value_info, dict):
+                continue
+            # 各校正点では description のみ保持。その他は削除対象。
+            for key in value_info:
+                if key == 'description':
+                    continue
+                if key in value_info and self._has_non_empty_value(value_info.get(key)):
+                    return True
+        return False
+
+    def _cleanup_data_for_type_change(self, var_info, target_type):
+        """Type変更時に unit/definition/description 以外を削除する"""
+        if not isinstance(var_info, dict):
+            return
+
+        if target_type not in ('A', 'B', 'fixed'):
+            return
+
+        values = var_info.get('values', [])
+        if not isinstance(values, list):
+            values = []
+
+        # 変数レベルは unit/definition/type/values のみ残す
+        preserved_var = {
+            'unit': var_info.get('unit', ''),
+            'definition': var_info.get('definition', ''),
+            'type': var_info.get('type', 'A'),
+            'values': [],
+        }
+
+        # 各校正点は description のみ残す
+        cleaned_values = []
+        for value_info in values:
+            if isinstance(value_info, dict):
+                cleaned_values.append({'description': value_info.get('description', '')})
+            else:
+                cleaned_values.append({'description': ''})
+        preserved_var['values'] = cleaned_values
+
+        var_info.clear()
+        var_info.update(preserved_var)
+
     def on_type_changed(self, checked):
         """不確かさ種類が変更されたときの処理"""
         if not checked:
@@ -181,11 +264,33 @@ class VariablesTabHandlers:
 
             else:  # 固定値
                 uncertainty_type = 'fixed'
-            self.update_widget_visibility(uncertainty_type)
 
             if self.current_variable:
+                var_info = self.parent.parent.variable_values.get(self.current_variable, {})
+                previous_type = var_info.get('type', 'A')
+                if previous_type != uncertainty_type:
+                    if self._has_data_loss_on_type_change(var_info, uncertainty_type):
+                        reply = QMessageBox.question(
+                            self.parent,
+                            self.parent.tr(MESSAGE_CONFIRM),
+                            self.parent.tr(TYPE_CHANGE_DATA_RESET_WARNING),
+                            QMessageBox.Yes | QMessageBox.No,
+                            QMessageBox.No,
+                        )
+                        if reply != QMessageBox.Yes:
+                            self._set_uncertainty_type_radio(previous_type)
+                            self.update_widget_visibility(previous_type)
+                            self.parent.display_current_value()
+                            self.parent.update_form_layout()
+                            return
+
+                    self._cleanup_data_for_type_change(var_info, uncertainty_type)
+
                 # 量の不確かさ種類を更新
-                self.parent.parent.variable_values[self.current_variable]['type'] = uncertainty_type
+                var_info['type'] = uncertainty_type
+                self.parent.parent.variable_values[self.current_variable] = var_info
+
+            self.update_widget_visibility(uncertainty_type)
 
             # タイプ変更後、現在変数の値を画面へ再反映する。
             # これを行わないと、直前に表示していた別変数の値が残って見える場合がある。

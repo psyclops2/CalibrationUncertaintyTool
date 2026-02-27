@@ -256,4 +256,5 @@ translations = {'CorrelationTab': {'MESSAGE_WARNING': '警告',
                   'CALCULATION_FORMULA': '計算式',
                   'CALCULATE': '計算',
                   'VALUE_SOURCE': '値のソース',
-                  'SOURCE_MANUAL': '手入力'}}
+                  'SOURCE_MANUAL': '手入力',
+                  'TYPE_CHANGE_DATA_RESET_WARNING': 'Type変更をすると現在の入力はすべての校正点について失われます。続行しますか？'}}
