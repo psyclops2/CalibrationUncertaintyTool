@@ -152,6 +152,7 @@ class VariablesTab(BaseTab):
         
         # 定義フィールドを追加
         self.definition_input = QTextEdit()
+        self.definition_input.setAcceptRichText(False)
         self.definition_input.setMaximumHeight(100)
         self.definition_input.textChanged.connect(self.handlers.on_definition_changed)
         self.definition_label = QLabel(self.tr(DEFINITION) + ":")
@@ -174,9 +175,9 @@ class VariablesTab(BaseTab):
         # 区切り線を追加
         separator = QFrame()
         separator.setFrameShape(QFrame.HLine)
-        separator.setFrameShadow(QFrame.Sunken)
-        separator.setLineWidth(2)
-        separator.setStyleSheet("QFrame { background-color: red; }") 
+        separator.setFrameShadow(QFrame.Plain)
+        separator.setFixedHeight(1)
+        separator.setStyleSheet("QFrame { border: none; background-color: gray; }")
         settings_layout.addRow("", separator)
         
         # TypeA用のウィジェット
@@ -252,6 +253,7 @@ class VariablesTab(BaseTab):
         
         # 詳細説明フィールドを追加
         self.type_a_widgets['description'] = QTextEdit()
+        self.type_a_widgets['description'].setAcceptRichText(False)
         self.type_a_widgets['description'].setMaximumHeight(100)
         self.type_a_widgets['description'].textChanged.connect(self.handlers.on_type_a_description_changed)
         self.detail_description_label_a = QLabel(self.tr(DETAIL_DESCRIPTION) + ":")
@@ -312,6 +314,7 @@ class VariablesTab(BaseTab):
         
         # 詳細説明フィールドを追加
         self.type_b_widgets['description'] = QTextEdit()
+        self.type_b_widgets['description'].setAcceptRichText(False)
         self.type_b_widgets['description'].setMaximumHeight(100)
         self.type_b_widgets['description'].textChanged.connect(self.handlers.on_type_b_description_changed)
         self.detail_description_label_b = QLabel(self.tr(DETAIL_DESCRIPTION) + ":")
@@ -327,6 +330,7 @@ class VariablesTab(BaseTab):
         
         # 詳細説明フィールドを追加
         self.fixed_value_widgets['description'] = QTextEdit()
+        self.fixed_value_widgets['description'].setAcceptRichText(False)
         self.fixed_value_widgets['description'].setMaximumHeight(100)
         self.fixed_value_widgets['description'].textChanged.connect(self.handlers.on_fixed_value_description_changed)
         self.detail_description_label_fixed = QLabel(self.tr(DETAIL_DESCRIPTION) + ":")

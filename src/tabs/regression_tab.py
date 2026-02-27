@@ -847,6 +847,7 @@ class RegressionTab(BaseTab):
         layout.addWidget(label)
         
         text_edit = QTextEdit()
+        text_edit.setAcceptRichText(False)
         text_edit.setPlaceholderText("x, u(x), y\nまたは\nx, y")
         layout.addWidget(text_edit)
         

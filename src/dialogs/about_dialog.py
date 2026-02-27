@@ -44,7 +44,7 @@ class AboutDialog(QDialog):
     def setup_ui(self):
         layout = QVBoxLayout()
 
-        app_info = QLabel("Uncertainty Calculation Tool")
+        app_info = QLabel("CAlibration uncertainty Tool")
         app_info.setStyleSheet("font-size: 16px; font-weight: bold;")
         layout.addWidget(app_info)
 

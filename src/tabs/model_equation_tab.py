@@ -59,6 +59,7 @@ class ModelEquationTab(BaseTab):
         equation_layout = QVBoxLayout()
         
         self.equation_input = QTextEdit()
+        self.equation_input.setAcceptRichText(False)
         self.equation_input.setPlaceholderText(self.tr(EQUATION_PLACEHOLDER))
         self.equation_input.setMaximumHeight(300)
         self.equation_input.focusOutEvent = self._on_equation_focus_lost

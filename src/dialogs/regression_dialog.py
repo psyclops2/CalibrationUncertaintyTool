@@ -36,6 +36,7 @@ class RegressionDialog(QDialog):
         self.invert_check = QCheckBox(self.tr(REGRESSION_INVERT))
 
         self.data_input = QTextEdit()
+        self.data_input.setAcceptRichText(False)
         self.data_input.setPlaceholderText(self.tr(REGRESSION_DATA_PLACEHOLDER))
         self.data_input.setMinimumHeight(160)
 

@@ -35,7 +35,7 @@ def _create_startup_splash(app: QApplication) -> QSplashScreen:
         painter.drawPixmap(x, y, scaled_logo)
 
     painter.setFont(title_font)
-    painter.drawText(20, 56, "Calibration Uncertainty Tool")
+    painter.drawText(20, 56, "CAlibration uncertainty Tool")
     painter.setFont(base_font)
     painter.drawText(20, 96, "Starting application...")
     painter.end()
