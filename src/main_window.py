@@ -253,12 +253,6 @@ class MainWindow(QMainWindow):
         
     def get_save_data(self):
         """保存するデータを辞書にまとめる"""
-        # 変数タブの選択状態も保存
-        last_selected_variable = None
-        last_selected_value_index = 0
-        if hasattr(self, 'variables_tab') and hasattr(self.variables_tab, 'handlers'):
-            last_selected_variable = self.variables_tab.handlers.last_selected_variable
-            last_selected_value_index = self.variables_tab.handlers.last_selected_value_index
         save_variable_values = {}
         ordered_variables = list(dict.fromkeys(self.result_variables + self.variables))
         for var_name in ordered_variables:
@@ -300,8 +294,6 @@ class MainWindow(QMainWindow):
             'result_variables': self.result_variables,
             'correlation_coefficients': self.correlation_coefficients,
             'variable_values': save_variable_values,
-            'last_selected_variable': last_selected_variable,
-            'last_selected_value_index': last_selected_value_index,
         }
         if hasattr(self, 'regression_tab') and hasattr(self.regression_tab, 'add_to_save_data'):
             self.regression_tab.add_to_save_data(save_data)
@@ -369,12 +361,9 @@ class MainWindow(QMainWindow):
                 self.document_info_tab.set_document_info(self.document_info)
             self.prune_variable_values()
             self.sync_variable_values_with_points()
-            # 変数タブの選択状態も復元（古いデータとの互換性あり）
-            last_selected_variable = data.get('last_selected_variable', None)
-            last_selected_value_index = data.get('last_selected_value_index', 0)
             if hasattr(self, 'variables_tab') and hasattr(self.variables_tab, 'handlers'):
-                self.variables_tab.handlers.last_selected_variable = last_selected_variable
-                self.variables_tab.handlers.last_selected_value_index = last_selected_value_index
+                self.variables_tab.handlers.last_selected_variable = None
+                self.variables_tab.handlers.last_selected_value_index = self.current_value_index
             # UIの更新
             if hasattr(self, 'variables_tab'):
                 self.variables_tab.update_variable_list(self.variables, self.result_variables)
@@ -460,8 +449,6 @@ class MainWindow(QMainWindow):
             'result_variables': [],
             'correlation_coefficients': {},
             'variable_values': {},
-            'last_selected_variable': None,
-            'last_selected_value_index': 0,
             'regressions': {},
         }
         self.load_data(empty_data, show_message=False)
