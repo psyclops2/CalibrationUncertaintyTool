@@ -164,12 +164,13 @@ class PartialDerivativeTab(BaseTab):
                         derivative_str = derivative_str.replace('*', '·')
                         
                         # 下付き文字と上付き文字の処理
-                        derivative_str = re.sub(r'([a-zA-Zα-ωΑ-Ω])_([a-zA-Z0-9α-ωΑ-Ω]+)', r'\1<sub>\2</sub>', derivative_str)
+                        derivative_str = self._format_subscripts(derivative_str)
                         derivative_str = re.sub(r'\^([0-9]+)', r'<sup>\1</sup>', derivative_str)
                         
-                        formatted_left = re.sub(r'([a-zA-Zα-ωΑ-Ω])_([a-zA-Z0-9α-ωΑ-Ω]+)', r'\1<sub>\2</sub>', left_side)
+                        formatted_left = self._format_subscripts(left_side)
+                        formatted_var = self._format_subscripts(var)
                         
-                        derivative_parts.append(f"∂{formatted_left}/∂{var} = {derivative_str}")
+                        derivative_parts.append(f"∂{formatted_left}/∂{formatted_var} = {derivative_str}")
                     except Exception as e:
 
                         self.parent.log_error(f"変数 {var} の偏微分計算エラー: {str(e)}", self.tr(DERIVATIVE_CALCULATION_ERROR))
@@ -190,3 +191,17 @@ class PartialDerivativeTab(BaseTab):
 
             self.parent.log_error(f"偏微分計算エラー: {str(e)}", self.tr(DERIVATIVE_CALCULATION_ERROR))
             self.partial_diff_area.setText(f"{self.tr(DERIVATIVE_CALCULATION_ERROR)}: {str(e)}") 
+
+    @staticmethod
+    def _format_subscripts(text):
+        """Convert V_ref_stability to V<sub>ref_stability</sub>."""
+        token_pattern = re.compile(r"[a-zA-Zα-ωΑ-Ω][a-zA-Z0-9_α-ωΑ-Ω]*")
+
+        def replacer(match):
+            token = match.group(0)
+            base, sep, suffix = token.partition('_')
+            if not sep or not suffix:
+                return token
+            return f"{base}<sub>{suffix}</sub>"
+
+        return token_pattern.sub(replacer, text)

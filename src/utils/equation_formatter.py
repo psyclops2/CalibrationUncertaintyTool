@@ -93,10 +93,14 @@ class EquationFormatter:
             html_parts.append(self._format_atom(token, result_vars, force_result))
             i += 1
 
-            while i < len(tokens) and tokens[i] == '_':
-                sub_text, i = self._consume_marker_expression(tokens, i + 1)
-                if sub_text:
-                    html_parts.append(f'<sub>{sub_text}</sub>')
+            if i < len(tokens) and tokens[i] == '_':
+                sub_parts = []
+                while i < len(tokens) and tokens[i] == '_':
+                    sub_text, i = self._consume_marker_expression(tokens, i + 1)
+                    if sub_text:
+                        sub_parts.append(sub_text)
+                if sub_parts:
+                    html_parts.append(f'<sub>{"_".join(sub_parts)}</sub>')
 
             if i < len(tokens) and tokens[i] == '^':
                 sup_text, i = self._consume_marker_expression(tokens, i + 1)

@@ -116,6 +116,18 @@ class ReportTab(BaseTab):
         return f"<{tag}>{html_lib.escape(str(text))}</{tag}>"
 
     @staticmethod
+    def _format_variable_name_html(name):
+        """Format variable name like V_ref_stability to V<sub>ref_stability</sub>."""
+        raw = str(name)
+        base, sep, suffix = raw.partition("_")
+        if not sep or not suffix:
+            return html_lib.escape(raw)
+        return f"{html_lib.escape(base)}<sub>{html_lib.escape(suffix)}</sub>"
+
+    def _build_variable_cell_html(self, name, tag="td"):
+        return f"<{tag}>{self._format_variable_name_html(name)}</{tag}>"
+
+    @staticmethod
     def _render_three_line_table(rows, header_row_indexes=None, table_classes="three-line"):
         if not rows:
             return f"<table class=\"{table_classes}\"><tbody></tbody></table>"
@@ -382,9 +394,9 @@ class ReportTab(BaseTab):
         if not has_non_default_off_diagonal:
             return ""
 
-        table_rows = [[self._build_cell_html("", "th")] + [self._build_cell_html(var, "th") for var in input_variables]]
+        table_rows = [[self._build_cell_html("", "th")] + [self._build_variable_cell_html(var, "th") for var in input_variables]]
         for row_index, row_var in enumerate(input_variables):
-            row_cells = [self._build_cell_html(row_var, "th")]
+            row_cells = [self._build_variable_cell_html(row_var, "th")]
             for col_index, col_var in enumerate(input_variables):
                 if row_index == col_index:
                     value = 1.0
@@ -476,10 +488,9 @@ class ReportTab(BaseTab):
                 unit = var_data.get('unit', '') or self.UNIT_PLACEHOLDER
                 definition = self._format_markdown_inline_or_placeholder(var_data.get('definition', ''))
                 uncertainty_type = self.get_uncertainty_type_display(var_data.get('type', ''), var_name)
-                safe_var_name = html_lib.escape(str(var_name))
                 safe_unit = html_lib.escape(str(unit))
                 variable_table_rows.append([
-                    f"<td>{safe_var_name}</td>",
+                    self._build_variable_cell_html(var_name),
                     f"<td>{safe_unit}</td>",
                     f"<td>{definition}</td>",
                     f"<td>{uncertainty_type}</td>",
@@ -501,8 +512,7 @@ class ReportTab(BaseTab):
                         continue
                     try:
                         var_data = get_variable_data(var_name)
-                        safe_var_name = html_lib.escape(str(var_name))
-                        html += f"<div><strong>{safe_var_name}</strong></div>"
+                        html += f"<div><strong>{self._format_variable_name_html(var_name)}</strong></div>"
                         uncertainty_type = var_data.get('type', '')
                         values_list = var_data.get('values', [])
                         if not isinstance(values_list, list):
@@ -590,7 +600,7 @@ class ReportTab(BaseTab):
                             ]]
                             for item in budget:
                                 budget_rows.append([
-                                    self._build_cell_html(item['variable']),
+                                    self._build_variable_cell_html(item['variable']),
                                     self._build_cell_html(item['central_value']),
                                     self._build_cell_html(item['standard_uncertainty']),
                                     self._build_cell_html(item['dof']),

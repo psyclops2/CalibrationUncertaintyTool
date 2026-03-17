@@ -2,6 +2,8 @@ import pytest
 
 try:
     from src.tabs.uncertainty_calculation_tab import UncertaintyCalculationTab
+    from src.tabs.model_equation_tab import ModelEquationTab
+    from src.tabs.partial_derivative_tab import PartialDerivativeTab
 except ImportError:
     pytest.skip("PySide6 is not available", allow_module_level=True)
 
@@ -15,3 +17,14 @@ def test_format_with_unit_placeholder():
     assert UncertaintyCalculationTab._format_with_unit("", "m") == ""
     assert UncertaintyCalculationTab._format_with_unit("--", "") == "--"
 
+
+def test_model_equation_tab_formats_multiple_subscripts():
+    formatted = ModelEquationTab._format_subscripts("Y = V_ref_stability + X_a_b")
+    assert "V<sub>ref_stability</sub>" in formatted
+    assert "X<sub>a_b</sub>" in formatted
+
+
+def test_partial_derivative_tab_formats_multiple_subscripts():
+    formatted = PartialDerivativeTab._format_subscripts("dY/dV_ref_stability = A_ref_stability")
+    assert "V<sub>ref_stability</sub>" in formatted
+    assert "A<sub>ref_stability</sub>" in formatted

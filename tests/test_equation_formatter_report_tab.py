@@ -26,6 +26,14 @@ def test_equation_formatter_formats_subscript_and_superscript():
     assert "<sup>(n+1)</sup>" in html
 
 
+def test_equation_formatter_keeps_underscore_inside_single_subscript():
+    formatter = EquationFormatter()
+    html = formatter.format_equation("Y = V_ref_stability + X_a_b")
+
+    assert "V</span><sub>ref_stability</sub>" in html
+    assert "X</span><sub>a_b</sub>" in html
+
+
 def test_report_tab_model_equation_keeps_subscript_and_superscript(qapp):
     class DummyParent:
         pass
@@ -215,3 +223,48 @@ def test_report_tab_hides_correlation_matrix_when_off_diagonal_is_all_zero(qapp)
     html = tab.generate_report_html("Y=X1+X2")
 
     assert "CORRELATION_MATRIX_INPUT" not in html
+
+
+def test_report_tab_formats_variable_names_with_underscore_in_non_equation_sections(qapp):
+    class DummyParent:
+        pass
+
+    parent = DummyParent()
+    parent.last_equation = "Y=V_ref_stability+X_a_b"
+    parent.document_info = {}
+    parent.variables = ["Y", "V_ref_stability", "X_a_b"]
+    parent.result_variables = ["Y"]
+    parent.value_names = ["P1"]
+    parent.correlation_coefficients = {
+        "V_ref_stability": {"V_ref_stability": 1.0, "X_a_b": 0.2},
+        "X_a_b": {"V_ref_stability": 0.2, "X_a_b": 1.0},
+    }
+    parent.variable_values = {
+        "Y": {"unit": "V", "type": "result", "values": [{"central_value": "1"}]},
+        "V_ref_stability": {
+            "unit": "V",
+            "definition": "",
+            "type": "fixed",
+            "values": [{"central_value": "1", "description": ""}],
+        },
+        "X_a_b": {
+            "unit": "V",
+            "definition": "",
+            "type": "fixed",
+            "values": [{"central_value": "1", "description": ""}],
+        },
+    }
+
+    tab = ReportTab()
+    tab.parent = parent
+    tab.result_combo.addItem("Y")
+    tab.result_combo.setCurrentIndex(0)
+
+    html = tab.generate_report_html("Y=V_ref_stability+X_a_b")
+
+    assert "<th>V<sub>ref_stability</sub></th>" in html
+    assert "<th>X<sub>a_b</sub></th>" in html
+    assert "<td>V<sub>ref_stability</sub></td>" in html
+    assert "<td>X<sub>a_b</sub></td>" in html
+    assert "<strong>V<sub>ref_stability</sub></strong>" in html
+    assert "<strong>X<sub>a_b</sub></strong>" in html

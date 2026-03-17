@@ -523,7 +523,7 @@ class ModelEquationTab(BaseTab):
                 processed_eq = eq.replace('*', '・･')
 
                 # 下付き表記に変換
-                processed_eq = re.sub(r'([a-zA-Zﾎｱ-ﾏ火・ﾎｩ])_([a-zA-Z0-9ﾎｱ-ﾏ火・ﾎｩ]+)', r'\1<sub>\2</sub>', processed_eq)
+                processed_eq = self._format_subscripts(processed_eq)
                 
                 # べき乗を上付き表記に変換
                 processed_eq = re.sub(r'\^(\d+|\([^)]+\))', r'<sup>\1</sup>', processed_eq)
@@ -539,6 +539,20 @@ class ModelEquationTab(BaseTab):
 
         except Exception as e:
             log_error(f"HTML表示更新エラー: {str(e)}", details=traceback.format_exc())
+
+    @staticmethod
+    def _format_subscripts(text):
+        """Convert V_ref_stability to V<sub>ref_stability</sub>."""
+        token_pattern = re.compile(r"[A-Za-z\u03B1-\u03C9\u0391-\u03A9][A-Za-z0-9_\u03B1-\u03C9\u0391-\u03A9]*")
+
+        def replacer(match):
+            token = match.group(0)
+            base, sep, suffix = token.partition('_')
+            if not sep or not suffix:
+                return token
+            return f"{base}<sub>{suffix}</sub>"
+
+        return token_pattern.sub(replacer, text)
 
     def detect_variables(self, equation):
         """モデル式から変数を抽出する"""
