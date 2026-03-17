@@ -33,11 +33,34 @@ table {
   margin-bottom: 20px;
 }
 
-th,
-td {
-  border: 1px solid #ddd;
+.three-line,
+.three-line thead,
+.three-line tbody,
+.three-line tr,
+.three-line th,
+.three-line td {
+  border: none !important;
+}
+
+.three-line th,
+.three-line td {
   padding: 8px;
   text-align: left;
+}
+
+.three-line .tl-first th,
+.three-line .tl-first td {
+  border-top: 1.5px solid #222 !important;
+}
+
+.three-line .tl-header th,
+.three-line .tl-header td {
+  border-bottom: 1px solid #666 !important;
+}
+
+.three-line .tl-last th,
+.three-line .tl-last td {
+  border-bottom: 1.5px solid #222 !important;
 }
 
 .doc-table th {
@@ -62,11 +85,3 @@ td {
   border-collapse: collapse;
   margin-top: 10px;
 }
-
-.revision-table th,
-.revision-table td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  text-align: left;
-}
-

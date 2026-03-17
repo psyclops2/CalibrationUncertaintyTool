@@ -246,6 +246,30 @@ class UncertaintyCalculationTab(BaseTab):
         self.calibration_table.setHorizontalHeaderLabels(self.headers)
         # ユーザーが手動で調整できるように変更
         self.calibration_table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
+        self.calibration_table.verticalHeader().setVisible(False)
+        self.calibration_table.setShowGrid(False)
+        self.calibration_table.setStyleSheet("""
+            QTableWidget {
+                border: none;
+                background: white;
+                gridline-color: transparent;
+            }
+            QTableWidget::viewport {
+                border-top: 1.5px solid #222;
+                border-bottom: 1.5px solid #222;
+                background: white;
+            }
+            QHeaderView::section {
+                border: none;
+                border-bottom: 1px solid #666;
+                background: white;
+                padding: 4px 6px;
+            }
+            QTableWidget::item {
+                border: none;
+                padding: 4px 6px;
+            }
+        """)
         # 初期のカラム幅を設定
         self.calibration_table.setColumnWidth(0, 100)  # 量
         self.calibration_table.setColumnWidth(1, 100)  # 中央値

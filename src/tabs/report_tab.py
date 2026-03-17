@@ -19,6 +19,7 @@ from src.utils.translation_keys import *
 from src.utils.variable_utils import get_distribution_translation_key
 from src.utils.equation_formatter import EquationFormatter
 from src.utils.app_logger import log_error
+from src.utils.markdown_renderer import render_markdown_to_html
 
 class ReportTab(BaseTab):
     UNIT_PLACEHOLDER = '-'
@@ -27,13 +28,17 @@ class ReportTab(BaseTab):
         .container { max-width: 800px; margin: auto; }
         .title { font-size: 20px; font-weight: bold; margin-top: 20px; margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px;}
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .three-line, .three-line thead, .three-line tbody, .three-line tr, .three-line th, .three-line td { border: none !important; }
+        .three-line th, .three-line td { padding: 8px; text-align: left; }
+        .three-line .tl-first th, .three-line .tl-first td { border-top: 1.5px solid #222 !important; }
+        .three-line .tl-header th, .three-line .tl-header td { border-bottom: 1px solid #666 !important; }
+        .three-line .tl-last th, .three-line .tl-last td { border-bottom: 1.5px solid #222 !important; }
         .equation { font-family: 'Times New Roman', serif; font-size: 16px; padding: 10px; border: 1px solid #ccc; margin-bottom: 20px; }
         .doc-table th { width: 180px; }
         .subtitle { font-size: 20px; font-weight: bold; margin-top: 10px; margin-bottom: 6px; }
         .description-body { border: 1px solid #ddd; padding: 10px; }
         .revision-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .revision-table th, .revision-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .revision-table th, .revision-table td { border: none; padding: 8px; text-align: left; }
     """).strip()
 
     def __init__(self, parent=None):
@@ -106,6 +111,32 @@ class ReportTab(BaseTab):
         text = str(value).strip()
         return text if text else placeholder
 
+    @staticmethod
+    def _build_cell_html(text, tag="td"):
+        return f"<{tag}>{html_lib.escape(str(text))}</{tag}>"
+
+    @staticmethod
+    def _render_three_line_table(rows, header_row_indexes=None, table_classes="three-line"):
+        if not rows:
+            return f"<table class=\"{table_classes}\"><tbody></tbody></table>"
+
+        header_set = set(header_row_indexes or [])
+        last_index = len(rows) - 1
+        rendered_rows = []
+        for idx, row_cells in enumerate(rows):
+            classes = []
+            if idx == 0:
+                classes.append("tl-first")
+            elif idx == last_index:
+                classes.append("tl-last")
+            else:
+                classes.append("tl-middle")
+            if idx in header_set:
+                classes.append("tl-header")
+            rendered_rows.append(f"<tr class=\"{' '.join(classes)}\">{''.join(row_cells)}</tr>")
+
+        return f"<table class=\"{table_classes}\"><tbody>{''.join(rendered_rows)}</tbody></table>"
+
     def _format_measurements_table(self, measurements):
         raw = self._to_display_text(measurements, '')
         if not raw:
@@ -114,28 +145,38 @@ class ReportTab(BaseTab):
         items = [part for part in re.split(r'[\s,\n]+', normalized) if part.strip()]
         if not items:
             return "<div>-</div>"
-        header = (
-            f"<tr><th>{html_lib.escape(self.tr(REPORT_MEASUREMENT_NUMBER))}</th>"
-            f"<th>{html_lib.escape(self.tr(REPORT_VALUE))}</th></tr>"
-        )
-        rows = "".join(
-            f"<tr><td>{idx + 1}</td><td>{html_lib.escape(item)}</td></tr>"
+        table_rows = [[
+            self._build_cell_html(self.tr(REPORT_MEASUREMENT_NUMBER), "th"),
+            self._build_cell_html(self.tr(REPORT_VALUE), "th"),
+        ]]
+        table_rows.extend(
+            [
+                self._build_cell_html(idx + 1),
+                self._build_cell_html(item),
+            ]
             for idx, item in enumerate(items)
         )
-        return f"<table><tbody>{header}{rows}</tbody></table>"
+        return self._render_three_line_table(table_rows, header_row_indexes={0})
 
-    @staticmethod
-    def _format_two_row_table(headers, values):
+    def _format_two_row_table(self, headers, values):
         if not headers or not values or len(headers) != len(values):
             return "<div>-</div>"
-        header_html = "".join(f"<th>{html_lib.escape(str(h))}</th>" for h in headers)
-        value_html = "".join(f"<td>{html_lib.escape(str(v))}</td>" for v in values)
-        return f"<table><tbody><tr>{header_html}</tr><tr>{value_html}</tr></tbody></table>"
+        rows = [
+            [self._build_cell_html(h, "th") for h in headers],
+            [self._build_cell_html(v) for v in values],
+        ]
+        return self._render_three_line_table(rows, header_row_indexes={0})
 
     @staticmethod
     def _format_description_block(text):
-        body = ReportTab._format_multiline_cell(text, '-')
+        markdown_html = render_markdown_to_html(text or "")
+        body = markdown_html if markdown_html else "-"
         return f'<div class="description-body">{body}</div>'
+
+    @staticmethod
+    def _format_markdown_inline_or_placeholder(text, placeholder='-'):
+        markdown_html = render_markdown_to_html(text or "")
+        return markdown_html if markdown_html else placeholder
 
     def retranslate_ui(self):
         """Retranslate UI text."""
@@ -327,30 +368,34 @@ class ReportTab(BaseTab):
         matrix = getattr(self.parent, 'correlation_coefficients', {})
         has_non_default_off_diagonal = False
 
-        header_cells = "".join(
-            f"<th>{html_lib.escape(str(var_name))}</th>"
-            for var_name in input_variables
-        )
-        rows = []
         for row_index, row_var in enumerate(input_variables):
-            data_cells = []
+            for col_index, col_var in enumerate(input_variables):
+                if row_index == col_index:
+                    continue
+                value = self._read_correlation_value(matrix, row_var, col_var)
+                if not np.isclose(value, 0.0):
+                    has_non_default_off_diagonal = True
+                    break
+            if has_non_default_off_diagonal:
+                break
+
+        if not has_non_default_off_diagonal:
+            return ""
+
+        table_rows = [[self._build_cell_html("", "th")] + [self._build_cell_html(var, "th") for var in input_variables]]
+        for row_index, row_var in enumerate(input_variables):
+            row_cells = [self._build_cell_html(row_var, "th")]
             for col_index, col_var in enumerate(input_variables):
                 if row_index == col_index:
                     value = 1.0
                 else:
                     value = self._read_correlation_value(matrix, row_var, col_var)
-                    if not np.isclose(value, 0.0):
-                        has_non_default_off_diagonal = True
-                data_cells.append(f"<td>{self._format_matrix_number(value)}</td>")
-            row_label = html_lib.escape(str(row_var))
-            rows.append(f"<tr><th>{row_label}</th>{''.join(data_cells)}</tr>")
-
-        if not has_non_default_off_diagonal:
-            return ""
+                row_cells.append(self._build_cell_html(self._format_matrix_number(value)))
+            table_rows.append(row_cells)
 
         return (
             f'<div class="subtitle">{self.tr(CORRELATION_MATRIX_INPUT)}</div>'
-            f"<table><tbody><tr><th></th>{header_cells}</tr>{''.join(rows)}</tbody></table>"
+            f"{self._render_three_line_table(table_rows, header_row_indexes={0})}"
         )
 
     def generate_report_html(self, equation):
@@ -372,6 +417,14 @@ class ReportTab(BaseTab):
             revision_rows = self.get_revision_rows(document_info)
             report_css = self._get_report_css()
             model_equation = self._get_model_equation_text() or equation
+            doc_table_html = self._render_three_line_table(
+                [
+                    [self._build_cell_html(self.tr(DOCUMENT_NUMBER), "th"), self._build_cell_html(doc_number or "-")],
+                    [self._build_cell_html(self.tr(DOCUMENT_NAME), "th"), self._build_cell_html(doc_name or "-")],
+                    [self._build_cell_html(self.tr(VERSION_INFO), "th"), self._build_cell_html(version_info or "-")],
+                ],
+                table_classes="three-line doc-table",
+            )
 
             html = textwrap.dedent(f"""
                 <html>
@@ -385,11 +438,7 @@ class ReportTab(BaseTab):
                 <body>
                 <div class="container">
                     <div class="title">{self.tr(REPORT_DOCUMENT_INFO)}</div>
-                    <table class="doc-table">
-                        <tr><th>{self.tr(DOCUMENT_NUMBER)}</th><td>{doc_number or '-'}</td></tr>
-                        <tr><th>{self.tr(DOCUMENT_NAME)}</th><td>{doc_name or '-'}</td></tr>
-                        <tr><th>{self.tr(VERSION_INFO)}</th><td>{version_info or '-'}</td></tr>
-                    </table>
+                    {doc_table_html}
                     <div class="subtitle">{self.tr(DESCRIPTION_LABEL)}</div>
                     <div class="description-body">{description_display}</div>
                     <div class="title">{self.tr(REPORT_MODEL_EQUATION)}</div>
@@ -399,16 +448,12 @@ class ReportTab(BaseTab):
             html += self._build_correlation_matrix_html()
 
             # 螟画焚荳隕ｧ繝・・繝悶Ν
-            html += f"""
-            <div class="title">{self.tr(REPORT_VARIABLE_LIST)}</div>
-            <table>
-                <tr>
-                    <th>{self.tr(REPORT_QUANTITY)}</th>
-                    <th>{self.tr(REPORT_UNIT)}</th>
-                    <th>{self.tr(REPORT_DEFINITION)}</th>
-                    <th>{self.tr(REPORT_UNCERTAINTY_TYPE)}</th>
-                </tr>
-            """
+            variable_table_rows = [[
+                self._build_cell_html(self.tr(REPORT_QUANTITY), "th"),
+                self._build_cell_html(self.tr(REPORT_UNIT), "th"),
+                self._build_cell_html(self.tr(REPORT_DEFINITION), "th"),
+                self._build_cell_html(self.tr(REPORT_UNCERTAINTY_TYPE), "th"),
+            ]]
             variables = getattr(self.parent, 'variables', [])
             # variables 縺ｯ繝ｪ繧ｹ繝医∪縺溘・霎樊嶌繧呈Φ螳壹☆繧九′縲√←縺｡繧峨〒繧ょｮ牙・縺ｫ謇ｱ縺医ｋ繧医≧豁｣隕丞喧
             if isinstance(variables, dict):
@@ -429,19 +474,18 @@ class ReportTab(BaseTab):
             for var_name in variable_names:
                 var_data = get_variable_data(var_name)
                 unit = var_data.get('unit', '') or self.UNIT_PLACEHOLDER
-                definition = self._format_multiline_cell(var_data.get('definition', ''))
+                definition = self._format_markdown_inline_or_placeholder(var_data.get('definition', ''))
                 uncertainty_type = self.get_uncertainty_type_display(var_data.get('type', ''), var_name)
                 safe_var_name = html_lib.escape(str(var_name))
                 safe_unit = html_lib.escape(str(unit))
-                html += f"""
-                <tr>
-                    <td>{safe_var_name}</td>
-                    <td>{safe_unit}</td>
-                    <td>{definition}</td>
-                    <td>{uncertainty_type}</td>
-                </tr>
-                """
-            html += "</table>"
+                variable_table_rows.append([
+                    f"<td>{safe_var_name}</td>",
+                    f"<td>{safe_unit}</td>",
+                    f"<td>{definition}</td>",
+                    f"<td>{uncertainty_type}</td>",
+                ])
+            html += f'<div class="title">{self.tr(REPORT_VARIABLE_LIST)}</div>'
+            html += self._render_three_line_table(variable_table_rows, header_row_indexes={0})
 
             # 蝗槫ｸｰ繝｢繝・Ν荳隕ｧ繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ
             point_names = getattr(self.parent, 'value_names', [])
@@ -534,69 +578,68 @@ class ReportTab(BaseTab):
                                 'contribution_rate': calc_tab.calibration_table.item(i, 7).text() if calc_tab.calibration_table.item(i, 7) else '-'
                             })
                         if budget:
-                            html += f"""
-                            <table>
-                                <tr>
-                                    <th>{self.tr(REPORT_FACTOR)}</th>
-                                    <th>{self.tr(REPORT_CENTRAL_VALUE)}</th>
-                                    <th>{self.tr(REPORT_STANDARD_UNCERTAINTY)}</th>
-                                    <th>{self.tr(REPORT_DOF)}</th>
-                                    <th>{self.tr(REPORT_DISTRIBUTION)}</th>
-                                    <th>{self.tr(REPORT_SENSITIVITY)}</th>
-                                    <th>{self.tr(REPORT_CONTRIBUTION)}</th>
-                                    <th>{self.tr(REPORT_CONTRIBUTION_RATE)}</th>
-                                </tr>
-                            """
+                            budget_rows = [[
+                                self._build_cell_html(self.tr(REPORT_FACTOR), "th"),
+                                self._build_cell_html(self.tr(REPORT_CENTRAL_VALUE), "th"),
+                                self._build_cell_html(self.tr(REPORT_STANDARD_UNCERTAINTY), "th"),
+                                self._build_cell_html(self.tr(REPORT_DOF), "th"),
+                                self._build_cell_html(self.tr(REPORT_DISTRIBUTION), "th"),
+                                self._build_cell_html(self.tr(REPORT_SENSITIVITY), "th"),
+                                self._build_cell_html(self.tr(REPORT_CONTRIBUTION), "th"),
+                                self._build_cell_html(self.tr(REPORT_CONTRIBUTION_RATE), "th"),
+                            ]]
                             for item in budget:
-                                html += f"""
-                                <tr>
-                                    <td>{item['variable']}</td>
-                                    <td>{item['central_value']}</td>
-                                    <td>{item['standard_uncertainty']}</td>
-                                    <td>{item['dof']}</td>
-                                    <td>{item['distribution']}</td>
-                                    <td>{item['sensitivity']}</td>
-                                    <td>{item['contribution']}</td>
-                                    <td>{item['contribution_rate']}</td>
-                                </tr>
-                                """
-                            html += "</table>"
+                                budget_rows.append([
+                                    self._build_cell_html(item['variable']),
+                                    self._build_cell_html(item['central_value']),
+                                    self._build_cell_html(item['standard_uncertainty']),
+                                    self._build_cell_html(item['dof']),
+                                    self._build_cell_html(item['distribution']),
+                                    self._build_cell_html(item['sensitivity']),
+                                    self._build_cell_html(item['contribution']),
+                                    self._build_cell_html(item['contribution_rate']),
+                                ])
+                            html += self._render_three_line_table(budget_rows, header_row_indexes={0})
 
                         # 險育ｮ礼ｵ先棡
                         html += f"<h4>{self.tr(REPORT_CALCULATION_RESULT)}</h4>"
-                        html += f"<table>"
-                        html += f"<tr><th>{self.tr(REPORT_ITEM)}</th><th>{self.tr(REPORT_VALUE)}</th></tr>"
-                        html += f"<tr><td>{self.tr(REPORT_EQUATION)}</td><td>{self.equation_formatter.format_equation(equation)}</td></tr>"
-                        html += f"<tr><td>{self.tr(REPORT_CENTRAL_VALUE)}</td><td>{calc_tab.central_value_label.text()}</td></tr>"
-                        html += f"<tr><td>{self.tr(REPORT_COMBINED_UNCERTAINTY)}</td><td>{calc_tab.standard_uncertainty_label.text()}</td></tr>"
-                        html += f"<tr><td>{self.tr(REPORT_EFFECTIVE_DOF)}</td><td>{calc_tab.effective_degrees_of_freedom_label.text()}</td></tr>"
-                        html += f"<tr><td>{self.tr(REPORT_COVERAGE_FACTOR)}</td><td>{calc_tab.coverage_factor_label.text()}</td></tr>"
-                        html += f"<tr><td>{self.tr(REPORT_EXPANDED_UNCERTAINTY)}</td><td>{calc_tab.expanded_uncertainty_label.text()}</td></tr>"
-                        html += f"</table>"
+                        result_rows = [
+                            [self._build_cell_html(self.tr(REPORT_ITEM), "th"), self._build_cell_html(self.tr(REPORT_VALUE), "th")],
+                            [self._build_cell_html(self.tr(REPORT_EQUATION)), f"<td>{self.equation_formatter.format_equation(equation)}</td>"],
+                            [self._build_cell_html(self.tr(REPORT_CENTRAL_VALUE)), self._build_cell_html(calc_tab.central_value_label.text())],
+                            [self._build_cell_html(self.tr(REPORT_COMBINED_UNCERTAINTY)), self._build_cell_html(calc_tab.standard_uncertainty_label.text())],
+                            [self._build_cell_html(self.tr(REPORT_EFFECTIVE_DOF)), self._build_cell_html(calc_tab.effective_degrees_of_freedom_label.text())],
+                            [self._build_cell_html(self.tr(REPORT_COVERAGE_FACTOR)), self._build_cell_html(calc_tab.coverage_factor_label.text())],
+                            [self._build_cell_html(self.tr(REPORT_EXPANDED_UNCERTAINTY)), self._build_cell_html(calc_tab.expanded_uncertainty_label.text())],
+                        ]
+                        html += self._render_three_line_table(result_rows, header_row_indexes={0})
 
             html += f'<div class="title">{self.tr(REPORT_REVISION_HISTORY)}</div>'
-            html += "<table class=\"revision-table\">"
-            html += "<tr>"
-            html += f"<th>{self.tr(REVISION_VERSION)}</th>"
-            html += f"<th>{self.tr(REVISION_DESCRIPTION)}</th>"
-            html += f"<th>{self.tr(REVISION_AUTHOR)}</th>"
-            html += f"<th>{self.tr(REVISION_CHECKER)}</th>"
-            html += f"<th>{self.tr(REVISION_APPROVER)}</th>"
-            html += f"<th>{self.tr(REVISION_DATE)}</th>"
-            html += "</tr>"
+            revision_table_rows = [[
+                self._build_cell_html(self.tr(REVISION_VERSION), "th"),
+                self._build_cell_html(self.tr(REVISION_DESCRIPTION), "th"),
+                self._build_cell_html(self.tr(REVISION_AUTHOR), "th"),
+                self._build_cell_html(self.tr(REVISION_CHECKER), "th"),
+                self._build_cell_html(self.tr(REVISION_APPROVER), "th"),
+                self._build_cell_html(self.tr(REVISION_DATE), "th"),
+            ]]
             if revision_rows:
                 for row in revision_rows:
-                    html += "<tr>"
-                    html += f"<td>{html_lib.escape(row.get('version', '') or '-')}</td>"
-                    html += f"<td>{html_lib.escape(row.get('description', '') or '-')}</td>"
-                    html += f"<td>{html_lib.escape(row.get('author', '') or '-')}</td>"
-                    html += f"<td>{html_lib.escape(row.get('checker', '') or '-')}</td>"
-                    html += f"<td>{html_lib.escape(row.get('approver', '') or '-')}</td>"
-                    html += f"<td>{html_lib.escape(row.get('date', '') or '-')}</td>"
-                    html += "</tr>"
+                    revision_table_rows.append([
+                        self._build_cell_html(row.get('version', '') or '-'),
+                        self._build_cell_html(row.get('description', '') or '-'),
+                        self._build_cell_html(row.get('author', '') or '-'),
+                        self._build_cell_html(row.get('checker', '') or '-'),
+                        self._build_cell_html(row.get('approver', '') or '-'),
+                        self._build_cell_html(row.get('date', '') or '-'),
+                    ])
             else:
-                html += "<tr><td colspan=\"6\">-</td></tr>"
-            html += "</table>"
+                revision_table_rows.append([f"<td colspan=\"6\">-</td>"])
+            html += self._render_three_line_table(
+                revision_table_rows,
+                header_row_indexes={0},
+                table_classes="three-line revision-table",
+            )
 
             html += """
             </div>
@@ -674,4 +717,3 @@ class ReportTab(BaseTab):
         file_name, _ = QFileDialog.getSaveFileName(self, self.tr(SAVE_REPORT_DIALOG_TITLE), "", "HTML File (*.html);;All Files (*)")
         if file_name:
             self.save_html_to_file(html, file_name)
-
