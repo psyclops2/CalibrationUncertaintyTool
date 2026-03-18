@@ -268,3 +268,118 @@ def test_report_tab_formats_variable_names_with_underscore_in_non_equation_secti
     assert "<td>X<sub>a_b</sub></td>" in html
     assert "<strong>V<sub>ref_stability</sub></strong>" in html
     assert "<strong>X<sub>a_b</sub></strong>" in html
+
+
+def test_report_tab_syncs_calculation_tab_selection_when_result_changes(qapp):
+    class _FakeCombo:
+        def __init__(self, items):
+            self._items = list(items)
+            self._index = 0 if self._items else -1
+
+        def findText(self, text):
+            try:
+                return self._items.index(text)
+            except ValueError:
+                return -1
+
+        def setCurrentIndex(self, index):
+            self._index = index
+
+        def currentText(self):
+            if 0 <= self._index < len(self._items):
+                return self._items[self._index]
+            return ""
+
+    class _FakeItem:
+        def __init__(self, text):
+            self._text = text
+
+        def text(self):
+            return self._text
+
+    class _FakeTable:
+        def __init__(self):
+            self._rows = []
+
+        def set_rows(self, rows):
+            self._rows = rows
+
+        def rowCount(self):
+            return len(self._rows)
+
+        def item(self, row, col):
+            try:
+                return _FakeItem(self._rows[row][col])
+            except Exception:
+                return None
+
+    class _FakeLabel:
+        def __init__(self):
+            self._text = "-"
+
+        def setText(self, text):
+            self._text = text
+
+        def text(self):
+            return self._text
+
+    class _FakeCalcTab:
+        def __init__(self):
+            self.result_combo = _FakeCombo(["Y1", "Y2"])
+            self.value_combo = _FakeCombo(["P1"])
+            self.calibration_table = _FakeTable()
+            self.central_value_label = _FakeLabel()
+            self.standard_uncertainty_label = _FakeLabel()
+            self.effective_degrees_of_freedom_label = _FakeLabel()
+            self.coverage_factor_label = _FakeLabel()
+            self.expanded_uncertainty_label = _FakeLabel()
+            self._update()
+
+        def _update(self):
+            result = self.result_combo.currentText()
+            self.calibration_table.set_rows(
+                [[f"factor_{result}", "1", "0.1", "10", "normal", "1", "0.1", "100%"]]
+            )
+            self.central_value_label.setText(f"CV_{result}")
+            self.standard_uncertainty_label.setText(f"SU_{result}")
+            self.effective_degrees_of_freedom_label.setText(f"DOF_{result}")
+            self.coverage_factor_label.setText(f"K_{result}")
+            self.expanded_uncertainty_label.setText(f"EU_{result}")
+
+        def on_result_changed(self, _):
+            self._update()
+
+        def on_value_changed(self, _):
+            self._update()
+
+    class DummyParent:
+        pass
+
+    parent = DummyParent()
+    parent.last_equation = "Y1=A,Y2=B"
+    parent.document_info = {}
+    parent.variables = ["Y1", "Y2", "A", "B"]
+    parent.result_variables = ["Y1", "Y2"]
+    parent.value_names = ["P1"]
+    parent.variable_values = {
+        "Y1": {"unit": "V", "type": "result", "values": [{"central_value": "1"}]},
+        "Y2": {"unit": "V", "type": "result", "values": [{"central_value": "2"}]},
+        "A": {"unit": "V", "type": "fixed", "values": [{"central_value": "1"}]},
+        "B": {"unit": "V", "type": "fixed", "values": [{"central_value": "2"}]},
+    }
+    parent.correlation_coefficients = {}
+    parent.uncertainty_calculation_tab = _FakeCalcTab()
+
+    tab = ReportTab()
+    tab.parent = parent
+    tab.result_combo.addItem("Y1")
+    tab.result_combo.addItem("Y2")
+    tab.result_combo.setCurrentText("Y1")
+    html_y1 = tab.generate_report_html("Y1=A")
+    assert "CV_Y1" in html_y1
+    assert "factor<sub>Y1</sub>" in html_y1
+
+    tab.result_combo.setCurrentText("Y2")
+    html_y2 = tab.generate_report_html("Y2=B")
+    assert "CV_Y2" in html_y2
+    assert "factor<sub>Y2</sub>" in html_y2

@@ -501,6 +501,12 @@ class ReportTab(BaseTab):
             # 蝗槫ｸｰ繝｢繝・Ν荳隕ｧ繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ
             point_names = getattr(self.parent, 'value_names', [])
             calc_tab = getattr(self.parent, 'uncertainty_calculation_tab', None)
+            if calc_tab and hasattr(calc_tab, 'result_combo'):
+                result_index = calc_tab.result_combo.findText(result_var)
+                if result_index >= 0:
+                    calc_tab.result_combo.setCurrentIndex(result_index)
+                if hasattr(calc_tab, 'on_result_changed'):
+                    calc_tab.on_result_changed(result_var)
 
             for idx, point_name in enumerate(point_names):
                 self.value_handler.current_value_index = idx
@@ -563,6 +569,8 @@ class ReportTab(BaseTab):
                     value_idx = calc_tab.value_combo.findText(point_name)
                     if value_idx >= 0:
                         calc_tab.value_combo.setCurrentIndex(value_idx)
+                        if hasattr(calc_tab, 'on_value_changed'):
+                            calc_tab.on_value_changed(value_idx)
                         budget = []
                         for i in range(calc_tab.calibration_table.rowCount()):
                             variable_name = calc_tab.calibration_table.item(i, 0).text() if calc_tab.calibration_table.item(i, 0) else '-'
