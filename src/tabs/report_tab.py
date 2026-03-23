@@ -237,7 +237,14 @@ class ReportTab(BaseTab):
     def update_variable_list(self, variables=None, result_variables=None):
         """Refresh result variable list."""
         try:
+            current_text = self.result_combo.currentText()
+            target_result = None
+            if hasattr(self.parent, 'get_selected_result_variable'):
+                target_result = self.parent.get_selected_result_variable()
+            if not target_result and current_text:
+                target_result = current_text
 
+            self.result_combo.blockSignals(True)
             self.result_combo.clear()
             
             # 蠑墓焚縺ｧ貂｡縺輔ｌ縺溷ｴ蜷医・縺昴ｌ繧剃ｽｿ逕ｨ
@@ -252,11 +259,19 @@ class ReportTab(BaseTab):
             else:
                 pass
 
-                
+            if target_result:
+                index = self.result_combo.findText(target_result)
+                if index >= 0:
+                    self.result_combo.setCurrentIndex(index)
+            if self.result_combo.currentIndex() < 0 and self.result_combo.count() > 0:
+                self.result_combo.setCurrentIndex(0)
+            self.result_combo.blockSignals(False)
+
             # 繝ｬ繝昴・繝医・譖ｴ譁ｰ
             self.update_report()
             
         except Exception as e:
+            self.result_combo.blockSignals(False)
             log_error(f"螟画焚繝ｪ繧ｹ繝域峩譁ｰ繧ｨ繝ｩ繝ｼ: {str(e)}", details=traceback.format_exc())
             
     def on_result_changed(self, result_var):
@@ -265,6 +280,31 @@ class ReportTab(BaseTab):
             return
             
         try:
+            combo_index = self.result_combo.findText(result_var)
+            if combo_index >= 0:
+                current_index = self.result_combo.currentIndex()
+                if current_index != combo_index:
+                    self.result_combo.blockSignals(True)
+                    self.result_combo.setCurrentIndex(combo_index)
+                    self.result_combo.blockSignals(False)
+            if hasattr(self.parent, 'set_selected_result_variable'):
+                self.parent.set_selected_result_variable(result_var)
+            calc_tab = getattr(self.parent, 'uncertainty_calculation_tab', None)
+            if calc_tab and hasattr(calc_tab, 'result_combo'):
+                result_index = calc_tab.result_combo.findText(result_var)
+                current_index = (
+                    calc_tab.result_combo.currentIndex()
+                    if hasattr(calc_tab.result_combo, 'currentIndex')
+                    else None
+                )
+                if result_index >= 0 and current_index != result_index:
+                    if hasattr(calc_tab.result_combo, 'blockSignals'):
+                        calc_tab.result_combo.blockSignals(True)
+                    calc_tab.result_combo.setCurrentIndex(result_index)
+                    if hasattr(calc_tab.result_combo, 'blockSignals'):
+                        calc_tab.result_combo.blockSignals(False)
+                    if hasattr(calc_tab, 'on_result_changed'):
+                        calc_tab.on_result_changed(result_var)
             self.update_report()
         except Exception as e:
             log_error(f"險育ｮ礼ｵ先棡螟画峩繧ｨ繝ｩ繝ｼ: {str(e)}", details=traceback.format_exc())
@@ -504,9 +544,21 @@ class ReportTab(BaseTab):
             if calc_tab and hasattr(calc_tab, 'result_combo'):
                 result_index = calc_tab.result_combo.findText(result_var)
                 if result_index >= 0:
+                    if hasattr(calc_tab.result_combo, 'blockSignals'):
+                        calc_tab.result_combo.blockSignals(True)
                     calc_tab.result_combo.setCurrentIndex(result_index)
+                    if hasattr(calc_tab.result_combo, 'blockSignals'):
+                        calc_tab.result_combo.blockSignals(False)
                 if hasattr(calc_tab, 'on_result_changed'):
                     calc_tab.on_result_changed(result_var)
+
+            original_point_index = getattr(self.parent, 'current_value_index', 0)
+            original_calc_point_index = None
+            original_calc_combo_index = None
+            if calc_tab and hasattr(calc_tab, 'value_handler'):
+                original_calc_point_index = calc_tab.value_handler.current_value_index
+            if calc_tab and hasattr(calc_tab, 'value_combo') and hasattr(calc_tab.value_combo, 'currentIndex'):
+                original_calc_combo_index = calc_tab.value_combo.currentIndex()
 
             for idx, point_name in enumerate(point_names):
                 self.value_handler.current_value_index = idx
@@ -566,71 +618,89 @@ class ReportTab(BaseTab):
                 # 荳咲｢ｺ縺九＆縺ｮ繝舌ず繧ｧ繝・ヨ・郁ｨ育ｮ励ち繝悶°繧牙叙蠕暦ｼ・
                 html += f'<h4>{self.tr(REPORT_UNCERTAINTY_BUDGET)}</h4>'
                 if calc_tab:
-                    value_idx = calc_tab.value_combo.findText(point_name)
-                    if value_idx >= 0:
-                        calc_tab.value_combo.setCurrentIndex(value_idx)
+                    if hasattr(calc_tab, 'value_handler'):
+                        calc_tab.value_handler.current_value_index = idx
+                    if hasattr(calc_tab, 'calculate_sensitivity_coefficients'):
+                        calc_tab.calculate_sensitivity_coefficients(equation)
+                    elif hasattr(calc_tab, 'value_combo'):
+                        if hasattr(calc_tab.value_combo, 'setCurrentIndex'):
+                            calc_tab.value_combo.setCurrentIndex(idx)
                         if hasattr(calc_tab, 'on_value_changed'):
-                            calc_tab.on_value_changed(value_idx)
-                        budget = []
-                        for i in range(calc_tab.calibration_table.rowCount()):
-                            variable_name = calc_tab.calibration_table.item(i, 0).text() if calc_tab.calibration_table.item(i, 0) else '-'
-                            unit = self._get_unit(variable_name)
-                            budget.append({
-                                'variable': variable_name,
-                                'central_value': self._format_with_unit(
-                                    calc_tab.calibration_table.item(i, 1).text() if calc_tab.calibration_table.item(i, 1) else '-',
-                                    unit,
-                                ),
-                                'standard_uncertainty': self._format_with_unit(
-                                    calc_tab.calibration_table.item(i, 2).text() if calc_tab.calibration_table.item(i, 2) else '-',
-                                    unit,
-                                ),
-                                'dof': calc_tab.calibration_table.item(i, 3).text() if calc_tab.calibration_table.item(i, 3) else '-',
-                                'distribution': (
-                                    self.tr(get_distribution_translation_key(self.value_handler.get_distribution(variable_name)))
-                                    if variable_name
-                                    else '-'
-                                ) or '-',
-                                'sensitivity': calc_tab.calibration_table.item(i, 5).text() if calc_tab.calibration_table.item(i, 5) else '-',
-                                'contribution': calc_tab.calibration_table.item(i, 6).text() if calc_tab.calibration_table.item(i, 6) else '-',
-                                'contribution_rate': calc_tab.calibration_table.item(i, 7).text() if calc_tab.calibration_table.item(i, 7) else '-'
-                            })
-                        if budget:
-                            budget_rows = [[
-                                self._build_cell_html(self.tr(REPORT_FACTOR), "th"),
-                                self._build_cell_html(self.tr(REPORT_CENTRAL_VALUE), "th"),
-                                self._build_cell_html(self.tr(REPORT_STANDARD_UNCERTAINTY), "th"),
-                                self._build_cell_html(self.tr(REPORT_DOF), "th"),
-                                self._build_cell_html(self.tr(REPORT_DISTRIBUTION), "th"),
-                                self._build_cell_html(self.tr(REPORT_SENSITIVITY), "th"),
-                                self._build_cell_html(self.tr(REPORT_CONTRIBUTION), "th"),
-                                self._build_cell_html(self.tr(REPORT_CONTRIBUTION_RATE), "th"),
-                            ]]
-                            for item in budget:
-                                budget_rows.append([
-                                    self._build_variable_cell_html(item['variable']),
-                                    self._build_cell_html(item['central_value']),
-                                    self._build_cell_html(item['standard_uncertainty']),
-                                    self._build_cell_html(item['dof']),
-                                    self._build_cell_html(item['distribution']),
-                                    self._build_cell_html(item['sensitivity']),
-                                    self._build_cell_html(item['contribution']),
-                                    self._build_cell_html(item['contribution_rate']),
-                                ])
-                            html += self._render_three_line_table(budget_rows, header_row_indexes={0})
+                            calc_tab.on_value_changed(idx)
+                    budget = []
+                    for i in range(calc_tab.calibration_table.rowCount()):
+                        variable_name = calc_tab.calibration_table.item(i, 0).text() if calc_tab.calibration_table.item(i, 0) else '-'
+                        unit = self._get_unit(variable_name)
+                        budget.append({
+                            'variable': variable_name,
+                            'central_value': self._format_with_unit(
+                                calc_tab.calibration_table.item(i, 1).text() if calc_tab.calibration_table.item(i, 1) else '-',
+                                unit,
+                            ),
+                            'standard_uncertainty': self._format_with_unit(
+                                calc_tab.calibration_table.item(i, 2).text() if calc_tab.calibration_table.item(i, 2) else '-',
+                                unit,
+                            ),
+                            'dof': calc_tab.calibration_table.item(i, 3).text() if calc_tab.calibration_table.item(i, 3) else '-',
+                            'distribution': (
+                                self.tr(get_distribution_translation_key(self.value_handler.get_distribution(variable_name)))
+                                if variable_name
+                                else '-'
+                            ) or '-',
+                            'sensitivity': calc_tab.calibration_table.item(i, 5).text() if calc_tab.calibration_table.item(i, 5) else '-',
+                            'contribution': calc_tab.calibration_table.item(i, 6).text() if calc_tab.calibration_table.item(i, 6) else '-',
+                            'contribution_rate': calc_tab.calibration_table.item(i, 7).text() if calc_tab.calibration_table.item(i, 7) else '-'
+                        })
+                    if budget:
+                        budget_rows = [[
+                            self._build_cell_html(self.tr(REPORT_FACTOR), "th"),
+                            self._build_cell_html(self.tr(REPORT_CENTRAL_VALUE), "th"),
+                            self._build_cell_html(self.tr(REPORT_STANDARD_UNCERTAINTY), "th"),
+                            self._build_cell_html(self.tr(REPORT_DOF), "th"),
+                            self._build_cell_html(self.tr(REPORT_DISTRIBUTION), "th"),
+                            self._build_cell_html(self.tr(REPORT_SENSITIVITY), "th"),
+                            self._build_cell_html(self.tr(REPORT_CONTRIBUTION), "th"),
+                            self._build_cell_html(self.tr(REPORT_CONTRIBUTION_RATE), "th"),
+                        ]]
+                        for item in budget:
+                            budget_rows.append([
+                                self._build_variable_cell_html(item['variable']),
+                                self._build_cell_html(item['central_value']),
+                                self._build_cell_html(item['standard_uncertainty']),
+                                self._build_cell_html(item['dof']),
+                                self._build_cell_html(item['distribution']),
+                                self._build_cell_html(item['sensitivity']),
+                                self._build_cell_html(item['contribution']),
+                                self._build_cell_html(item['contribution_rate']),
+                            ])
+                        html += self._render_three_line_table(budget_rows, header_row_indexes={0})
 
-                        # 險育ｮ礼ｵ先棡
-                        html += f"<h4>{self.tr(REPORT_CALCULATION_RESULT)}</h4>"
-                        result_rows = [
-                            [self._build_cell_html(self.tr(REPORT_ITEM), "th"), self._build_cell_html(self.tr(REPORT_VALUE), "th")],
-                            [self._build_cell_html(self.tr(REPORT_EQUATION)), f"<td>{self.equation_formatter.format_equation(equation)}</td>"],
-                            [self._build_cell_html(self.tr(REPORT_CENTRAL_VALUE)), self._build_cell_html(calc_tab.central_value_label.text())],
-                            [self._build_cell_html(self.tr(REPORT_COMBINED_UNCERTAINTY)), self._build_cell_html(calc_tab.standard_uncertainty_label.text())],
-                            [self._build_cell_html(self.tr(REPORT_EFFECTIVE_DOF)), self._build_cell_html(calc_tab.effective_degrees_of_freedom_label.text())],
-                            [self._build_cell_html(self.tr(REPORT_COVERAGE_FACTOR)), self._build_cell_html(calc_tab.coverage_factor_label.text())],
-                            [self._build_cell_html(self.tr(REPORT_EXPANDED_UNCERTAINTY)), self._build_cell_html(calc_tab.expanded_uncertainty_label.text())],
-                        ]
-                        html += self._render_three_line_table(result_rows, header_row_indexes={0})
+                    # 險育ｮ礼ｵ先棡
+                    html += f"<h4>{self.tr(REPORT_CALCULATION_RESULT)}</h4>"
+                    result_rows = [
+                        [self._build_cell_html(self.tr(REPORT_ITEM), "th"), self._build_cell_html(self.tr(REPORT_VALUE), "th")],
+                        [self._build_cell_html(self.tr(REPORT_EQUATION)), f"<td>{self.equation_formatter.format_equation(equation)}</td>"],
+                        [self._build_cell_html(self.tr(REPORT_CENTRAL_VALUE)), self._build_cell_html(calc_tab.central_value_label.text())],
+                        [self._build_cell_html(self.tr(REPORT_COMBINED_UNCERTAINTY)), self._build_cell_html(calc_tab.standard_uncertainty_label.text())],
+                        [self._build_cell_html(self.tr(REPORT_EFFECTIVE_DOF)), self._build_cell_html(calc_tab.effective_degrees_of_freedom_label.text())],
+                        [self._build_cell_html(self.tr(REPORT_COVERAGE_FACTOR)), self._build_cell_html(calc_tab.coverage_factor_label.text())],
+                        [self._build_cell_html(self.tr(REPORT_EXPANDED_UNCERTAINTY)), self._build_cell_html(calc_tab.expanded_uncertainty_label.text())],
+                    ]
+                    html += self._render_three_line_table(result_rows, header_row_indexes={0})
+
+            self.value_handler.current_value_index = original_point_index
+            if calc_tab and hasattr(calc_tab, 'value_handler') and original_calc_point_index is not None:
+                calc_tab.value_handler.current_value_index = original_calc_point_index
+            if hasattr(self.parent, 'current_value_index'):
+                self.parent.current_value_index = original_point_index
+            if calc_tab and hasattr(calc_tab, 'value_combo') and original_calc_combo_index is not None:
+                if hasattr(calc_tab.value_combo, 'blockSignals'):
+                    calc_tab.value_combo.blockSignals(True)
+                calc_tab.value_combo.setCurrentIndex(original_calc_combo_index)
+                if hasattr(calc_tab.value_combo, 'blockSignals'):
+                    calc_tab.value_combo.blockSignals(False)
+            if calc_tab and hasattr(calc_tab, 'calculate_sensitivity_coefficients'):
+                calc_tab.calculate_sensitivity_coefficients(equation)
 
             html += f'<div class="title">{self.tr(REPORT_REVISION_HISTORY)}</div>'
             revision_table_rows = [[

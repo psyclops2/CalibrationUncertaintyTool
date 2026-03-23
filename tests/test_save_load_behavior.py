@@ -186,3 +186,78 @@ def test_load_data_ignores_legacy_last_selected_fields_and_restores_first_variab
     assert current_item.data(Qt.UserRole) == "result_x"
     assert main_window.variables_tab.handlers.last_selected_variable == "result_x"
     assert main_window.variables_tab.value_combo.currentIndex() == 1
+
+
+def test_report_tab_does_not_change_shared_calibration_point_or_variable_selection(main_window):
+    main_window.variables = ["result_x", "input_a", "input_b"]
+    main_window.result_variables = ["result_x"]
+    main_window.value_count = 2
+    main_window.value_names = ["50 V", "10 V"]
+    main_window.current_value_index = 0
+    main_window.variable_values = {
+        "result_x": {
+            "type": "result",
+            "unit": "V",
+            "values": [{}, {}],
+        },
+        "input_a": {
+            "type": "fixed",
+            "unit": "V",
+            "definition": "",
+            "values": [
+                {"central_value": "1", "description": ""},
+                {"central_value": "2", "description": ""},
+            ],
+        },
+        "input_b": {
+            "type": "fixed",
+            "unit": "V",
+            "definition": "",
+            "values": [
+                {"central_value": "3", "description": ""},
+                {"central_value": "4", "description": ""},
+            ],
+        },
+    }
+    main_window.last_equation = "result_x = input_a + input_b"
+
+    main_window.variables_tab.handlers.last_selected_variable = "input_b"
+    main_window.variables_tab.restore_selection_state()
+    main_window.uncertainty_calculation_tab.update_result_combo()
+    main_window.uncertainty_calculation_tab.update_value_combo()
+    main_window.report_tab.update_variable_list(main_window.variables, main_window.result_variables)
+
+    assert main_window.current_value_index == 0
+    assert main_window.variables_tab.variable_list.currentItem().data(Qt.UserRole) == "input_b"
+
+    main_window.report_tab.generate_report()
+
+    assert main_window.current_value_index == 0
+    assert main_window.variables_tab.handlers.last_selected_variable == "input_b"
+    assert main_window.variables_tab.variable_list.currentItem().data(Qt.UserRole) == "input_b"
+
+
+def test_result_variable_selection_is_shared_between_calculation_and_report_tabs(main_window):
+    main_window.variables = ["result_x", "result_y", "input_a"]
+    main_window.result_variables = ["result_x", "result_y"]
+    main_window.value_count = 1
+    main_window.value_names = ["P1"]
+    main_window.current_value_index = 0
+    main_window.variable_values = {
+        "result_x": {"type": "result", "unit": "V", "values": [{}]},
+        "result_y": {"type": "result", "unit": "V", "values": [{}]},
+        "input_a": {"type": "fixed", "unit": "V", "values": [{"central_value": "1", "description": ""}]},
+    }
+    main_window.last_equation = "result_x = input_a\nresult_y = input_a"
+
+    main_window.uncertainty_calculation_tab.update_result_combo()
+    main_window.report_tab.update_variable_list(main_window.variables, main_window.result_variables)
+
+    main_window.report_tab.on_result_changed("result_y")
+    assert main_window.selected_result_variable == "result_y"
+    assert main_window.uncertainty_calculation_tab.result_combo.currentText() == "result_y"
+
+    main_window.uncertainty_calculation_tab.on_result_changed("result_x")
+    main_window.report_tab.update_variable_list(main_window.variables, main_window.result_variables)
+    assert main_window.selected_result_variable == "result_x"
+    assert main_window.report_tab.result_combo.currentText() == "result_x"

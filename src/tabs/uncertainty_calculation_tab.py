@@ -334,6 +334,7 @@ class UncertaintyCalculationTab(BaseTab):
     def update_result_combo(self):
         """計算結果の選択肢を更新"""
         try:
+            current_text = self.result_combo.currentText()
             self.result_combo.blockSignals(True)
             self.result_combo.clear()
             
@@ -350,6 +351,19 @@ class UncertaintyCalculationTab(BaseTab):
                     self._clear_calculation_display()
             else:
                 self._clear_calculation_display()
+
+            target_var = None
+            if self.parent and hasattr(self.parent, 'get_selected_result_variable'):
+                target_var = self.parent.get_selected_result_variable()
+            if not target_var and current_text:
+                target_var = current_text
+
+            if target_var:
+                index = self.result_combo.findText(target_var)
+                if index >= 0:
+                    self.result_combo.setCurrentIndex(index)
+            if self.result_combo.currentIndex() < 0 and self.result_combo.count() > 0:
+                self.result_combo.setCurrentIndex(0)
 
             self.result_combo.blockSignals(False)
                 
@@ -382,6 +396,8 @@ class UncertaintyCalculationTab(BaseTab):
             return
             
         try:
+            if self.parent and hasattr(self.parent, 'set_selected_result_variable'):
+                self.parent.set_selected_result_variable(result_var)
             # 選択された計算結果変数の式を取得
             equation = self.equation_handler.get_target_equation(result_var)
             if not equation:

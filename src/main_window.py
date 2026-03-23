@@ -71,6 +71,7 @@ class MainWindow(QMainWindow):
         self.last_equation = ""
         self.value_count = 1
         self.current_value_index = 0
+        self.selected_result_variable = None
         self.value_names = [f"{self.tr(CALIBRATION_POINT_NAME)} {i+1}" for i in range(self.value_count)]
         self.regressions = {}
         self.document_info = {
@@ -250,6 +251,23 @@ class MainWindow(QMainWindow):
             self.uncertainty_calculation_tab.update_value_combo()
         if hasattr(self, 'report_tab'):
             self.report_tab.update_report()
+
+    def get_selected_result_variable(self):
+        """共有する計算対象変数を返す。未設定なら先頭の結果変数を採用する。"""
+        if self.selected_result_variable in self.result_variables:
+            return self.selected_result_variable
+        if self.result_variables:
+            self.selected_result_variable = self.result_variables[0]
+        else:
+            self.selected_result_variable = None
+        return self.selected_result_variable
+
+    def set_selected_result_variable(self, var_name):
+        """不確かさ計算タブとレポートタブで共有する計算対象変数を更新する。"""
+        if var_name in self.result_variables:
+            self.selected_result_variable = var_name
+        elif not self.result_variables:
+            self.selected_result_variable = None
         
     def get_save_data(self):
         """保存するデータを辞書にまとめる"""
@@ -356,6 +374,7 @@ class MainWindow(QMainWindow):
             self.value_count = max(1, len(self.value_names))
             if self.current_value_index >= self.value_count:
                 self.current_value_index = self.value_count - 1
+            self.selected_result_variable = None
             self.document_info = data.get('document_info', self.document_info)
             if hasattr(self, 'document_info_tab'):
                 self.document_info_tab.set_document_info(self.document_info)
@@ -397,13 +416,12 @@ class MainWindow(QMainWindow):
             if hasattr(self, 'uncertainty_calculation_tab'):
                 self.uncertainty_calculation_tab.update_result_combo()
                 self.uncertainty_calculation_tab.update_value_combo()
-                # 選択状態を復元し、計算を実行
-                if self.uncertainty_calculation_tab.result_combo.count() > 0:
-                    self.uncertainty_calculation_tab.result_combo.setCurrentIndex(0)
-                    self.uncertainty_calculation_tab.on_result_changed(self.uncertainty_calculation_tab.result_combo.currentText())
+                result_var = self.uncertainty_calculation_tab.result_combo.currentText()
+                if result_var:
+                    self.set_selected_result_variable(result_var)
+                    self.uncertainty_calculation_tab.on_result_changed(result_var)
                 if self.uncertainty_calculation_tab.value_combo.count() > 0:
-                    self.uncertainty_calculation_tab.value_combo.setCurrentIndex(0)
-                    self.uncertainty_calculation_tab.on_value_changed(0)
+                    self.uncertainty_calculation_tab.on_value_changed(self.current_value_index)
             if hasattr(self, 'monte_carlo_tab'):
                 self.monte_carlo_tab.refresh_controls()
             if hasattr(self, 'correlation_tab'):
@@ -629,6 +647,7 @@ class MainWindow(QMainWindow):
         """変数の検出と変数タブの更新"""
         try:
             self.prune_variable_values()
+            self.get_selected_result_variable()
             if hasattr(self, 'variables_tab'):
                 self.variables_tab.update_variable_list(
                     self.variables,

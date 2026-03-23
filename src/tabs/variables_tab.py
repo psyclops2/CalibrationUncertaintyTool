@@ -433,6 +433,13 @@ class VariablesTab(BaseTab):
     def update_variable_list(self, variables, result_variables):
         """変数リストを更新"""
         try:
+            current_variable = self.handlers.last_selected_variable
+            if not current_variable:
+                current_item = self.variable_list.currentItem()
+                if current_item:
+                    current_variable = current_item.data(Qt.UserRole)
+
+            self.variable_list.blockSignals(True)
             self.variable_list.clear()
             
             # 量を計算結果量と入力量に分類
@@ -449,18 +456,12 @@ class VariablesTab(BaseTab):
                 item = QListWidgetItem(f"{var} [入力]")
                 item.setData(Qt.UserRole, var)
                 self.variable_list.addItem(item)
-            
-            # 前回選択していた変数が存在する場合は、それを選択状態に戻す
-            if self.handlers.last_selected_variable:
-                for i in range(self.variable_list.count()):
-                    item = self.variable_list.item(i)
-                    if item.data(Qt.UserRole) == self.handlers.last_selected_variable:
-                        self.variable_list.setCurrentItem(item)
-                        break
-            
+            self.handlers.last_selected_variable = current_variable
 
+            self.variable_list.blockSignals(False)
             
         except Exception as e:
+            self.variable_list.blockSignals(False)
             log_error(f"変数リスト更新エラー: {str(e)}", details=traceback.format_exc())
             QMessageBox.warning(self, "エラー", "変数リストの更新に失敗しました。")
             
