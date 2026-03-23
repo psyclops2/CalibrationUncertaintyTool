@@ -48,7 +48,7 @@ class AboutDialog(QDialog):
         app_info.setStyleSheet("font-size: 16px; font-weight: bold;")
         layout.addWidget(app_info)
 
-        version = "1.0.0"
+        version = "1.00.01"
         version_label = QLabel(f"Version: {version}")
         layout.addWidget(version_label)
 
