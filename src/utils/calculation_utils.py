@@ -1,4 +1,5 @@
-import re
+import ast
+import operator
 import math
 import traceback
 import decimal
@@ -32,25 +33,46 @@ def evaluate_formula(formula, variables=None):
         # ^ を Python のべき乗演算子へ変換
         formula = formula.replace('^', '**')
 
-        # 数値リテラルを Decimal に変換（科学記法: 1e-6, 1E3 に対応）
-        # 例: 50e-6, 2E3, 0.5e+2, .25E-1
-        number_pattern = (
-            r'(?<![A-Za-z_"])'
-            r'((?:\d+\.\d*|\.\d+|\d+)(?:[eE][+-]?\d+)?)'
-        )
-        formula = re.sub(number_pattern, r'Decimal("\1")', formula)
-
-        # 変数展開は数値変換の後に実行する。
-        # 先に実行すると Decimal("...") 内の数字が再置換される。
-        for var_name, var_value in variables.items():
-            formula = re.sub(
-                r'\b' + re.escape(str(var_name)) + r'\b',
-                f'Decimal("{var_value}")',
-                formula,
+        tree = ast.parse(formula, mode="eval")
+        binary_ops = {
+            ast.Add: operator.add, ast.Sub: operator.sub,
+            ast.Mult: operator.mul, ast.Div: operator.truediv,
+            ast.Pow: operator.pow, ast.Mod: operator.mod,
+            ast.FloorDiv: operator.floordiv,
+        }
+        functions = {
+            name: getattr(math, name) for name in (
+                "sin", "cos", "tan", "asin", "acos", "atan", "atan2",
+                "sinh", "cosh", "tanh", "exp", "log", "log10", "log2",
+                "sqrt", "fabs", "floor", "ceil", "degrees", "radians",
             )
+        }
 
-        result = eval(formula, {"Decimal": Decimal, "math": math})
-        return result
+        def evaluate(node):
+            if isinstance(node, ast.Constant) and type(node.value) in (int, float):
+                return Decimal(ast.get_source_segment(formula, node).replace("_", ""))
+            if isinstance(node, ast.Name) and node.id in variables:
+                return Decimal(str(variables[node.id]))
+            if isinstance(node, ast.BinOp) and type(node.op) in binary_ops:
+                return binary_ops[type(node.op)](evaluate(node.left), evaluate(node.right))
+            if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
+                value = evaluate(node.operand)
+                return -value if isinstance(node.op, ast.USub) else value
+            if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name):
+                if node.value.id == "math" and node.attr in ("pi", "e", "tau"):
+                    return Decimal(str(getattr(math, node.attr)))
+            if isinstance(node, ast.Call) and not node.keywords:
+                func = node.func
+                if (isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name)
+                        and func.value.id == "math" and func.attr in functions):
+                    args = [evaluate(arg) for arg in node.args]
+                    # sqrt can preserve Decimal precision; other math functions use float.
+                    if func.attr == "sqrt" and len(args) == 1:
+                        return args[0].sqrt()
+                    return Decimal(str(functions[func.attr](*args)))
+            raise ValueError("Unsupported formula expression")
+
+        return evaluate(tree.body)
 
     except Exception as e:
         log_error(f"計算式の評価エラー: {str(e)}", details=traceback.format_exc())

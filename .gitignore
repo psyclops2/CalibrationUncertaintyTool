@@ -157,3 +157,14 @@ Desktop.ini
 !.env.sample
 config.ini
 config.local.ini
+
+# Local uv cache
+.uv-cache/
+
+# Project-local Python and environment backups
+.python/
+venv.backup-*/
+
+# Unsaved project recovery data
+logs/recovery-*.json
+logs/recovery-*.json.lock

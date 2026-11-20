@@ -33,7 +33,7 @@ class TestUncertaintyRoundingConfig(unittest.TestCase):
             original = number_formatter.ConfigLoader
             try:
                 number_formatter.ConfigLoader = lambda: ConfigLoader(str(config_path))
-                self.assertEqual(number_formatter.format_expanded_uncertainty(288.6), "290.0")
+                self.assertEqual(number_formatter.format_expanded_uncertainty(288.6), "290")
             finally:
                 number_formatter.ConfigLoader = original
         finally:

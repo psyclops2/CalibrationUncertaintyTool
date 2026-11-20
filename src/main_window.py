@@ -1,11 +1,15 @@
 ﻿import traceback
 import copy
 import os
+import uuid
+from pathlib import Path
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTabWidget, QMessageBox, QFileDialog, QMenuBar, QMenu
 from PySide6.QtGui import QAction
-from PySide6.QtCore import Qt, QEvent, Slot, QLocale
+from PySide6.QtCore import Qt, QEvent, Slot, QLocale, QTimer, QLockFile
 import json
 import decimal
+
+from src.utils.project_io import atomic_write_json, validate_project
 
 from src.utils.app_logger import log_error as write_error_log
 
@@ -86,6 +90,16 @@ class MainWindow(QMainWindow):
         # UIの初期化
         self.setup_ui()
         self.create_menu_bar()
+        self._saved_snapshot = self._project_snapshot()
+        self._dirty = False
+        self._recovery_path = Path(__file__).resolve().parent.parent / "logs" / ("recovery-" + uuid.uuid4().hex + ".json")
+        self._change_timer = QTimer(self)
+        self._change_timer.timeout.connect(self._check_modified)
+        self._change_timer.start(1000)
+        self._recovery_timer = QTimer(self)
+        self._recovery_timer.timeout.connect(self._autosave_recovery)
+        self._recovery_timer.start(30000)
+        QTimer.singleShot(0, self._offer_recovery)
 
     def set_current_file_path(self, file_path):
         """現在開いているファイルパスを設定して、タイトルを更新する"""
@@ -95,6 +109,8 @@ class MainWindow(QMainWindow):
     def update_window_title(self):
         """アプリ名の後に現在のファイル名を表示する"""
         base_title = self.tr(APP_TITLE)
+        if getattr(self, "_dirty", False):
+            base_title += " *"
         if self.current_file_path:
             self.setWindowTitle(f"{base_title} - {os.path.basename(self.current_file_path)}")
         else:
@@ -361,8 +377,38 @@ class MainWindow(QMainWindow):
         return cleaned_info
         
     def load_data(self, data, show_message=True):
+        previous = copy.deepcopy(self.get_save_data())
+        selected_result = self.selected_result_variable
+        selected_variable = self.variables_tab.handlers.last_selected_variable
+        cached_results = copy.deepcopy(getattr(self, "calculation_results", {}))
+        applying = False
+        try:
+            validate_project(data)
+            applying = True
+            self._apply_data(copy.deepcopy(data))
+        except Exception as error:
+            try:
+                if applying:
+                    self._apply_data(previous)
+                    self.set_selected_result_variable(selected_result)
+                    self.variables_tab.handlers.last_selected_variable = selected_variable
+                    self.variables_tab.restore_selection_state()
+                    self.calculation_results = cached_results
+            except Exception:
+                write_error_log("Project rollback failed", details=traceback.format_exc())
+            QMessageBox.critical(self, self.tr(MESSAGE_ERROR), f"読み込みに失敗しました。作業内容を保持します。\n{error}")
+            return False
+        self._saved_snapshot = self._project_snapshot()
+        self._dirty = False
+        self.update_window_title()
+        if show_message:
+            QMessageBox.information(self, self.tr(MESSAGE_SUCCESS), self.tr(FILE_LOADED))
+        return True
+
+    def _apply_data(self, data, show_message=False):
         """読み込んだデータでアプリケーションの状態を更新"""
         try:
+            self.calculation_results = {}
             self.variables = data.get('variables', [])
             self.result_variables = data.get('result_variables', [])
             self.correlation_coefficients = data.get('correlation_coefficients', {})
@@ -433,22 +479,14 @@ class MainWindow(QMainWindow):
             if show_message:
                 QMessageBox.information(self, self.tr(MESSAGE_SUCCESS), self.tr(FILE_LOADED))
              
-        except Exception as e:
-            self.log_error(f"データ読み込みエラー: {str(e)}", "データ読み込みエラー", details=traceback.format_exc())
-            QMessageBox.critical(self, self.tr(MESSAGE_ERROR), f"データの読み込みに失敗しました:\n{str(e)}")
+        except Exception:
+            raise
 
     def new_file(self):
         """新規ドキュメントを作成して初期状態に戻す"""
-        if self.current_file_path:
-            reply = QMessageBox.question(
-                self,
-                self._new_file_confirm_title(),
-                self._new_file_confirm_text(),
-                QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.No,
-            )
-            if reply != QMessageBox.Yes:
-                return
+        if not self._confirm_unsaved():
+            return
+        self._remove_recovery()
 
         empty_data = {
             'document_info': {
@@ -473,16 +511,11 @@ class MainWindow(QMainWindow):
         self.set_current_file_path(None)
 
     def _write_save_data_to_path(self, file_path):
-        save_data = self.get_save_data()
-
-        # Decimal型のみstrに変換するカスタムエンコーダ
-        def decimal_default(obj):
-            if isinstance(obj, decimal.Decimal):
-                return str(obj)
-            raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
-
-        with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(save_data, f, indent=4, ensure_ascii=False, default=decimal_default)
+        atomic_write_json(file_path, self.get_save_data())
+        self._saved_snapshot = self._project_snapshot()
+        self._dirty = False
+        self._remove_recovery()
+        self.update_window_title()
 
     def save_file(self):
         """上書き保存（保存先が未設定の場合は「名前を付けて保存」）"""
@@ -492,6 +525,7 @@ class MainWindow(QMainWindow):
         try:
             self._write_save_data_to_path(self.current_file_path)
             QMessageBox.information(self, self.tr(MESSAGE_SUCCESS), self.tr(FILE_SAVED))
+            return True
         except Exception as e:
             self.log_error(f"ファイル保存エラー: {str(e)}", "ファイル保存エラー", details=traceback.format_exc())
             QMessageBox.critical(self, self.tr(MESSAGE_ERROR), self.tr(FILE_SAVE_ERROR) + f"\n{str(e)}")
@@ -509,11 +543,12 @@ class MainWindow(QMainWindow):
             )
 
             if not file_path:
-                return
+                return False
 
             self._write_save_data_to_path(file_path)
             self.set_current_file_path(file_path)
             QMessageBox.information(self, self.tr(MESSAGE_SUCCESS), self.tr(FILE_SAVED))
+            return True
 
         except Exception as e:
             self.log_error(f"ファイル保存エラー: {str(e)}", "ファイル保存エラー", details=traceback.format_exc())
@@ -532,10 +567,13 @@ class MainWindow(QMainWindow):
             )
             
             if file_path:
+                if not self._confirm_unsaved():
+                    return
                 with open(file_path, 'r', encoding='utf-8') as f:
                     loaded_data = json.load(f)
-                self.load_data(loaded_data)
-                self.set_current_file_path(file_path)
+                if self.load_data(loaded_data):
+                    self._remove_recovery()
+                    self.set_current_file_path(file_path)
                 
         except FileNotFoundError:
             QMessageBox.critical(self, self.tr(MESSAGE_ERROR), self.tr(FILE_NOT_FOUND))
@@ -816,3 +854,94 @@ class MainWindow(QMainWindow):
         self.tab_widget.setCurrentIndex(7)
 
     # ... existing code ... 
+
+    def _project_snapshot(self):
+        data = self.get_save_data()
+        data.pop("current_value_index", None)
+        return json.dumps(data, sort_keys=True, ensure_ascii=False, default=str)
+
+    def _check_modified(self):
+        self._dirty = self._project_snapshot() != self._saved_snapshot
+        self.update_window_title()
+        return self._dirty
+
+    def _confirm_unsaved(self):
+        if not self._check_modified():
+            return True
+        reply = QMessageBox.question(self, "未保存の変更", "変更内容を保存しますか？",
+                                     QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
+                                     QMessageBox.Save)
+        if reply == QMessageBox.Save:
+            return bool(self.save_file())
+        return reply == QMessageBox.Discard
+
+    def _remove_recovery(self):
+        self._recovery_snapshot = None
+        path = getattr(self, "_recovery_path", None)
+        if path:
+            path.unlink(missing_ok=True)
+        lock = getattr(self, "_recovery_lock", None)
+        if lock:
+            lock.unlock()
+            self._recovery_lock = None
+
+    def _autosave_recovery(self):
+        if not self._check_modified():
+            self._remove_recovery()
+            return
+        snapshot = self._project_snapshot()
+        if snapshot == getattr(self, "_recovery_snapshot", None) and self._recovery_path.exists():
+            return
+        if self._dirty:
+            try:
+                self._recovery_path.parent.mkdir(parents=True, exist_ok=True)
+                if not getattr(self, "_recovery_lock", None):
+                    lock = QLockFile(str(self._recovery_path) + ".lock")
+                    if not lock.tryLock(0):
+                        return
+                    self._recovery_lock = lock
+                atomic_write_json(self._recovery_path, self.get_save_data())
+                self._recovery_snapshot = snapshot
+            except Exception:
+                write_error_log("Recovery save failed", details=traceback.format_exc())
+
+    def _offer_recovery(self):
+        if not self.isVisible():
+            return
+        candidates = sorted(self._recovery_path.parent.glob("recovery-*.json"),
+                            key=lambda path: path.stat().st_mtime, reverse=True)
+        if not candidates:
+            return
+        recovery_lock = None
+        for candidate in candidates:
+            lock = QLockFile(str(candidate) + ".lock")
+            if lock.tryLock(0):
+                path = candidate
+                recovery_lock = lock
+                break
+        if recovery_lock is None:
+            return
+        reply = QMessageBox.question(self, "作業内容の復旧", "前回の未保存データを復旧しますか？",
+                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+        if reply == QMessageBox.Yes:
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+                baseline = self._saved_snapshot
+                if self.load_data(data, show_message=False):
+                    self.set_current_file_path(None)
+                    self._saved_snapshot = baseline
+                    self._check_modified()
+                    self._autosave_recovery()
+                    path.unlink(missing_ok=True)
+            except Exception as error:
+                QMessageBox.warning(self, "復旧エラー", str(error))
+        else:
+            path.unlink(missing_ok=True)
+        recovery_lock.unlock()
+
+    def closeEvent(self, event):
+        if self.isVisible() and not self._confirm_unsaved():
+            event.ignore()
+            return
+        self._remove_recovery()
+        event.accept()

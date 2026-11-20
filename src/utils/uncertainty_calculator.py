@@ -1,5 +1,6 @@
 import traceback
 import numpy as np
+from .correlation_utils import build_correlation_matrix
 from .config_loader import ConfigLoader
 from .app_logger import log_error
 
@@ -47,39 +48,16 @@ class UncertaintyCalculator:
             if not contributions or not variables or len(contributions) != len(variables):
                 return self.calculate_combined_uncertainty(contributions)
 
-            matrix = correlation_coefficients if isinstance(correlation_coefficients, dict) else {}
-
-            variance = 0.0
-            for c in contributions:
-                if c:
-                    variance += float(c) ** 2
-
-            for i, var_i in enumerate(variables):
-                ci = contributions[i]
-                if not ci:
-                    continue
-                for j in range(i + 1, len(variables)):
-                    cj = contributions[j]
-                    if not cj:
-                        continue
-                    var_j = variables[j]
-                    r = 0.0
-                    try:
-                        row = matrix.get(var_i, {})
-                        if isinstance(row, dict) and var_j in row:
-                            r = float(row.get(var_j, 0.0))
-                        else:
-                            row_rev = matrix.get(var_j, {})
-                            if isinstance(row_rev, dict):
-                                r = float(row_rev.get(var_i, 0.0))
-                    except (TypeError, ValueError):
-                        r = 0.0
-                    variance += 2.0 * float(ci) * float(cj) * r
+            matrix = build_correlation_matrix(variables, correlation_coefficients)
+            vector = np.asarray(contributions, dtype=float)
+            variance = float(vector @ matrix @ vector)
 
             return (variance ** 0.5) if variance > 0 else 0
+        except ValueError:
+            raise
         except Exception as e:
             log_error(
-                f"蜷域・讓呎ｺ紋ｸ咲｢ｺ縺九＆(相関)險育ｮ励お繝ｩ繝ｼ: {str(e)}",
+                f"合成標準不確かさ(相関)計算エラー: {str(e)}",
                 details=traceback.format_exc(),
             )
             return 0
@@ -92,7 +70,8 @@ class UncertaintyCalculator:
 
             denominator = 0
             for contribution, df in zip(contributions, degrees_of_freedom_list):
-                if contribution > 0:
+                # 負の感度係数による寄与も4乗の項に含める（ゼロのみ除外）。
+                if contribution != 0:
                     df_value = self._normalize_degrees_of_freedom(df)
                     if df_value and df_value > 0:
                         denominator += (contribution ** 4) / df_value
@@ -106,7 +85,7 @@ class UncertaintyCalculator:
             return self._inf_replacement
 
     def get_coverage_factor(self, effective_df):
-        """包含係数を取得"""
+        """自由度10以上ではk=2、それ未満では設定のt値を使用する。"""
         try:
             if effective_df >= 10:
                 return 2.0

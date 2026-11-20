@@ -1,3 +1,5 @@
+import math
+from src.utils.correlation_utils import build_correlation_matrix
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QBrush
 from PySide6.QtWidgets import QGroupBox, QLabel, QTableWidget, QTableWidgetItem, QVBoxLayout, QHeaderView, QMessageBox
@@ -37,6 +39,10 @@ class CorrelationTab(BaseTab):
         )
         self.matrix_table.itemChanged.connect(self._on_item_changed)
         group_layout.addWidget(self.matrix_table)
+        self.validation_label = QLabel()
+        self.validation_label.setWordWrap(True)
+        self.validation_label.setStyleSheet("color: #c62828;")
+        group_layout.addWidget(self.validation_label)
 
         self.empty_label = QLabel(self.tr(CORRELATION_NO_INPUT_VARIABLES))
         self.empty_label.setAlignment(Qt.AlignCenter)
@@ -109,6 +115,7 @@ class CorrelationTab(BaseTab):
             self.matrix_table.setRowCount(0)
             self.matrix_table.setColumnCount(0)
             self._updating_table = False
+            self._validate_matrix()
             return
 
         self.matrix_table.setRowCount(len(input_variables))
@@ -134,6 +141,7 @@ class CorrelationTab(BaseTab):
                     item.setForeground(QBrush(QColor("#ffffff")))
                 self.matrix_table.setItem(row_index, col_index, item)
         self._updating_table = False
+        self._validate_matrix()
 
     def _on_item_changed(self, item):
         if self._updating_table:
@@ -171,7 +179,7 @@ class CorrelationTab(BaseTab):
                 item.setText(f"{float(value):g}")
                 return
 
-            if value > 1 or value < -1:
+            if not math.isfinite(value) or value > 1 or value < -1:
                 previous_value = matrix.get(row_var, {}).get(col_var, 0.0)
                 QMessageBox.warning(
                     self,
@@ -193,3 +201,11 @@ class CorrelationTab(BaseTab):
                 mirror_item.setText(f"{value:g}")
         finally:
             self._updating_table = False
+            self._validate_matrix()
+
+    def _validate_matrix(self):
+        try:
+            build_correlation_matrix(self._get_input_variables(), self.parent.correlation_coefficients)
+            self.validation_label.clear()
+        except (ValueError, TypeError) as error:
+            self.validation_label.setText(str(error))

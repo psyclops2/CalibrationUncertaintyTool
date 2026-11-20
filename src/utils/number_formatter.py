@@ -47,7 +47,7 @@ def _format_with_exponent(value: Decimal, significant_digits: int) -> str:
         abs_value *= 1000
         exponent -= 3
 
-    decimals = max(significant_digits - 1, 0)
+    decimals = max(significant_digits - 1 - abs_value.adjusted(), 0)
     format_str = f"{{:.{decimals}f}}"
     if value < 0:
         abs_value = -abs_value

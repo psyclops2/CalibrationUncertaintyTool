@@ -1,3 +1,5 @@
+from PySide6.QtWidgets import QMessageBox
+from src.utils.correlation_utils import build_correlation_matrix, validate_correlation_matrix
 import traceback
 import math
 
@@ -531,50 +533,14 @@ class MonteCarloTab(BaseTab):
         return 0.0
 
     def _build_correlation_matrix(self, variables):
-        size = len(variables)
-        correlation_matrix = np.eye(size, dtype=float)
-        matrix = getattr(self.parent, "correlation_coefficients", {})
-
-        for row_index in range(size):
-            for col_index in range(row_index + 1, size):
-                value = self._read_correlation_value(
-                    matrix,
-                    variables[row_index],
-                    variables[col_index],
-                )
-                value = float(np.clip(value, -1.0, 1.0))
-                correlation_matrix[row_index, col_index] = value
-                correlation_matrix[col_index, row_index] = value
-        return correlation_matrix
-
-    def _normalize_to_correlation_matrix(self, matrix):
-        sym_matrix = 0.5 * (matrix + matrix.T)
-        eigenvalues, eigenvectors = np.linalg.eigh(sym_matrix)
-        clipped = np.clip(eigenvalues, self._EPSILON, None)
-        psd_matrix = eigenvectors @ np.diag(clipped) @ eigenvectors.T
-
-        diagonal = np.sqrt(np.clip(np.diag(psd_matrix), self._EPSILON, None))
-        normalized = psd_matrix / np.outer(diagonal, diagonal)
-        np.fill_diagonal(normalized, 1.0)
-        return normalized
+        return build_correlation_matrix(variables, getattr(self.parent, "correlation_coefficients", {}))
 
     def _generate_correlated_normal_scores(self, correlation_matrix, sample_count):
-        matrix = correlation_matrix
-        try:
-            cholesky = np.linalg.cholesky(matrix)
-        except np.linalg.LinAlgError:
-            matrix = self._normalize_to_correlation_matrix(matrix)
-            try:
-                cholesky = np.linalg.cholesky(matrix)
-            except np.linalg.LinAlgError:
-                eigenvalues, eigenvectors = np.linalg.eigh(matrix)
-                clipped = np.clip(eigenvalues, self._EPSILON, None)
-                transform = eigenvectors @ np.diag(np.sqrt(clipped))
-                independent = np.random.normal(size=(sample_count, len(matrix)))
-                return independent @ transform.T
-
-        independent = np.random.normal(size=(sample_count, matrix.shape[0]))
-        return independent @ cholesky.T
+        matrix = validate_correlation_matrix(correlation_matrix)
+        eigenvalues, eigenvectors = np.linalg.eigh(matrix)
+        transform = eigenvectors @ np.diag(np.sqrt(np.maximum(eigenvalues, 0)))
+        independent = np.random.normal(size=(sample_count, len(matrix)))
+        return independent @ transform.T
 
     @staticmethod
     def _standard_normal_cdf(values):
@@ -775,6 +741,7 @@ class MonteCarloTab(BaseTab):
 
         except Exception as e:
             self._invalidate_results(clear_display=True)
+            QMessageBox.warning(self, "計算できません", str(e))
             log_error(
                 f"Monte Carlo simulation error: {str(e)}",
                 details=traceback.format_exc(),

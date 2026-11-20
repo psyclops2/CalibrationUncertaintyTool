@@ -1,7 +1,7 @@
 ﻿from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                              QComboBox, QTableWidget, QTableWidgetItem, QHeaderView,
                              QGroupBox, QFormLayout, QDoubleSpinBox,
-                             QAbstractItemView)
+                             QAbstractItemView, QPushButton, QDialog)
 from PySide6.QtCore import Qt, Signal, Slot
 import traceback
 
@@ -222,6 +222,9 @@ class UncertaintyCalculationTab(BaseTab):
         self.result_group.setLayout(result_layout)
         left_layout.addWidget(self.result_group)
         
+        self.overview_button = QPushButton("全校正点の結果一覧")
+        self.overview_button.clicked.connect(self.show_point_overview)
+        left_layout.addWidget(self.overview_button)
         left_layout.addStretch(1)
         
         # 右側のレイアウト（3/4）
@@ -473,7 +476,7 @@ class UncertaintyCalculationTab(BaseTab):
             contributions = []  # 寄与不確かさを保存するリスト
             degrees_of_freedom_list = []
             budget_issues = []
-            point_name = self.value_combo.currentText() or f"index={self.value_handler.current_value_index}"
+            point_name = self.parent.value_names[self.value_handler.current_value_index]
             zero_denominator_terms = detect_zero_denominator_terms(
                 right_side, variables, self.value_handler
             )
@@ -634,7 +637,7 @@ class UncertaintyCalculationTab(BaseTab):
 
                 # --- ここで計算結果をMainWindowに保存 ---
                 result_var = self.result_combo.currentText()
-                point_name = self.value_combo.currentText()
+                point_name = self.parent.value_names[self.value_handler.current_value_index]
                 # バジェット情報を作成
                 budget = []
                 for i, var in enumerate(ordered_variables):
@@ -673,6 +676,59 @@ class UncertaintyCalculationTab(BaseTab):
         except Exception as e:
             log_error(f"感度係数計算エラー: {str(e)}", details=traceback.format_exc())
             self._clear_calculation_display()
+            self.warning_label.setText(str(e))
+            self.warning_label.show()
         finally:
             # Always reset the updating flag
             self._updating_table = False
+
+    def collect_point_overview(self):
+        result = self.result_combo.currentText()
+        equation = self.equation_handler.get_target_equation(result)
+        if not equation or "=" not in equation:
+            return [[name, "--", "--", "--", "--", "モデル式を確認してください"]
+                    for name in self.parent.value_names]
+        original_index = self.value_handler.current_value_index
+        rows = []
+        try:
+            for index, name in enumerate(self.parent.value_names):
+                self.value_handler.current_value_index = index
+                self.calculate_sensitivity_coefficients(equation)
+                fields = [self.central_value_label.text(), self.standard_uncertainty_label.text(),
+                          self.coverage_factor_label.text(), self.expanded_uncertainty_label.text()]
+                issues = self.warning_label.text()
+                inputs = self.equation_handler.get_variables_from_equation(equation.split("=", 1)[1])
+                missing = [var for var in inputs if self.value_handler.get_central_value(var) in (None, "")]
+                if missing:
+                    issues = "未入力: " + ", ".join(missing)
+                rows.append([name] + fields + [issues or ("計算できません" if fields[0] in ("", "--") else "OK")])
+        finally:
+            self.value_handler.current_value_index = original_index
+            if equation:
+                self.calculate_sensitivity_coefficients(equation)
+        return rows
+
+    def show_point_overview(self):
+        if not self.result_combo.currentText():
+            return
+        dialog = QDialog(self)
+        dialog.setWindowTitle("校正点の結果一覧 — " + self.result_combo.currentText())
+        dialog.resize(1050, 450)
+        layout = QVBoxLayout(dialog)
+        table = QTableWidget(0, 6, dialog)
+        table.setHorizontalHeaderLabels(["校正点", "結果値", "合成標準不確かさ", "包含係数", "拡張不確かさ", "状態"])
+        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        rows = self.collect_point_overview()
+        table.setRowCount(len(rows))
+        for i, row in enumerate(rows):
+            for j, text in enumerate(row):
+                table.setItem(i, j, QTableWidgetItem(text))
+        table.resizeColumnsToContents()
+        table.horizontalHeader().setStretchLastSection(True)
+        layout.addWidget(QLabel("行をダブルクリックすると、その校正点の詳細を表示します。"))
+        layout.addWidget(table)
+        def select_point(row, column):
+            self.value_combo.setCurrentIndex(row)
+            dialog.accept()
+        table.cellDoubleClicked.connect(select_point)
+        dialog.exec()

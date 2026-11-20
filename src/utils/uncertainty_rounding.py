@@ -1,4 +1,4 @@
-from decimal import Decimal, ROUND_HALF_UP, ROUND_DOWN
+from decimal import Decimal, ROUND_UP, ROUND_DOWN
 from .config_loader import ConfigLoader
 import traceback
 from .app_logger import log_error
@@ -52,7 +52,7 @@ def round_uncertainty(value: Decimal, mode: str = None) -> Decimal:
         
         if mode == 'round_up':
             # 常に切上げ
-            rounded_value = abs_value.quantize(Decimal('1.' + '0' * (significant_digits - 1)), rounding=ROUND_HALF_UP)
+            rounded_value = abs_value.quantize(Decimal('1.' + '0' * (significant_digits - 1)), rounding=ROUND_UP)
         else:  # 5_percent
             # 5%ルールによる自動切上げ/切り下げ
             # 切り捨てる値を計算
@@ -65,7 +65,7 @@ def round_uncertainty(value: Decimal, mode: str = None) -> Decimal:
                 rounded_value = rounded_down
             else:
                 # 5%以上なら切上げ
-                rounded_value = rounded_down + Decimal('1.' + '0' * (significant_digits - 1))
+                rounded_value = rounded_down + Decimal('10') ** (1 - significant_digits)
         
         # 指数を戻す
         final_value = rounded_value * (Decimal('10') ** exponent)
@@ -110,20 +110,12 @@ def format_uncertainty(value: Decimal, mode: str = None) -> str:
         # 設定された有効数字に合わせて表示桁数を決定
         settings = get_uncertainty_rounding_settings()
         significant_digits = max(settings['significant_digits'], 1)
-        decimal_places = max(significant_digits - 1, 0)
+        decimal_places = max(significant_digits - 1 - abs_value.adjusted(), 0) if abs_value else max(significant_digits - 1, 0)
         format_str = f"{{:.{decimal_places}f}}"
         
         # 負の数の場合、符号を戻す
         if rounded_value < 0:
             abs_value = -abs_value
-            
-        # 指数表記を正しく表示するための処理
-        if abs_value >= 1000:
-            abs_value /= 1000
-            exponent += 3
-        elif abs_value < 1 and abs_value != 0:
-            abs_value *= 1000
-            exponent -= 3
             
         return f"{format_str.format(abs_value)} E{exponent}"
         

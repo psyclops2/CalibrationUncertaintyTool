@@ -84,7 +84,7 @@ The batch input dialog (Tools -> Bulk Input) applies values across calibration p
 - Values greater than `1` are rejected with a warning and reverted.
 
 ## Requirements
-- Python 3.8+
+- Python 3.15.x (validated with 3.15.2)
 - PySide6
 - numpy
 - sympy
