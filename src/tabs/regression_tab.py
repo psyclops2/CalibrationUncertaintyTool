@@ -826,6 +826,7 @@ class RegressionTab(BaseTab):
         # モデルを複製
         import copy
         regressions[new_name] = copy.deepcopy(original_model)
+        regressions[new_name].pop('id', None)
         self.parent.regressions = regressions
         self.refresh_model_list()
         items = self.model_list.findItems(new_name, Qt.MatchExactly)

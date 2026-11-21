@@ -1,7 +1,11 @@
+from src.utils.model_expression import parse_expression
+from src.utils.ui_translation import tr_ui
 from PySide6.QtWidgets import QMessageBox
 from src.utils.correlation_utils import build_correlation_matrix, validate_correlation_matrix
 import traceback
 import math
+import secrets
+from datetime import datetime, timezone
 
 import numpy as np
 import sympy as sp
@@ -14,6 +18,8 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QLineEdit,
+    QFileDialog,
     QSpinBox,
     QVBoxLayout,
     QWidget,
@@ -332,10 +338,25 @@ class MonteCarloTab(BaseTab):
 
         self.run_button = QPushButton()
         self.run_button.clicked.connect(self.run_simulation)
+        self.save_trial_button = QPushButton(tr_ui('試行結果を保存…'))
+        self.save_trial_button.setEnabled(False)
+        self.save_trial_button.clicked.connect(self.save_trial)
         run_layout = QHBoxLayout()
         run_layout.addWidget(self.run_button)
+        run_layout.addWidget(self.save_trial_button)
         run_layout.addStretch(1)
         settings_layout.addRow(run_layout)
+        self.seed_edit = QLineEdit()
+        self.seed_edit.setPlaceholderText(tr_ui('空欄は自動。再現する場合は保存した乱数シードを指定'))
+        self.seed_edit.textChanged.connect(self.on_selection_changed)
+        self.seed_label = QLabel(tr_ui('乱数シード'))
+        settings_layout.addRow(self.seed_label,self.seed_edit)
+        settings_layout.setRowVisible(self.seed_edit,False)
+        advanced = QPushButton(tr_ui('詳細な試行条件'))
+        self.advanced_button = advanced
+        advanced.setCheckable(True)
+        advanced.toggled.connect(lambda checked:settings_layout.setRowVisible(self.seed_edit,checked))
+        settings_layout.addRow(advanced)
 
         self.settings_group.setLayout(settings_layout)
         layout.addWidget(self.settings_group)
@@ -355,6 +376,8 @@ class MonteCarloTab(BaseTab):
         self.interval95_empirical_text = QLabel("--")
         self.min_text = QLabel("--")
         self.max_text = QLabel("--")
+        self.trial_note = QLabel('')
+        self.trial_note.setWordWrap(True)
         self.mean_label = QLabel()
         self.std_label = QLabel()
         self.interval95_label = QLabel()
@@ -367,12 +390,17 @@ class MonteCarloTab(BaseTab):
         stats_layout.addRow(self.interval95_empirical_label, self.interval95_empirical_text)
         stats_layout.addRow(self.min_label, self.min_text)
         stats_layout.addRow(self.max_label, self.max_text)
+        stats_layout.addRow(self.trial_note)
         self.stats_group.setLayout(stats_layout)
         layout.addWidget(self.stats_group)
 
         self.retranslate_ui()
 
     def retranslate_ui(self):
+        self.save_trial_button.setText(tr_ui('試行結果を保存…'))
+        self.seed_label.setText(tr_ui('乱数シード'))
+        self.advanced_button.setText(tr_ui('詳細な試行条件'))
+        self.seed_edit.setPlaceholderText(tr_ui('空欄は自動。再現する場合は保存した乱数シードを指定'))
         self.settings_group.setTitle(self.tr(MONTE_CARLO_SETTINGS))
         self.plot_group.setTitle(self.tr(MONTE_CARLO_PLOT))
         self.stats_group.setTitle(self.tr(MONTE_CARLO_STATS))
@@ -398,7 +426,6 @@ class MonteCarloTab(BaseTab):
 
     def showEvent(self, event):
         self.refresh_controls()
-        self.run_simulation()
         super().showEvent(event)
 
     def refresh_controls(self):
@@ -457,6 +484,9 @@ class MonteCarloTab(BaseTab):
     def _invalidate_results(self, clear_display=True):
         self._has_simulation_result = False
         self._last_simulation_key = None
+        self._trial_record = None
+        if hasattr(self,'save_trial_button'):self.save_trial_button.setEnabled(False)
+        if hasattr(self,'trial_note'):self.trial_note.clear()
         if clear_display:
             self._clear_result()
 
@@ -533,7 +563,14 @@ class MonteCarloTab(BaseTab):
         return 0.0
 
     def _build_correlation_matrix(self, variables):
-        return build_correlation_matrix(variables, getattr(self.parent, "correlation_coefficients", {}))
+        from src.utils.input_sources import statistical_state
+        covariance, _, _ = statistical_state(self.parent,variables,self.value_handler.current_value_index,self.value_handler)
+        sd=np.sqrt(np.maximum(0,np.diag(covariance)))
+        denom=np.outer(sd,sd)
+        matrix=np.divide(covariance,denom,out=np.zeros_like(covariance),where=denom!=0)
+        matrix=np.clip(matrix,-1.,1.)
+        np.fill_diagonal(matrix,1.)
+        return matrix
 
     def _generate_correlated_normal_scores(self, correlation_matrix, sample_count):
         matrix = validate_correlation_matrix(correlation_matrix)
@@ -678,13 +715,13 @@ class MonteCarloTab(BaseTab):
         if not variables:
             raise ValueError(f"No input variables: {result_variable}")
 
-        symbols = {var: sp.Symbol(var) for var in variables}
+        symbols = {var: sp.Symbol(var, real=True) for var in variables}
         expression = normalize_equation_text(right_side).replace("^", "**")
-        sympy_expr = sp.sympify(expression, locals=symbols)
+        sympy_expr = parse_expression(expression, symbols)
         ordered_symbols = [symbols[var] for var in variables]
 
         sampled_values = self._sample_input_variables(variables, sample_count)
-        evaluator = sp.lambdify(ordered_symbols, sympy_expr, modules="numpy")
+        evaluator = sp.lambdify(ordered_symbols, sympy_expr, modules="numpy", dummify=True)
         result = evaluator(*sampled_values)
 
         result_array = np.asarray(result, dtype=float)
@@ -702,7 +739,14 @@ class MonteCarloTab(BaseTab):
 
             self.value_handler.current_value_index = value_index
             sample_count = int(self.samples_spin.value())
-            samples = self._evaluate_result_samples(result_variable, sample_count)
+            seed = int(self.seed_edit.text()) if self.seed_edit.text().strip() else secrets.randbits(32)
+            if not 0<=seed<2**32:raise ValueError('乱数シードは0以上2^32未満の整数にしてください')
+            previous_random_state = np.random.get_state()
+            try:
+                np.random.seed(seed)
+                samples = self._evaluate_result_samples(result_variable, sample_count)
+            finally:
+                np.random.set_state(previous_random_state)
 
             finite_samples = samples[np.isfinite(samples)]
             if finite_samples.size == 0:
@@ -738,6 +782,26 @@ class MonteCarloTab(BaseTab):
             self.max_text.setText(self._format_number(float(np.max(finite_samples))))
             self._has_simulation_result = True
             self._last_simulation_key = (result_variable, value_index, sample_count)
+            from src.utils.output_covariance import evaluate_outputs
+            try:
+                _, covariance, _ = evaluate_outputs(self.parent,value_index,[result_variable])
+                first_u = float(max(0,covariance[0,0])**.5)
+            except Exception:
+                first_u = None
+            self._trial_record = dict(kind='monte_carlo_trial',version=1,
+                created_utc=datetime.now(timezone.utc).isoformat(),result=result_variable,
+                point=self.parent.value_names[value_index],samples_requested=sample_count,
+                finite_samples=len(finite_samples),seed=seed,numpy_version=np.__version__,
+                sampling_assumption='Linked statistical estimates use a multivariate normal approximation; other inputs use configured marginals and Gaussian copula.',
+                mean=mean_value,standard_uncertainty=std_value,
+                equal_tail_95_interval=[float(x) for x in empirical_interval95_bounds],first_order_u=first_u,
+                project=self.parent.get_save_data() if hasattr(self.parent,'get_save_data') else {})
+            if hasattr(self.parent,'calculation_input_signature'):
+                self.parent._calculation_input_signature=self.parent.calculation_input_signature()
+            self.save_trial_button.setEnabled(True)
+            text=f'乱数シード {seed} / 有効な試行 {len(finite_samples)}/{sample_count}'
+            if first_u is not None:text+=f' / 一次計算のu {first_u:.7g}'
+            self.trial_note.setText(text+'\n統計的な入力元は多変量正規近似。包含区間の妥当性を自動判定したものではありません。')
 
         except Exception as e:
             self._invalidate_results(clear_display=True)
@@ -746,3 +810,12 @@ class MonteCarloTab(BaseTab):
                 f"Monte Carlo simulation error: {str(e)}",
                 details=traceback.format_exc(),
             )
+
+    def save_trial(self):
+        if not getattr(self,'_trial_record',None):return
+        path,_=QFileDialog.getSaveFileName(self,'MCの試行条件・比較結果を保存','','JSON (*.json)')
+        if not path:return
+        from src.utils.project_io import atomic_write_json
+        try:
+            atomic_write_json(path,self._trial_record)
+        except Exception as error:QMessageBox.warning(self,'保存できません',str(error))

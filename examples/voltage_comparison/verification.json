@@ -1,0 +1,212 @@
+[
+  {
+    "point": "1 V",
+    "dut_half_width": "0.00005",
+    "ref_half_width": "0.000005",
+    "stability_half_width": "0.00012000020",
+    "results": {
+      "budget": [
+        {
+          "variable": "V_dut",
+          "central_value": "1.0001 V",
+          "standard_uncertainty": "31.62 E-6 V",
+          "dof": "4",
+          "distribution": "",
+          "sensitivity": "1.0",
+          "contribution": "31.62 E-6 V",
+          "contribution_rate": 15.033789946253131
+        },
+        {
+          "variable": "V_refIndcating",
+          "central_value": "1.00001 V",
+          "standard_uncertainty": "3.162 E-6 V",
+          "dof": "4",
+          "distribution": "",
+          "sensitivity": "-1.0",
+          "contribution": "-3.162 E-6 V",
+          "contribution_rate": 0.15033789946253126
+        },
+        {
+          "variable": "Vdut_digit",
+          "central_value": "0 V",
+          "standard_uncertainty": "28.87 E-6 V",
+          "dof": "inf",
+          "distribution": "RECTANGULAR_DISTRIBUTION",
+          "sensitivity": "1.0",
+          "contribution": "28.87 E-6 V",
+          "contribution_rate": 12.528158288544276
+        },
+        {
+          "variable": "deltaV_refdigit",
+          "central_value": "0 V",
+          "standard_uncertainty": "2.887 E-6 V",
+          "dof": "inf",
+          "distribution": "RECTANGULAR_DISTRIBUTION",
+          "sensitivity": "-1.0",
+          "contribution": "-2.887 E-6 V",
+          "contribution_rate": 0.12528158288544275
+        },
+        {
+          "variable": "deltaV_stability",
+          "central_value": "0 V",
+          "standard_uncertainty": "69.28 E-6 V",
+          "dof": "inf",
+          "distribution": "RECTANGULAR_DISTRIBUTION",
+          "sensitivity": "-1.0",
+          "contribution": "-69.28 E-6 V",
+          "contribution_rate": 72.16243228285462
+        }
+      ],
+      "result_central_value": 9e-05,
+      "result_standard_uncertainty": 8.155784859031043e-05,
+      "effective_df": 176.9618330095437,
+      "coverage_factor": 2.0,
+      "expanded_uncertainty": 0.00016311569718062085,
+      "coverage_settings": {
+        "method": "manual",
+        "k": "2",
+        "note": "本サンプルの表示条件としてk=2を指定。"
+      }
+    }
+  },
+  {
+    "point": "5 V",
+    "dut_half_width": "0.00005",
+    "ref_half_width": "0.00005",
+    "stability_half_width": "0.0006000000",
+    "results": {
+      "budget": [
+        {
+          "variable": "V_dut",
+          "central_value": "5.0002 V",
+          "standard_uncertainty": "31.62 E-6 V",
+          "dof": "4",
+          "distribution": "",
+          "sensitivity": "1.0",
+          "contribution": "31.62 E-6 V",
+          "contribution_rate": 0.8086253369272239
+        },
+        {
+          "variable": "V_refIndcating",
+          "central_value": "5.0000 V",
+          "standard_uncertainty": "31.62 E-6 V",
+          "dof": "4",
+          "distribution": "",
+          "sensitivity": "-1.0",
+          "contribution": "-31.62 E-6 V",
+          "contribution_rate": 0.8086253369272239
+        },
+        {
+          "variable": "Vdut_digit",
+          "central_value": "0 V",
+          "standard_uncertainty": "28.87 E-6 V",
+          "dof": "inf",
+          "distribution": "RECTANGULAR_DISTRIBUTION",
+          "sensitivity": "1.0",
+          "contribution": "28.87 E-6 V",
+          "contribution_rate": 0.6738544474393532
+        },
+        {
+          "variable": "deltaV_refdigit",
+          "central_value": "0 V",
+          "standard_uncertainty": "28.87 E-6 V",
+          "dof": "inf",
+          "distribution": "RECTANGULAR_DISTRIBUTION",
+          "sensitivity": "-1.0",
+          "contribution": "-28.87 E-6 V",
+          "contribution_rate": 0.6738544474393532
+        },
+        {
+          "variable": "deltaV_stability",
+          "central_value": "0 V",
+          "standard_uncertainty": "346.4 E-6 V",
+          "dof": "inf",
+          "distribution": "RECTANGULAR_DISTRIBUTION",
+          "sensitivity": "-1.0",
+          "contribution": "-346.4 E-6 V",
+          "contribution_rate": 97.03504043126685
+        }
+      ],
+      "result_central_value": 0.0002,
+      "result_standard_uncertainty": 0.0003516627171974115,
+      "effective_df": 30586.88888888888,
+      "coverage_factor": 2.0,
+      "expanded_uncertainty": 0.000703325434394823,
+      "coverage_settings": {
+        "method": "manual",
+        "k": "2",
+        "note": "本サンプルの表示条件としてk=2を指定。"
+      }
+    }
+  },
+  {
+    "point": "10 V",
+    "dut_half_width": "0.0005",
+    "ref_half_width": "0.00005",
+    "stability_half_width": "0.0007000020",
+    "results": {
+      "budget": [
+        {
+          "variable": "V_dut",
+          "central_value": "10.002 V",
+          "standard_uncertainty": "316.2 E-6 V",
+          "dof": "4",
+          "distribution": "",
+          "sensitivity": "1.0",
+          "contribution": "316.2 E-6 V",
+          "contribution_rate": 28.69432774344098
+        },
+        {
+          "variable": "V_refIndcating",
+          "central_value": "10.0001 V",
+          "standard_uncertainty": "31.62 E-6 V",
+          "dof": "4",
+          "distribution": "",
+          "sensitivity": "-1.0",
+          "contribution": "-31.62 E-6 V",
+          "contribution_rate": 0.2869432774344098
+        },
+        {
+          "variable": "Vdut_digit",
+          "central_value": "0 V",
+          "standard_uncertainty": "288.7 E-6 V",
+          "dof": "inf",
+          "distribution": "RECTANGULAR_DISTRIBUTION",
+          "sensitivity": "1.0",
+          "contribution": "288.7 E-6 V",
+          "contribution_rate": 23.911939786200815
+        },
+        {
+          "variable": "deltaV_refdigit",
+          "central_value": "0 V",
+          "standard_uncertainty": "28.87 E-6 V",
+          "dof": "inf",
+          "distribution": "RECTANGULAR_DISTRIBUTION",
+          "sensitivity": "-1.0",
+          "contribution": "-28.87 E-6 V",
+          "contribution_rate": 0.23911939786200814
+        },
+        {
+          "variable": "deltaV_stability",
+          "central_value": "0 V",
+          "standard_uncertainty": "404.1 E-6 V",
+          "dof": "inf",
+          "distribution": "RECTANGULAR_DISTRIBUTION",
+          "sensitivity": "-1.0",
+          "contribution": "-404.1 E-6 V",
+          "contribution_rate": 46.8676697950618
+        }
+      ],
+      "result_central_value": 0.0019,
+      "result_standard_uncertainty": 0.0005903396762328165,
+      "effective_df": 48.57630258379512,
+      "coverage_factor": 2.0,
+      "expanded_uncertainty": 0.001180679352465633,
+      "coverage_settings": {
+        "method": "manual",
+        "k": "2",
+        "note": "本サンプルの表示条件としてk=2を指定。"
+      }
+    }
+  }
+]

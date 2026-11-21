@@ -1,7 +1,8 @@
 import traceback
 
 from .app_logger import log_error
-from .variable_utils import get_distribution_translation_key
+from .variable_utils import get_distribution_translation_key, evaluate_type_a_value
+from decimal import DecimalException
 
 
 class ValueHandler:
@@ -10,6 +11,11 @@ class ValueHandler:
         self.current_value_index = current_value_index
 
     def _get_current_value_data(self, var):
+        if hasattr(self.main_window, 'refresh_references'):
+            self.main_window.refresh_references()
+        error = getattr(self.main_window, 'reference_errors', {}).get((var,self.current_value_index))
+        if error:
+            raise ValueError(f"{var}: {error}")
         if var not in self.main_window.variable_values:
             return None, None
         var_data = self.main_window.variable_values.get(var)
@@ -25,6 +31,16 @@ class ValueHandler:
         value_data = values[self.current_value_index]
         if not isinstance(value_data, dict):
             return None, None
+        if value_data.get('input_source'):
+            from .input_sources import source_packet
+            packet = source_packet(self.main_window, var, self.current_value_index)
+            value_data.update(central_value=str(packet['mean']), standard_uncertainty=str(packet['u']),
+                              degrees_of_freedom=str(packet['df']))
+        elif var_data.get('type') == 'A' and 'evaluation_mode' in value_data:
+            try:
+                value_data.update(evaluate_type_a_value(value_data))
+            except (ValueError, DecimalException) as error:
+                raise ValueError(f'{var}: Type A評価を確認してください: {error}') from error
         return var_data, value_data
 
     def get_central_value(self, var):
@@ -34,6 +50,8 @@ class ValueHandler:
             if not value_data:
                 return ""
             return value_data.get("central_value", "")
+        except ValueError:
+            raise
         except Exception as e:
             log_error(f"中央値取得エラー: {str(e)}", details=traceback.format_exc())
             return ""
@@ -50,6 +68,8 @@ class ValueHandler:
                 return "0"
 
             return value_data.get("standard_uncertainty", "")
+        except ValueError:
+            raise
         except Exception as e:
             log_error(f"標準不確かさ取得エラー: {str(e)}", details=traceback.format_exc())
             return ""
@@ -61,6 +81,8 @@ class ValueHandler:
             if not value_data:
                 return ""
             return value_data.get("degrees_of_freedom", "")
+        except ValueError:
+            raise
         except Exception as e:
             log_error(f"自由度取得エラー: {str(e)}", details=traceback.format_exc())
             return ""
@@ -75,6 +97,8 @@ class ValueHandler:
                 return ""
             distribution = var_data.get("distribution", "")
             return get_distribution_translation_key(distribution) or distribution
+        except ValueError:
+            raise
         except Exception as e:
             log_error(f"分布取得エラー: {str(e)}", details=traceback.format_exc())
             return ""
@@ -101,6 +125,8 @@ class ValueHandler:
 
             return False
 
+        except ValueError:
+            raise
         except Exception as e:
             log_error(f"値更新エラー: {str(e)}", details=traceback.format_exc())
             return False

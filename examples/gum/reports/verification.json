@@ -1,0 +1,968 @@
+[
+    {
+        "key": "H1",
+        "results": {
+            "l": {
+                "budget": [
+                    {
+                        "variable": "ls",
+                        "central_value": ".050000623 m",
+                        "standard_uncertainty": "25.00 E-9 m",
+                        "dof": "18",
+                        "distribution": "NORMAL_DISTRIBUTION",
+                        "sensitivity": "1.0",
+                        "contribution": "25.00 E-9 m",
+                        "contribution_rate": 62.359942099015925
+                    },
+                    {
+                        "variable": "difference",
+                        "central_value": "2.15E-7 m",
+                        "standard_uncertainty": "5.814 E-9 m",
+                        "dof": "24",
+                        "distribution": "",
+                        "sensitivity": "1.0",
+                        "contribution": "5.814 E-9 m",
+                        "contribution_rate": 3.372425668714782
+                    },
+                    {
+                        "variable": "random",
+                        "central_value": "0 m",
+                        "standard_uncertainty": "3.891 E-9 m",
+                        "dof": "5",
+                        "distribution": "NORMAL_DISTRIBUTION",
+                        "sensitivity": "1.0",
+                        "contribution": "3.891 E-9 m",
+                        "contribution_rate": 1.5106346403189375
+                    },
+                    {
+                        "variable": "systematic",
+                        "central_value": "0 m",
+                        "standard_uncertainty": "6.667 E-9 m",
+                        "dof": "8",
+                        "distribution": "NORMAL_DISTRIBUTION",
+                        "sensitivity": "1.0",
+                        "contribution": "6.667 E-9 m",
+                        "contribution_rate": 4.434484771485578
+                    },
+                    {
+                        "variable": "alpha",
+                        "central_value": "11.5e-6 1/K",
+                        "standard_uncertainty": "1.155 E-6 1/K",
+                        "dof": "inf",
+                        "distribution": "RECTANGULAR_DISTRIBUTION",
+                        "sensitivity": "0.0",
+                        "contribution": "--",
+                        "contribution_rate": 0.0
+                    },
+                    {
+                        "variable": "meanT",
+                        "central_value": "-.1 K",
+                        "standard_uncertainty": "200.0 E-3 K",
+                        "dof": "inf",
+                        "distribution": "NORMAL_DISTRIBUTION",
+                        "sensitivity": "0.0",
+                        "contribution": "--",
+                        "contribution_rate": 0.0
+                    },
+                    {
+                        "variable": "cycleT",
+                        "central_value": "0 K",
+                        "standard_uncertainty": "353.6 E-3 K",
+                        "dof": "inf",
+                        "distribution": "U_DISTRIBUTION",
+                        "sensitivity": "0.0",
+                        "contribution": "--",
+                        "contribution_rate": 0.0
+                    },
+                    {
+                        "variable": "deltaAlpha",
+                        "central_value": "0 1/K",
+                        "standard_uncertainty": "577.4 E-9 1/K",
+                        "dof": "50",
+                        "distribution": "RECTANGULAR_DISTRIBUTION",
+                        "sensitivity": "5.0 E-3",
+                        "contribution": "2.887 E-9 m",
+                        "contribution_rate": 0.8314866149127271
+                    },
+                    {
+                        "variable": "deltaT",
+                        "central_value": "0 K",
+                        "standard_uncertainty": "28.87 E-3 K",
+                        "dof": "2",
+                        "distribution": "RECTANGULAR_DISTRIBUTION",
+                        "sensitivity": "-580 E-9",
+                        "contribution": "-16.60 E-9 m",
+                        "contribution_rate": 27.49102620555204
+                    }
+                ],
+                "result_central_value": 0.050000838,
+                "result_standard_uncertainty": 3.165826842146606e-08,
+                "effective_df": 16.741366263306915,
+                "coverage_factor": 2.9207816224251,
+                "expanded_uncertainty": 9.246688860321897e-08,
+                "coverage_settings": {
+                    "method": "student",
+                    "probability": 0.99,
+                    "floor_df": true,
+                    "note": "GUM H.1.6; first-order budget, not second-order propagation"
+                }
+            }
+        },
+        "source_comparison": {
+            "l": {
+                "published": {
+                    "value": 0.050000838,
+                    "u": 3.2e-08,
+                    "df": 16,
+                    "k": 2.92,
+                    "U": 9.3e-08
+                },
+                "central_delta": 0.0,
+                "standard_uncertainty_delta": -3.4173157853393964e-10
+            }
+        },
+        "output_names": [
+            "l"
+        ],
+        "covariance": [
+            [
+                1.0022459594455953e-15
+            ]
+        ],
+        "correlation": [
+            [
+                1.0
+            ]
+        ],
+        "save_reload": true,
+        "source_edit_checked": false,
+        "mc_auto_run": false
+    },
+    {
+        "key": "H2_approach1",
+        "results": {
+            "R": {
+                "budget": [
+                    {
+                        "variable": "voltage",
+                        "central_value": "4.9990000000000006 V",
+                        "standard_uncertainty": "3.209 E-3 V",
+                        "dof": "4",
+                        "distribution": "",
+                        "sensitivity": "26",
+                        "contribution": "82.00 E-3 ohm",
+                        "contribution_rate": -61.58130453799315
+                    },
+                    {
+                        "variable": "current",
+                        "central_value": "0.019661 A",
+                        "standard_uncertainty": "9.471 E-6 A",
+                        "dof": "4",
+                        "distribution": "",
+                        "sensitivity": "-6.5 E3",
+                        "contribution": "-61.53 E-3 ohm",
+                        "contribution_rate": -19.483391807940585
+                    },
+                    {
+                        "variable": "phase",
+                        "central_value": "1.0444600000000002 1",
+                        "standard_uncertainty": "752.1 E-6 1",
+                        "dof": "4",
+                        "distribution": "",
+                        "sensitivity": "-220",
+                        "contribution": "-165.3 E-3 ohm",
+                        "contribution_rate": 181.06469634593373
+                    }
+                ],
+                "result_central_value": 127.73216992810205,
+                "result_standard_uncertainty": 0.07107140739699513,
+                "effective_df": 4.0,
+                "coverage_factor": 2.776,
+                "expanded_uncertainty": 0.1972942269340585,
+                "coverage_settings": {
+                    "method": "legacy"
+                }
+            },
+            "X": {
+                "budget": [
+                    {
+                        "variable": "voltage",
+                        "central_value": "4.9990000000000006 V",
+                        "standard_uncertainty": "3.209 E-3 V",
+                        "dof": "4",
+                        "distribution": "",
+                        "sensitivity": "44",
+                        "contribution": "141.1 E-3 ohm",
+                        "contribution_rate": 42.18908436989858
+                    },
+                    {
+                        "variable": "current",
+                        "central_value": "0.019661 A",
+                        "standard_uncertainty": "9.471 E-6 A",
+                        "dof": "4",
+                        "distribution": "",
+                        "sensitivity": "-11 E3",
+                        "contribution": "-105.9 E-3 ohm",
+                        "contribution_rate": 26.427685394481742
+                    },
+                    {
+                        "variable": "phase",
+                        "central_value": "1.0444600000000002 1",
+                        "standard_uncertainty": "752.1 E-6 1",
+                        "dof": "4",
+                        "distribution": "",
+                        "sensitivity": "130",
+                        "contribution": "96.06 E-3 ohm",
+                        "contribution_rate": 31.383230235619678
+                    }
+                ],
+                "result_central_value": 219.84651191263848,
+                "result_standard_uncertainty": 0.2955816773586382,
+                "effective_df": 4.0,
+                "coverage_factor": 2.776,
+                "expanded_uncertainty": 0.8205347363475797,
+                "coverage_settings": {
+                    "method": "legacy"
+                }
+            },
+            "Z": {
+                "budget": [
+                    {
+                        "variable": "voltage",
+                        "central_value": "4.9990000000000006 V",
+                        "standard_uncertainty": "3.209 E-3 V",
+                        "dof": "4",
+                        "distribution": "",
+                        "sensitivity": "51",
+                        "contribution": "163.2 E-3 ohm",
+                        "contribution_rate": 60.4235291247237
+                    },
+                    {
+                        "variable": "current",
+                        "central_value": "0.019661 A",
+                        "standard_uncertainty": "9.471 E-6 A",
+                        "dof": "4",
+                        "distribution": "",
+                        "sensitivity": "-13 E3",
+                        "contribution": "-122.5 E-3 ohm",
+                        "contribution_rate": 39.576470875276286
+                    }
+                ],
+                "result_central_value": 254.25970194801894,
+                "result_standard_uncertainty": 0.2363361300823703,
+                "effective_df": 4.0,
+                "coverage_factor": 2.776,
+                "expanded_uncertainty": 0.6560690971086599,
+                "coverage_settings": {
+                    "method": "legacy"
+                }
+            }
+        },
+        "source_comparison": {
+            "R": {
+                "published": {
+                    "value": 127.732,
+                    "u": 0.071
+                },
+                "central_delta": 0.00016992810205351816,
+                "standard_uncertainty_delta": 7.140739699514065e-05
+            },
+            "X": {
+                "published": {
+                    "value": 219.847,
+                    "u": 0.295
+                },
+                "central_delta": -0.00048808736153205246,
+                "standard_uncertainty_delta": 0.0005816773586382329
+            },
+            "Z": {
+                "published": {
+                    "value": 254.26,
+                    "u": 0.236
+                },
+                "central_delta": -0.00029805198104781994,
+                "standard_uncertainty_delta": 0.0003361300823703228
+            }
+        },
+        "output_names": [
+            "R",
+            "X",
+            "Z"
+        ],
+        "covariance": [
+            [
+                0.005051144949389654,
+                -0.012361383272455279,
+                -0.00815077369311674
+            ],
+            [
+                -0.012361383272455279,
+                0.0873685279901461,
+                0.06933351878338832
+            ],
+            [
+                -0.008150773693116743,
+                0.06933351878338832,
+                0.055854766382311044
+            ]
+        ],
+        "correlation": [
+            [
+                0.9999999999999998,
+                -0.5884297844235794,
+                -0.4852592242099991
+            ],
+            [
+                -0.5884297844235794,
+                1.0,
+                0.9925116489490171
+            ],
+            [
+                -0.48525922420999934,
+                0.9925116489490171,
+                0.9999999999999999
+            ]
+        ],
+        "save_reload": true,
+        "source_edit_checked": true,
+        "mc_auto_run": false
+    },
+    {
+        "key": "H2_approach2",
+        "results": {
+            "R": {
+                "budget": [
+                    {
+                        "variable": "rObs",
+                        "central_value": "127.7316304828154 ohm",
+                        "standard_uncertainty": "71.27 E-3 ohm",
+                        "dof": "4",
+                        "distribution": "",
+                        "sensitivity": "1.0",
+                        "contribution": "71.27 E-3 ohm",
+                        "contribution_rate": 100.0
+                    }
+                ],
+                "result_central_value": 127.7316304828154,
+                "result_standard_uncertainty": 0.07127354317859358,
+                "effective_df": 4.0,
+                "coverage_factor": 2.776,
+                "expanded_uncertainty": 0.19785535586377576,
+                "coverage_settings": {
+                    "method": "legacy"
+                }
+            },
+            "X": {
+                "budget": [
+                    {
+                        "variable": "xObs",
+                        "central_value": "219.84689460329236 ohm",
+                        "standard_uncertainty": "295.5 E-3 ohm",
+                        "dof": "4",
+                        "distribution": "",
+                        "sensitivity": "1.0",
+                        "contribution": "295.5 E-3 ohm",
+                        "contribution_rate": 100.0
+                    }
+                ],
+                "result_central_value": 219.84689460329236,
+                "result_standard_uncertainty": 0.29548908561008547,
+                "effective_df": 4.0,
+                "coverage_factor": 2.776,
+                "expanded_uncertainty": 0.8202777016535971,
+                "coverage_settings": {
+                    "method": "legacy"
+                }
+            },
+            "Z": {
+                "budget": [
+                    {
+                        "variable": "zObs",
+                        "central_value": "254.26004958674116 ohm",
+                        "standard_uncertainty": "236.2 E-3 ohm",
+                        "dof": "4",
+                        "distribution": "",
+                        "sensitivity": "1.0",
+                        "contribution": "236.2 E-3 ohm",
+                        "contribution_rate": 100.0
+                    }
+                ],
+                "result_central_value": 254.26004958674116,
+                "result_standard_uncertainty": 0.23624750170396908,
+                "effective_df": 4.0,
+                "coverage_factor": 2.776,
+                "expanded_uncertainty": 0.6558230647302181,
+                "coverage_settings": {
+                    "method": "legacy"
+                }
+            }
+        },
+        "source_comparison": {
+            "R": {
+                "published": {
+                    "value": 127.732,
+                    "u": 0.071
+                },
+                "central_delta": -0.0003695171845947698,
+                "standard_uncertainty_delta": 0.00027354317859358546
+            },
+            "X": {
+                "published": {
+                    "value": 219.847,
+                    "u": 0.295
+                },
+                "central_delta": -0.0001053967076529716,
+                "standard_uncertainty_delta": 0.0004890856100854823
+            },
+            "Z": {
+                "published": {
+                    "value": 254.26,
+                    "u": 0.236
+                },
+                "central_delta": 4.958674117006012e-05,
+                "standard_uncertainty_delta": 0.00024750170396908855
+            }
+        },
+        "output_names": [
+            "R",
+            "X",
+            "Z"
+        ],
+        "covariance": [
+            [
+                0.005079917957230843,
+                -0.012389436548486989,
+                -0.008167613286621318
+            ],
+            [
+                -0.012389436548486989,
+                0.08731379971468442,
+                0.06928552057461497
+            ],
+            [
+                -0.008167613286621318,
+                0.06928552057461497,
+                0.05581288206136688
+            ]
+        ],
+        "correlation": [
+            [
+                1.0,
+                -0.5882768557970035,
+                -0.48506461366317255
+            ],
+            [
+                -0.5882768557970035,
+                1.0,
+                0.992507542132032
+            ],
+            [
+                -0.48506461366317255,
+                0.992507542132032,
+                1.0000000000000002
+            ]
+        ],
+        "save_reload": true,
+        "source_edit_checked": true,
+        "mc_auto_run": false
+    },
+    {
+        "key": "H3",
+        "results": {
+            "correction": {
+                "budget": [
+                    {
+                        "variable": "prediction",
+                        "central_value": "-0.14937681273247716 K",
+                        "standard_uncertainty": "4.139 E-3 K",
+                        "dof": "9",
+                        "distribution": "",
+                        "sensitivity": "1.0",
+                        "contribution": "4.139 E-3 K",
+                        "contribution_rate": 100.0
+                    }
+                ],
+                "result_central_value": -0.14937681273247716,
+                "result_standard_uncertainty": 0.004138595752854955,
+                "effective_df": 9.0,
+                "coverage_factor": 2.2621571627982053,
+                "expanded_uncertainty": 0.009362154026247066,
+                "coverage_settings": {
+                    "method": "student",
+                    "probability": 0.95
+                }
+            }
+        },
+        "source_comparison": {
+            "correction": {
+                "published": {
+                    "value": -0.1494,
+                    "u": 0.0041,
+                    "df": 9
+                },
+                "central_delta": 2.3187267522845056e-05,
+                "standard_uncertainty_delta": 3.859575285495437e-05
+            }
+        },
+        "output_names": [
+            "correction"
+        ],
+        "covariance": [
+            [
+                1.712797480554907e-05
+            ]
+        ],
+        "correlation": [
+            [
+                1.0
+            ]
+        ],
+        "save_reload": true,
+        "source_edit_checked": true,
+        "mc_auto_run": false
+    },
+    {
+        "key": "H4_approach1",
+        "results": {
+            "Ax": {
+                "budget": [
+                    {
+                        "variable": "activity",
+                        "central_value": "136.8 1/(s*kg)",
+                        "standard_uncertainty": "1.800 1/(s*kg)",
+                        "dof": "inf",
+                        "distribution": "NORMAL_DISTRIBUTION",
+                        "sensitivity": "3.1",
+                        "contribution": "5.657 1/(s*kg)",
+                        "contribution_rate": 46.079635100439766
+                    },
+                    {
+                        "variable": "massStandard",
+                        "central_value": ".0050192 kg",
+                        "standard_uncertainty": "5.000 E-6 kg",
+                        "dof": "inf",
+                        "distribution": "NORMAL_DISTRIBUTION",
+                        "sensitivity": "86 E3",
+                        "contribution": "428.3 E-3 1/(s*kg)",
+                        "contribution_rate": 0.26412360836680365
+                    },
+                    {
+                        "variable": "massSample",
+                        "central_value": ".0050571 kg",
+                        "standard_uncertainty": "1.000 E-6 kg",
+                        "dof": "inf",
+                        "distribution": "NORMAL_DISTRIBUTION",
+                        "sensitivity": "-85 E3",
+                        "contribution": "-85.02 E-3 1/(s*kg)",
+                        "contribution_rate": 0.010407181598732308
+                    },
+                    {
+                        "variable": "rateSample",
+                        "central_value": "652.6006796991608 1/min",
+                        "standard_uncertainty": "6.416 1/min",
+                        "dof": "5",
+                        "distribution": "",
+                        "sensitivity": "660 E-3",
+                        "contribution": "4.227 1/(s*kg)",
+                        "contribution_rate": -5.379326182133474
+                    },
+                    {
+                        "variable": "rateStandard",
+                        "central_value": "206.0880666003874 1/min",
+                        "standard_uncertainty": "3.793 1/min",
+                        "dof": "5",
+                        "distribution": "",
+                        "sensitivity": "-2.1",
+                        "contribution": "-7.912 1/(s*kg)",
+                        "contribution_rate": 59.02516029172817
+                    }
+                ],
+                "result_central_value": 429.9458229675307,
+                "result_standard_uncertainty": 8.333848977570671,
+                "effective_df": 17.37392729434792,
+                "coverage_factor": 2.0,
+                "expanded_uncertainty": 16.667697955141342,
+                "coverage_settings": {
+                    "method": "legacy"
+                }
+            }
+        },
+        "source_comparison": {
+            "Ax": {
+                "published": {
+                    "value": 430.0,
+                    "u": 8.3
+                },
+                "central_delta": -0.054177032469283404,
+                "standard_uncertainty_delta": 0.03384897757067051
+            }
+        },
+        "output_names": [
+            "Ax"
+        ],
+        "covariance": [
+            [
+                69.4530387809557
+            ]
+        ],
+        "correlation": [
+            [
+                1.0
+            ]
+        ],
+        "save_reload": true,
+        "source_edit_checked": false,
+        "mc_auto_run": false
+    },
+    {
+        "key": "H4_approach2",
+        "results": {
+            "Ax": {
+                "budget": [
+                    {
+                        "variable": "activity",
+                        "central_value": "136.8 1/(s*kg)",
+                        "standard_uncertainty": "1.800 1/(s*kg)",
+                        "dof": "inf",
+                        "distribution": "NORMAL_DISTRIBUTION",
+                        "sensitivity": "3.1",
+                        "contribution": "5.664 1/(s*kg)",
+                        "contribution_rate": 45.39772996260307
+                    },
+                    {
+                        "variable": "massStandard",
+                        "central_value": ".0050192 kg",
+                        "standard_uncertainty": "5.000 E-6 kg",
+                        "dof": "inf",
+                        "distribution": "NORMAL_DISTRIBUTION",
+                        "sensitivity": "86 E3",
+                        "contribution": "428.8 E-3 1/(s*kg)",
+                        "contribution_rate": 0.26021500003740344
+                    },
+                    {
+                        "variable": "massSample",
+                        "central_value": ".0050571 kg",
+                        "standard_uncertainty": "1.000 E-6 kg",
+                        "dof": "inf",
+                        "distribution": "NORMAL_DISTRIBUTION",
+                        "sensitivity": "-85 E3",
+                        "contribution": "-85.11 E-3 1/(s*kg)",
+                        "contribution_rate": 0.010253171902537741
+                    },
+                    {
+                        "variable": "ratio",
+                        "central_value": "3.170185792044825 1",
+                        "standard_uncertainty": "45.63 E-3 1",
+                        "dof": "5",
+                        "distribution": "",
+                        "sensitivity": "140",
+                        "contribution": "6.196 1/(s*kg)",
+                        "contribution_rate": 54.33180186545698
+                    }
+                ],
+                "result_central_value": 430.4312283626216,
+                "result_standard_uncertainty": 8.405685011714667,
+                "effective_df": 16.937986711783925,
+                "coverage_factor": 2.0,
+                "expanded_uncertainty": 16.811370023429333,
+                "coverage_settings": {
+                    "method": "legacy"
+                }
+            }
+        },
+        "source_comparison": {
+            "Ax": {
+                "published": {
+                    "value": 430.4,
+                    "u": 8.4
+                },
+                "central_delta": 0.031228362621618544,
+                "standard_uncertainty_delta": 0.005685011714666288
+            }
+        },
+        "output_names": [
+            "Ax"
+        ],
+        "covariance": [
+            [
+                70.65554051616459
+            ]
+        ],
+        "correlation": [
+            [
+                1.0
+            ]
+        ],
+        "save_reload": true,
+        "source_edit_checked": false,
+        "mc_auto_run": false
+    },
+    {
+        "key": "H5",
+        "results": {
+            "voltage": {
+                "budget": [
+                    {
+                        "variable": "dailyMean",
+                        "central_value": "10.0000971 V",
+                        "standard_uncertainty": "18.05 E-6 V",
+                        "dof": "9",
+                        "distribution": "",
+                        "sensitivity": "1.0",
+                        "contribution": "18.05 E-6 V",
+                        "contribution_rate": 100.00000000000001
+                    }
+                ],
+                "result_central_value": 10.0000971,
+                "result_standard_uncertainty": 1.805328532745598e-05,
+                "effective_df": 9.0,
+                "coverage_factor": 2.262,
+                "expanded_uncertainty": 4.0836531410705425e-05,
+                "coverage_settings": {
+                    "method": "legacy"
+                }
+            }
+        },
+        "source_comparison": {
+            "voltage": {
+                "published": {
+                    "value": 10.000097,
+                    "u": 1.8e-05,
+                    "df": 9
+                },
+                "central_delta": 9.99999993922529e-08,
+                "standard_uncertainty_delta": 5.328532745597881e-08
+            }
+        },
+        "output_names": [
+            "voltage"
+        ],
+        "covariance": [
+            [
+                3.2592111111453735e-10
+            ]
+        ],
+        "correlation": [
+            [
+                1.0
+            ]
+        ],
+        "save_reload": true,
+        "source_edit_checked": false,
+        "mc_auto_run": false
+    },
+    {
+        "key": "H6",
+        "results": {
+            "h": {
+                "budget": [
+                    {
+                        "variable": "scale",
+                        "central_value": "0.000002 m",
+                        "standard_uncertainty": "0.000 m",
+                        "dof": "",
+                        "distribution": "",
+                        "sensitivity": "100",
+                        "contribution": "0.000 m",
+                        "contribution_rate": 0.0
+                    },
+                    {
+                        "variable": "depth",
+                        "central_value": "0.000072 m",
+                        "standard_uncertainty": "402.5 E-9 m",
+                        "dof": "inf",
+                        "distribution": "",
+                        "sensitivity": "-1.0",
+                        "contribution": "-402.5 E-9 m",
+                        "contribution_rate": 13.185024416711883
+                    },
+                    {
+                        "variable": "resolution",
+                        "central_value": "0 m",
+                        "standard_uncertainty": "57.74 E-9 m",
+                        "dof": "inf",
+                        "distribution": "RECTANGULAR_DISTRIBUTION",
+                        "sensitivity": "-1.0",
+                        "contribution": "-57.74 E-9 m",
+                        "contribution_rate": 0.2712967986977754
+                    },
+                    {
+                        "variable": "standardCorrection",
+                        "central_value": "0 m",
+                        "standard_uncertainty": "81.65 E-9 m",
+                        "dof": "inf",
+                        "distribution": "",
+                        "sensitivity": "-1.0",
+                        "contribution": "-81.65 E-9 m",
+                        "contribution_rate": 0.5425935973955508
+                    },
+                    {
+                        "variable": "calibrationCorrection",
+                        "central_value": "0 m",
+                        "standard_uncertainty": "89.81 E-9 m",
+                        "dof": "inf",
+                        "distribution": "",
+                        "sensitivity": "1.0",
+                        "contribution": "89.81 E-9 m",
+                        "contribution_rate": 0.6565382528486163
+                    },
+                    {
+                        "variable": "heterogeneity",
+                        "central_value": "0 m",
+                        "standard_uncertainty": "220.5 E-9 m",
+                        "dof": "inf",
+                        "distribution": "TRIANGULAR_DISTRIBUTION",
+                        "sensitivity": "-1.0",
+                        "contribution": "-220.5 E-9 m",
+                        "contribution_rate": 3.955507325013565
+                    },
+                    {
+                        "variable": "national",
+                        "central_value": "0 m",
+                        "standard_uncertainty": "1.000 E-6 m",
+                        "dof": "inf",
+                        "distribution": "NORMAL_DISTRIBUTION",
+                        "sensitivity": "-1.0",
+                        "contribution": "-1.000 E-6 m",
+                        "contribution_rate": 81.38903960933261
+                    }
+                ],
+                "result_central_value": 0.000128,
+                "result_standard_uncertainty": 1.1084523745595327e-06,
+                "effective_df": 1e+100,
+                "coverage_factor": 2.0,
+                "expanded_uncertainty": 2.2169047491190654e-06,
+                "coverage_settings": {
+                    "method": "legacy"
+                }
+            },
+            "HRC": {
+                "budget": [
+                    {
+                        "variable": "scale",
+                        "central_value": "0.000002 m",
+                        "standard_uncertainty": "0.000 m",
+                        "dof": "",
+                        "distribution": "",
+                        "sensitivity": "18 E6",
+                        "contribution": "0.000 1",
+                        "contribution_rate": 0.0
+                    },
+                    {
+                        "variable": "depth",
+                        "central_value": "0.000072 m",
+                        "standard_uncertainty": "402.5 E-9 m",
+                        "dof": "inf",
+                        "distribution": "",
+                        "sensitivity": "-500 E3",
+                        "contribution": "-201.2 E-3 1",
+                        "contribution_rate": 13.185024416711883
+                    },
+                    {
+                        "variable": "resolution",
+                        "central_value": "0 m",
+                        "standard_uncertainty": "57.74 E-9 m",
+                        "dof": "inf",
+                        "distribution": "RECTANGULAR_DISTRIBUTION",
+                        "sensitivity": "-500 E3",
+                        "contribution": "-28.87 E-3 1",
+                        "contribution_rate": 0.2712967986977754
+                    },
+                    {
+                        "variable": "standardCorrection",
+                        "central_value": "0 m",
+                        "standard_uncertainty": "81.65 E-9 m",
+                        "dof": "inf",
+                        "distribution": "",
+                        "sensitivity": "-500 E3",
+                        "contribution": "-40.82 E-3 1",
+                        "contribution_rate": 0.5425935973955508
+                    },
+                    {
+                        "variable": "calibrationCorrection",
+                        "central_value": "0 m",
+                        "standard_uncertainty": "89.81 E-9 m",
+                        "dof": "inf",
+                        "distribution": "",
+                        "sensitivity": "500 E3",
+                        "contribution": "44.91 E-3 1",
+                        "contribution_rate": 0.6565382528486164
+                    },
+                    {
+                        "variable": "heterogeneity",
+                        "central_value": "0 m",
+                        "standard_uncertainty": "220.5 E-9 m",
+                        "dof": "inf",
+                        "distribution": "TRIANGULAR_DISTRIBUTION",
+                        "sensitivity": "-500 E3",
+                        "contribution": "-110.2 E-3 1",
+                        "contribution_rate": 3.955507325013565
+                    },
+                    {
+                        "variable": "national",
+                        "central_value": "0 m",
+                        "standard_uncertainty": "1.000 E-6 m",
+                        "dof": "inf",
+                        "distribution": "NORMAL_DISTRIBUTION",
+                        "sensitivity": "-500 E3",
+                        "contribution": "-500.0 E-3 1",
+                        "contribution_rate": 81.38903960933261
+                    }
+                ],
+                "result_central_value": 64.0,
+                "result_standard_uncertainty": 0.5542261872797664,
+                "effective_df": 1e+100,
+                "coverage_factor": 2.0,
+                "expanded_uncertainty": 1.1084523745595327,
+                "coverage_settings": {
+                    "method": "legacy"
+                }
+            }
+        },
+        "source_comparison": {
+            "h": {
+                "published": {
+                    "value": 0.000128,
+                    "u": 1.1e-06
+                },
+                "central_delta": 0.0,
+                "standard_uncertainty_delta": 8.452374559532636e-09
+            },
+            "HRC": {
+                "published": {
+                    "value": 64,
+                    "u": 0.55
+                },
+                "central_delta": 0.0,
+                "standard_uncertainty_delta": 0.004226187279766314
+            }
+        },
+        "output_names": [
+            "h",
+            "HRC"
+        ],
+        "covariance": [
+            [
+                1.2286666666666666e-12,
+                6.143333333333333e-07
+            ],
+            [
+                6.143333333333333e-07,
+                0.30716666666666664
+            ]
+        ],
+        "correlation": [
+            [
+                1.0,
+                1.0
+            ],
+            [
+                1.0,
+                1.0
+            ]
+        ],
+        "save_reload": true,
+        "source_edit_checked": false,
+        "mc_auto_run": false
+    }
+]

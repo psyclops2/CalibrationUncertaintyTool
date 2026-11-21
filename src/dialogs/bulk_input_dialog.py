@@ -244,6 +244,9 @@ class BulkInputDialog(QDialog):
 
                 row_label = self._row_header_text(spec)
                 self._parse_decimal_or_raise(new_text, row_label, point_name)
+                refs = getattr(self.main_window, 'value_references', None)
+                if spec['field'] == 'half_width' and refs and refs['variables'].get(var_name) in refs['rules']:
+                    raise ValueError(f"{var_name}: 半値幅は参照式で計算します。参照式を解除してから入力してください")
                 value_info[spec["field"]] = new_text
 
                 if spec["value_type"] != "B":

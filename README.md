@@ -1,4 +1,4 @@
-﻿# Calibration Uncertainty Tool
+# Calibration Uncertainty Tool
 
 ## Overview
 Calibration Uncertainty Tool is a desktop GUI application for uncertainty evaluation based on GUM (JCGM 100).
@@ -11,7 +11,7 @@ It supports model-equation based uncertainty budgets, multiple calibration point
 - Variable order management by drag-and-drop
 - Variable settings per calibration point:
   - Type A uncertainty (measurement list -> mean, standard uncertainty, degrees of freedom)
-  - Type B uncertainty (distribution, divisor, half-width, formula-assisted entry)
+  - Type B uncertainty (distribution, divisor, half-width, formula and input bindings)
   - Fixed values
 - Calibration point management (add/remove/rename/reorder)
 - Batch input dialog for B-type and fixed-value rows across all calibration points
@@ -155,10 +155,11 @@ tests/
 
 ## Tests
 ```bash
+python -m pip install -r requirements-dev.txt
 pytest
 ```
 
 ## License
-MIT License. See `LICENSE`.
+The application is licensed under the [MIT License](LICENSE). Third-party libraries, reference PDFs, and user-supplied materials retain their respective terms.
 
-Third-party dependency licenses are documented in `THIRD_PARTY_LICENSES.md`.
+See [third-party notices](THIRD_PARTY_LICENSES.md), [original license texts](licenses/README.md), [sample attribution](examples/NOTICE.md), and the [license review](docs/license-review.md). External reference PDFs are kept locally and excluded from public source archives; their presence does not grant redistribution permission.

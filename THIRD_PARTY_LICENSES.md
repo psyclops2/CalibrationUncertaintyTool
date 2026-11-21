@@ -1,114 +1,66 @@
-# THIRD‑PARTY LICENSES / NOTICE
+# Third-party licenses / notices
 
-このファイルは、本ソフトウェアが **リンク／実行時に依存するものの、配布物には含まれない** 外部ライブラリの著作権表示およびライセンス情報をまとめたものです。実行前に利用者ご自身で各ライブラリをインストールしてください。
+This software uses the third-party libraries listed below. These libraries retain their respective copyrights and license terms. The application's [MIT License](LICENSE) does not relicense them.
 
----
+This source distribution does not include the Python or Qt runtimes. Dependencies are installed separately in the user's environment.
 
-## 1. PySide6
+## PySide6 / Shiboken6 / Qt
 
-| 項目     | 内容                                                                      |
-| ------ | ----------------------------------------------------------------------- |
-| バージョン例 | 6.\* 系（開発時に確認）                                                          |
-| 配布元    | [https://www.qt.io/qt-for-python](https://www.qt.io/qt-for-python)      |
-| ライセンス  | **GNU Lesser General Public License v3.0 or later (LGPL‑3.0‑or‑later)** |
-| 著作権者   | © 2016 – 2025 The Qt Company Ltd.                                       |
+Qt for Python is provided by The Qt Company and its contributors. The open-source license options for PySide6 and Shiboken6 are LGPL-3.0-only, GPL-2.0-only, or GPL-3.0-only. Qt modules and their bundled third-party components are subject to their respective license terms.
 
-PySide6 は Qt ランタイムを Python から利用可能にする公式バインディングです。LGPL に従い、動的リンク形態であれば本ソフトウェアと組み合わせて利用できます。
+- [Qt licensing](https://doc.qt.io/qt-6/licensing.html)
+- [Third-party licenses used in Qt for Python](https://doc.qt.io/qtforpython-6/licenses.html)
+- License texts: [LGPL v3](licenses/upstream/LGPL-3.0.txt), [GPL v2](licenses/upstream/GPL-2.0.txt), [GPL v3](licenses/upstream/GPL-3.0.txt)
 
-> **LGPL‑3.0 全文**は [https://www.gnu.org/licenses/lgpl-3.0.html](https://www.gnu.org/licenses/lgpl-3.0.html) を参照してください。
+## NumPy
 
----
+Copyright (c) 2005-2025, NumPy Developers.
 
-## 2. NumPy
+NumPy is distributed under the BSD 3-Clause License. Bundled components carry additional copyright notices and license terms.
 
-| 項目     | 内容                                       |
-| ------ | ---------------------------------------- |
-| バージョン例 | 1.26.\*                                  |
-| 配布元    | [https://numpy.org/](https://numpy.org/) |
-| ライセンス  | **BSD 3‑Clause License**                 |
-| 著作権者   | © 2005 – 2025 NumPy Developers           |
+- [Copyright notices and license text](licenses/third-party/numpy-2.5.5/numpy-2.5.5.dist-info/licenses/LICENSE.txt)
+- [Bundled-component notices](licenses/README.md#numpy)
 
-### BSD 3‑Clause License 全文
+## SymPy
 
-```
-Copyright (c) 2005-2025, NumPy Developers
-All rights reserved.
+Copyright (c) 2006-2023 SymPy Development Team.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
+SymPy is distributed under the BSD 3-Clause License. The original license and author list include copyright holders and additional notices.
 
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of the NumPy Developers nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+- [License text](licenses/third-party/sympy-1.14.0/sympy-1.14.0.dist-info/licenses/LICENSE)
+- [AUTHORS](licenses/third-party/sympy-1.14.0/sympy-1.14.0.dist-info/licenses/AUTHORS)
+- [Additional notices](licenses/README.md#sympy)
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
-```
+## mpmath
 
----
+Copyright (c) 2005-2021 Fredrik Johansson and mpmath contributors.
 
-## 3. SymPy
+mpmath is distributed under the BSD 3-Clause License.
 
-| 項目     | 内容                                               |
-| ------ | ------------------------------------------------ |
-| バージョン例 | 1.12.\*                                          |
-| 配布元    | [https://www.sympy.org/](https://www.sympy.org/) |
-| ライセンス  | **BSD 3‑Clause License**                         |
-| 著作権者   | © 2006 – 2025 SymPy Development Team             |
+- [Copyright notice and license text](licenses/third-party/mpmath-1.3.0/mpmath-1.3.0.dist-info/LICENSE)
 
-> SymPy は BSD 3‑Clause ライセンスで配布されています。ライセンス本文は NumPy と同一であるため省略し、上記 NumPy 節の BSD 3‑Clause License テキストが適用されます。
+## Python-Markdown
 
----
+Copyright 2007, 2008 The Python Markdown Project (v. 1.7 and later).
 
+Copyright 2004, 2005, 2006 Yuri Takhteyev (v. 0.2-1.6b).
 
-## 4. Markdown (Python-Markdown)
+Copyright 2004 Manfred Stienstra (the original version).
 
-| Item | Value |
-| --- | --- |
-| Example version | 3.* |
-| Home | https://python-markdown.github.io/ |
-| License | BSD 3-Clause License |
-| PyPI | https://pypi.org/project/Markdown/ |
+Python-Markdown is distributed under the BSD 3-Clause License.
 
-> Python-Markdown is distributed under the BSD 3-Clause License.
-> The full license text is the same as the BSD 3-Clause License shown in the NumPy section above.
+- [Copyright notices and license text](licenses/third-party/markdown-3.11.3/markdown-3.11.3.dist-info/licenses/LICENSE.md)
 
-## 5. Python 標準ライブラリ
+## Python
 
-* **ライセンス:** Python Software Foundation License 2.0（PSF‑2.0）
-* **著作権者:** © 2001 – 2025 Python Software Foundation
-* **参照 URL:** [https://docs.python.org/3/license.html](https://docs.python.org/3/license.html)
+Python and its standard library are subject to the copyright notices and license terms of the Python Software Foundation and other contributors.
 
-標準ライブラリのモジュール (json, decimal, re, math, traceback 等) は CPython 配布物に含まれるものであり、本ソフトウェアはこれらをそのまま利用しています。
+- [Copyright notices and license text](licenses/python/LICENSE.txt)
 
----
+## Additional notices
 
-## 6. SPDX サマリ
+Additional dependency notices and license texts for development and testing tools are included in the [license index](licenses/README.md).
 
-```
-PySide6                LGPL-3.0-or-later
-NumPy                  BSD-3-Clause
-SymPy                  BSD-3-Clause
-Python-Markdown        BSD-3-Clause
-python-stdlib          Python-2.0
-```
+## Samples and external materials
 
----
-
-### 免責 / Disclaimer
-
-本ファイルはライセンス義務の履行と透明性のために提供していますが、当プロジェクトはこれら外部ライブラリを再頒布していません。ライブラリを本ソフトウェアと共に再配布する場合は、各ライセンスの追加義務（LGPL §4〜§6 など）を遵守してください。
+Sources and attribution for the samples are listed in the [sample notices](examples/NOTICE.md). Reference publications and third-party materials retain the copyrights of their respective owners.

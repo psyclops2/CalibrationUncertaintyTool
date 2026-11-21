@@ -1,5 +1,6 @@
 import re
 import unicodedata
+from .quantity_notation import decode_greek
 
 ZERO_WIDTH_PATTERN = re.compile(r"[\u200B\u200C\u200D\u2060\uFEFF]")
 # Bar-like Unicode marks/symbols that users may type in variable names.
@@ -12,7 +13,7 @@ def normalize_variable_name(name: str) -> str:
     """Normalize variable names for parser use (e.g. Rȳ -> Ry_bar)."""
     if not name:
         return ""
-    text = unicodedata.normalize("NFD", str(name))
+    text = unicodedata.normalize("NFD", decode_greek(name))
     text = ZERO_WIDTH_PATTERN.sub("", text)
     text = text.replace("\u00A0", " ").replace("\u3000", " ")
     text = BAR_MARKS_PATTERN.sub("_bar", text)
@@ -24,7 +25,7 @@ def normalize_equation_text(text):
     """Remove invisible characters that can break equation parsing."""
     if not text:
         return text
-    normalized = unicodedata.normalize("NFD", text)
+    normalized = unicodedata.normalize("NFD", decode_greek(text))
     normalized = ZERO_WIDTH_PATTERN.sub("", normalized)
     normalized = normalized.replace("\u00A0", " ").replace("\u3000", " ")
     normalized = BAR_MARKS_PATTERN.sub("_bar", normalized)

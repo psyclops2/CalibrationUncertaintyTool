@@ -1,5 +1,7 @@
 ﻿import html
 import re
+from .model_expression import split_equations, FUNCTIONS
+from .quantity_notation import IDENTIFIER, decode_greek, format_quantity_name
 
 
 class EquationFormatter:
@@ -19,7 +21,7 @@ class EquationFormatter:
 
     def format_equation(self, equation):
         """Format equation text as HTML."""
-        equations = [eq.strip() for eq in (equation or "").split(',') if eq.strip()]
+        equations = split_equations(equation)
         formatted_parts = []
         result_vars = set()
         parsed_equations = []
@@ -43,25 +45,8 @@ class EquationFormatter:
         return '<br>'.join(formatted_parts)
 
     def _tokenize_side(self, text):
-        tokens = []
-        current = ''
-        delimiters = set("+-*/^()_=,")
-        for char in text:
-            if char.isspace():
-                if current:
-                    tokens.append(current)
-                    current = ''
-                continue
-            if char in delimiters:
-                if current:
-                    tokens.append(current)
-                    current = ''
-                tokens.append(char)
-                continue
-            current += char
-        if current:
-            tokens.append(current)
-        return tokens
+        pattern = r'(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?|'+IDENTIFIER+r'|\*\*|[^\s]'
+        return re.findall(pattern, decode_greek(text))
 
     def _first_identifier_token(self, text):
         for token in self._tokenize_side(text):
@@ -73,72 +58,54 @@ class EquationFormatter:
         return ''
 
     def _is_number(self, token):
-        return bool(re.fullmatch(r'\d+(\.\d+)?', token or ''))
+        return bool(re.fullmatch(r'(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?', token or ''))
 
     def _format_side(self, text, result_vars, force_result=False):
         tokens = self._tokenize_side(text)
-        html_parts = []
-        i = 0
-        while i < len(tokens):
-            token = tokens[i]
-            if token in self._operator_tokens:
-                html_parts.append(f'<span class="operator">{html.escape(token)}</span>')
-                i += 1
-                continue
-            if token in {'^', '_'}:
-                html_parts.append(f'<span class="operator">{token}</span>')
-                i += 1
-                continue
+        def group(index, stop=False):
+            parts = []
+            while index < len(tokens) and not (stop and tokens[index] == ')'):
+                value, index = power(index)
+                parts.append(value)
+            return ''.join(parts), index
 
-            html_parts.append(self._format_atom(token, result_vars, force_result))
-            i += 1
+        def atom(index):
+            if index >= len(tokens):
+                return '', index
+            token = tokens[index]
+            if token == '(':
+                content, end = group(index+1, True)
+                return '('+content+(')' if end < len(tokens) else ''), min(end+1,len(tokens))
+            if token in self._operator_tokens or token in {'^','**'}:
+                return html.escape('·' if token == '*' else token), index+1
+            if token in FUNCTIONS and index+1 < len(tokens) and tokens[index+1]=='(':
+                return html.escape(token), index+1
+            return self._format_atom(token,result_vars,force_result), index+1
 
-            if i < len(tokens) and tokens[i] == '_':
-                sub_parts = []
-                while i < len(tokens) and tokens[i] == '_':
-                    sub_text, i = self._consume_marker_expression(tokens, i + 1)
-                    if sub_text:
-                        sub_parts.append(sub_text)
-                if sub_parts:
-                    html_parts.append(f'<sub>{"_".join(sub_parts)}</sub>')
+        def power(index):
+            content, end = atom(index)
+            if end < len(tokens) and tokens[end] in {'^','**'}:
+                end += 1
+                sign = ''
+                if end < len(tokens) and tokens[end] in {'+','-'}:
+                    sign = tokens[end]; end += 1
+                exponent, end = power(end)
+                # Parentheses remain visible to make the exponent's extent explicit.
+                exponent = re.sub(r'</?span\b[^>]*>', '', exponent)
+                content += '<sup>'+sign+exponent+'</sup>'
+            return content, end
 
-            if i < len(tokens) and tokens[i] == '^':
-                sup_text, i = self._consume_marker_expression(tokens, i + 1)
-                if sup_text:
-                    html_parts.append(f'<sup>{sup_text}</sup>')
-
-        return ''.join(html_parts)
-
-    def _consume_marker_expression(self, tokens, start_index):
-        if start_index >= len(tokens):
-            return '', start_index
-
-        token = tokens[start_index]
-        if token != '(':
-            return html.escape(token), start_index + 1
-
-        # Parenthesized group: keep as plain text inside sub/sup.
-        depth = 0
-        parts = []
-        i = start_index
-        while i < len(tokens):
-            current = tokens[i]
-            parts.append(html.escape(current))
-            if current == '(':
-                depth += 1
-            elif current == ')':
-                depth -= 1
-                if depth == 0:
-                    return ''.join(parts), i + 1
-            i += 1
-        return ''.join(parts), i
+        return group(0)[0]
 
     def _format_atom(self, token, result_vars, force_result=False):
         escaped = html.escape(token)
         if self._is_number(token):
             return f'<span class="number">{escaped}</span>'
         var_class = 'result-variable' if force_result or token in result_vars else 'input-variable'
-        return f'<span class="{var_class}">{escaped}</span>'
+        notation = getattr(self.parent, 'model_notation', 'legacy')
+        formatted = format_quantity_name(token,notation)
+        base, sep, suffix = formatted.partition('<sub>')
+        return f'<span class="{var_class}">{base}</span>'+ (sep+suffix if sep else '')
 
     def _format_variables(self, text):
         """Backward-compatible helper."""

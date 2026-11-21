@@ -45,6 +45,50 @@ def calculate_type_a_uncertainty(measurements_str):
         return None, None, None, None
 
 
+TYPE_A_MODES = {
+    'sample': '観測列から評価',
+    'pooled': 'プール標準偏差を使用',
+    'summary': '評価済み統計量を入力',
+}
+
+
+def evaluate_type_a_value(value):
+    """Evaluate a point's explicit Type A method without changing its source data."""
+    result = dict(value)
+    mode = value.get('evaluation_mode', 'sample')
+    if mode not in TYPE_A_MODES:
+        raise ValueError('Type Aの評価方法が不正です')
+    if mode == 'summary':
+        mean = Decimal(str(value.get('central_value', '')))
+        uncertainty = Decimal(str(value.get('standard_uncertainty', '')))
+        df = Decimal(str(value.get('degrees_of_freedom', '')))
+    else:
+        text = str(value.get('measurements', '')).strip()
+        measurements = [Decimal(x.strip()) for x in text.split(',')]
+        if not measurements or not all(x.is_finite() for x in measurements):
+            raise ValueError('有限の観測値を入力してください')
+        mean = sum(measurements) / Decimal(len(measurements))
+        if mode == 'pooled':
+            sigma = Decimal(str(value.get('pooled_standard_deviation', '')))
+            if not sigma.is_finite() or sigma < 0:
+                raise ValueError('プール標準偏差は有限の0以上の数値にしてください')
+            uncertainty = sigma / Decimal(len(measurements)).sqrt()
+            df = Decimal(str(value.get('pooled_degrees_of_freedom', '')))
+        else:
+            if len(measurements) < 2:
+                raise ValueError('観測列からの評価には2個以上の観測値が必要です')
+            df = Decimal(len(measurements)-1)
+            variance = sum((x-mean)**2 for x in measurements) / df
+            uncertainty = variance.sqrt() / Decimal(len(measurements)).sqrt()
+    if not mean.is_finite() or not uncertainty.is_finite() or uncertainty < 0:
+        raise ValueError('中心値は有限値、標準不確かさは有限の0以上の数値にしてください')
+    if df.is_nan() or df <= 0:
+        raise ValueError('自由度は正の数またはinfを入力してください')
+    result.update(central_value=str(mean), standard_uncertainty=str(uncertainty),
+                  degrees_of_freedom='inf' if df.is_infinite() else str(df))
+    return result
+
+
 def calculate_type_b_uncertainty(half_width_str, divisor_str):
     """TypeB不確かさ（半値幅と除数から標準不確かさ）を計算する。"""
     try:
@@ -115,7 +159,6 @@ def create_empty_value_dict():
         "standard_uncertainty": "",
         "half_width": "",
         "description": "",
-        "calculation_formula": "",
         "divisor": "",
     }
 

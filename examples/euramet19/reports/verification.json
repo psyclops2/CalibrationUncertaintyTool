@@ -1,0 +1,250 @@
+[
+  {
+    "case": "flask",
+    "independent": {
+      "central": 999.608733407061,
+      "u": 0.016885212039019597,
+      "df": 19.043689476061907,
+      "sensitivities": {
+        "m": 1.0026663644855596,
+        "t": -0.00999599836968512,
+        "rhoW": -1002.4154967980957,
+        "rhoA": 877.4456596466404,
+        "rhoB": 0.018745475572718297,
+        "gamma": 889.6438549019762,
+        "dMen": 1,
+        "dRep": 1
+      }
+    },
+    "tool": {
+      "budget": [
+        {
+          "variable": "m",
+          "central_value": "996.9505 g",
+          "standard_uncertainty": "1.270 E-3 g",
+          "dof": "50",
+          "distribution": "NORMAL_DISTRIBUTION",
+          "sensitivity": "1.0",
+          "contribution": "1.273 E-3 mL",
+          "contribution_rate": 0.5687315185105941
+        },
+        {
+          "variable": "t",
+          "central_value": "19.11 degC",
+          "standard_uncertainty": "15.20 E-3 degC",
+          "dof": "inf",
+          "distribution": "NORMAL_DISTRIBUTION",
+          "sensitivity": "-10 E-3",
+          "contribution": "-151.9 E-6 mL",
+          "contribution_rate": 0.008097043858117596
+        },
+        {
+          "variable": "rhoW",
+          "central_value": "0.9984 g/mL",
+          "standard_uncertainty": "3.090 E-6 g/mL",
+          "dof": "inf",
+          "distribution": "NORMAL_DISTRIBUTION",
+          "sensitivity": "-1.0 E3",
+          "contribution": "-3.097 E-3 mL",
+          "contribution_rate": 3.365111551182798
+        },
+        {
+          "variable": "rhoA",
+          "central_value": "0.0012 g/mL",
+          "standard_uncertainty": "1.760 E-6 g/mL",
+          "dof": "inf",
+          "distribution": "NORMAL_DISTRIBUTION",
+          "sensitivity": "880",
+          "contribution": "1.544 E-3 mL",
+          "contribution_rate": 0.8364746006340332
+        },
+        {
+          "variable": "rhoB",
+          "central_value": "8.00 g/mL",
+          "standard_uncertainty": "34.60 E-3 g/mL",
+          "dof": "inf",
+          "distribution": "NORMAL_DISTRIBUTION",
+          "sensitivity": "19 E-3",
+          "contribution": "648.6 E-6 mL",
+          "contribution_rate": 0.1475475783672435
+        },
+        {
+          "variable": "gamma",
+          "central_value": "1e-5 1/degC",
+          "standard_uncertainty": "288.7 E-9 1/degC",
+          "dof": "inf",
+          "distribution": "RECTANGULAR_DISTRIBUTION",
+          "sensitivity": "890",
+          "contribution": "256.8 E-6 mL",
+          "contribution_rate": 0.023133326263904335
+        },
+        {
+          "variable": "dMen",
+          "central_value": "0 mL",
+          "standard_uncertainty": "8.660 E-3 mL",
+          "dof": "inf",
+          "distribution": "RECTANGULAR_DISTRIBUTION",
+          "sensitivity": "1.0",
+          "contribution": "8.660 E-3 mL",
+          "contribution_rate": 26.305600843500915
+        },
+        {
+          "variable": "dRep",
+          "central_value": "0 mL",
+          "standard_uncertainty": "14.00 E-3 mL",
+          "dof": "9",
+          "distribution": "",
+          "sensitivity": "1.0",
+          "contribution": "14.00 E-3 mL",
+          "contribution_rate": 68.74530353768239
+        },
+        {
+          "variable": "tref",
+          "central_value": "20 degC",
+          "standard_uncertainty": "0.000 degC",
+          "dof": "",
+          "distribution": "",
+          "sensitivity": "10 E-3",
+          "contribution": "0.000 mL",
+          "contribution_rate": 0.0
+        }
+      ],
+      "result_central_value": 999.6087334070609,
+      "result_standard_uncertainty": 0.016885212039019597,
+      "effective_df": 19.043689476061896,
+      "coverage_factor": 2.0930240544083096,
+      "expanded_uncertainty": 0.0353411549614528,
+      "coverage_settings": {
+        "method": "student",
+        "probability": 0.95,
+        "floor_df": true,
+        "note": "95%両側t分位点。原文との係数差は文書説明参照。"
+      }
+    },
+    "save_reload": true
+  },
+  {
+    "case": "pycnometer",
+    "independent": {
+      "central": 100.01613988307011,
+      "u": 0.000881979070250133,
+      "df": 13.294839543737721,
+      "sensitivities": {
+        "m": 1.002668069003209,
+        "t": -0.0010001507972322505,
+        "rhoW": -100.29697140299851,
+        "rhoA": 87.79307833365435,
+        "rhoB": 0.0018755839604016244,
+        "gamma": 106.01598450661842,
+        "dMen": 1,
+        "dRep": 1
+      }
+    },
+    "tool": {
+      "budget": [
+        {
+          "variable": "m",
+          "central_value": "99.7500 g",
+          "standard_uncertainty": "114.0 E-6 g",
+          "dof": "50",
+          "distribution": "NORMAL_DISTRIBUTION",
+          "sensitivity": "1.0",
+          "contribution": "114.3 E-6 mL",
+          "contribution_rate": 1.6796063712384937
+        },
+        {
+          "variable": "t",
+          "central_value": "18.94 degC",
+          "standard_uncertainty": "17.00 E-3 degC",
+          "dof": "inf",
+          "distribution": "NORMAL_DISTRIBUTION",
+          "sensitivity": "-1.0 E-3",
+          "contribution": "-17.00 E-6 mL",
+          "contribution_rate": 0.03716312748612837
+        },
+        {
+          "variable": "rhoW",
+          "central_value": "0.9984 g/mL",
+          "standard_uncertainty": "3.090 E-6 g/mL",
+          "dof": "inf",
+          "distribution": "NORMAL_DISTRIBUTION",
+          "sensitivity": "-100",
+          "contribution": "-309.9 E-6 mL",
+          "contribution_rate": 12.34741481403726
+        },
+        {
+          "variable": "rhoA",
+          "central_value": "0.0012 g/mL",
+          "standard_uncertainty": "1.740 E-6 g/mL",
+          "dof": "inf",
+          "distribution": "NORMAL_DISTRIBUTION",
+          "sensitivity": "88",
+          "contribution": "152.8 E-6 mL",
+          "contribution_rate": 2.999870397406568
+        },
+        {
+          "variable": "rhoB",
+          "central_value": "8.00 g/mL",
+          "standard_uncertainty": "34.60 E-3 g/mL",
+          "dof": "inf",
+          "distribution": "NORMAL_DISTRIBUTION",
+          "sensitivity": "1.9 E-3",
+          "contribution": "64.90 E-6 mL",
+          "contribution_rate": 0.5413880423270582
+        },
+        {
+          "variable": "gamma",
+          "central_value": "1e-5 1/degC",
+          "standard_uncertainty": "288.7 E-9 1/degC",
+          "dof": "inf",
+          "distribution": "RECTANGULAR_DISTRIBUTION",
+          "sensitivity": "110",
+          "contribution": "30.60 E-6 mL",
+          "contribution_rate": 0.12040510393141245
+        },
+        {
+          "variable": "dMen",
+          "central_value": "0 mL",
+          "standard_uncertainty": "0.000 mL",
+          "dof": "inf",
+          "distribution": "RECTANGULAR_DISTRIBUTION",
+          "sensitivity": "1.0",
+          "contribution": "0.000 mL",
+          "contribution_rate": 0.0
+        },
+        {
+          "variable": "dRep",
+          "central_value": "0 mL",
+          "standard_uncertainty": "800.0 E-6 mL",
+          "dof": "9",
+          "distribution": "",
+          "sensitivity": "1.0",
+          "contribution": "800.0 E-6 mL",
+          "contribution_rate": 82.27415214357308
+        },
+        {
+          "variable": "tref",
+          "central_value": "20 degC",
+          "standard_uncertainty": "0.000 degC",
+          "dof": "",
+          "distribution": "",
+          "sensitivity": "1.0 E-3",
+          "contribution": "0.000 mL",
+          "contribution_rate": 0.0
+        }
+      ],
+      "result_central_value": 100.0161398830701,
+      "result_standard_uncertainty": 0.0008819790702501329,
+      "effective_df": 13.29483954373772,
+      "coverage_factor": 2.1603686564627926,
+      "expanded_uncertainty": 0.0019053999390245826,
+      "coverage_settings": {
+        "method": "student",
+        "probability": 0.95,
+        "floor_df": true,
+        "note": "95%両側t分位点。原文との係数差は文書説明参照。"
+      }
+    },
+    "save_reload": true
+  }
+]

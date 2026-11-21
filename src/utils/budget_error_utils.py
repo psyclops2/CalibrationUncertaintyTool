@@ -4,6 +4,7 @@ from typing import Optional
 import sympy as sp
 
 from .equation_normalizer import normalize_equation_text
+from .model_expression import parse_expression
 
 
 @dataclass
@@ -31,11 +32,8 @@ def detect_zero_denominator_terms(expression: str, variables, value_handler):
     its central value is numerically zero at the current point.
     """
     try:
-        symbols = {var: sp.Symbol(var) for var in variables}
-        expr = sp.sympify(
-            normalize_equation_text(expression).replace("^", "**"),
-            locals=symbols,
-        )
+        symbols = {var: sp.Symbol(var,real=True) for var in variables}
+        expr = parse_expression(expression,symbols)
         denominator = sp.denom(sp.together(expr))
     except Exception:
         return []

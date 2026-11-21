@@ -3,12 +3,13 @@
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QPainter, QPixmap
 from PySide6.QtWidgets import QDialog, QDialogButtonBox, QLabel, QTextBrowser, QVBoxLayout
+from src.utils.ui_translation import tr_ui
 
 
 class AboutDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("About")
+        self.setWindowTitle(tr_ui('このソフトについて'))
         self.setModal(True)
         self.resize(600, 500)
 
@@ -49,44 +50,46 @@ class AboutDialog(QDialog):
         layout.addWidget(app_info)
 
         version = "1.00.01"
-        version_label = QLabel(f"Version: {version}")
+        version_label = QLabel(tr_ui('バージョン：')+version)
         layout.addWidget(version_label)
 
         license_text = self._make_transparent_text_browser(
-            """
-            <h3>License</h3>
-            <p>This software is licensed under the <b>MIT License</b>.</p>
+            f"""
+            <h3>{tr_ui('ライセンス')}</h3>
+            <p>{tr_ui('本体はMITライセンスです。第三者のライブラリ・資料には各権利者の条件が適用されます。')}</p>
             <ul>
                 <li><a href=\"https://opensource.org/licenses/MIT\">https://opensource.org/licenses/MIT</a></li>
-                <li><a href=\"https://github.com/psyclops2/CalibrationUncertaintyTool\">Project GitHub Repository</a></li>
+                <li><a href=\"https://github.com/psyclops2/CalibrationUncertaintyTool\">{tr_ui('プロジェクトのリポジトリ')}</a></li>
             </ul>
             """
         )
         layout.addWidget(license_text)
 
         libraries_text = self._make_transparent_text_browser(
-            """
-            <h3>Used Libraries</h3>
+            f"""
+            <h3>{tr_ui('依存ライブラリ')}</h3>
             <ul>
-                <li>PySide6 (LGPLv3)<br>
-                    <a href='https://www.gnu.org/licenses/lgpl-3.0.html'>https://www.gnu.org/licenses/lgpl-3.0.html</a>
+                <li>PySide6 / Qt / Shiboken6<br>
+                    <a href='https://doc.qt.io/qt-6/licensing.html'>{tr_ui('Qtのライセンス・モジュール別条件')}</a>
                 </li>
                 <li>SymPy (BSD 3-Clause)<br>
                     <a href='https://opensource.org/licenses/BSD-3-Clause'>https://opensource.org/licenses/BSD-3-Clause</a>
                 </li>
-                <li>NumPy (BSD 3-Clause)<br>
+                <li>NumPy (BSD 3-Clause; {tr_ui('同梱コードの表示も参照')})<br>
                     <a href='https://opensource.org/licenses/BSD-3-Clause'>https://opensource.org/licenses/BSD-3-Clause</a>
                 </li>
                 <li>Python-Markdown (BSD 3-Clause)<br>
                     <a href='https://python-markdown.github.io/'>https://python-markdown.github.io/</a>
                 </li>
+                <li>mpmath (BSD 3-Clause)</li>
             </ul>
-            <p>For full third-party notices, see <b>THIRD_PARTY_LICENSES.md</b>.</p>
+            <p><a href='{(Path(__file__).resolve().parents[2]/'THIRD_PARTY_LICENSES.md').as_uri()}'>{tr_ui('第三者ライセンス表示')}</a></p>
             """
         )
         layout.addWidget(libraries_text)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Close)
+        buttons.button(QDialogButtonBox.Close).setText(tr_ui('閉じる'))
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 

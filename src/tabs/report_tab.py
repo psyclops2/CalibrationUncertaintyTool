@@ -20,6 +20,9 @@ from src.utils.variable_utils import get_distribution_translation_key
 from src.utils.equation_formatter import EquationFormatter
 from src.utils.app_logger import log_error
 from src.utils.markdown_renderer import render_markdown_to_html
+from src.utils.image_assets import embed_report_images
+from src.utils.quantity_notation import format_quantity_name
+from src.utils.ui_translation import tr_ui
 
 class ReportTab(BaseTab):
     UNIT_PLACEHOLDER = '-'
@@ -115,14 +118,9 @@ class ReportTab(BaseTab):
     def _build_cell_html(text, tag="td"):
         return f"<{tag}>{html_lib.escape(str(text))}</{tag}>"
 
-    @staticmethod
-    def _format_variable_name_html(name):
+    def _format_variable_name_html(self, name):
         """Format variable name like V_ref_stability to V<sub>ref_stability</sub>."""
-        raw = str(name)
-        base, sep, suffix = raw.partition("_")
-        if not sep or not suffix:
-            return html_lib.escape(raw)
-        return f"{html_lib.escape(base)}<sub>{html_lib.escape(suffix)}</sub>"
+        return format_quantity_name(str(name),getattr(self.parent,'model_notation','legacy'))
 
     def _build_variable_cell_html(self, name, tag="td"):
         return f"<{tag}>{self._format_variable_name_html(name)}</{tag}>"
@@ -196,7 +194,7 @@ class ReportTab(BaseTab):
         self.generate_button.setText(self.tr(GENERATE_REPORT))
         self.save_button.setText(self.tr(SAVE_REPORT))
         # 繝ｬ繝昴・繝医ｒ蜀咲函謌舌＠縺ｦ陦ｨ遉ｺ繧呈峩譁ｰ
-        self.generate_report()
+        self.generate_report(show_errors=False)
         
     def setup_ui(self):
         """Set up UI widgets."""
@@ -309,7 +307,7 @@ class ReportTab(BaseTab):
         except Exception as e:
             log_error(f"險育ｮ礼ｵ先棡螟画峩繧ｨ繝ｩ繝ｼ: {str(e)}", details=traceback.format_exc())
             
-    def generate_report(self):
+    def generate_report(self, *, show_errors=True):
         """Generate and display report HTML."""
         try:
 
@@ -336,7 +334,8 @@ class ReportTab(BaseTab):
             
         except Exception as e:
             log_error(f"繝ｬ繝昴・繝育函謌舌お繝ｩ繝ｼ: {str(e)}", details=traceback.format_exc())
-            QMessageBox.warning(self, self.tr(SAVE_ERROR), self.tr(REPORT_SAVE_ERROR))
+            if show_errors:
+                QMessageBox.warning(self, self.tr(SAVE_ERROR), self.tr(REPORT_SAVE_ERROR))
             
 
 
@@ -523,10 +522,16 @@ class ReportTab(BaseTab):
                 data = variable_values.get(name, {})
                 return data if isinstance(data, dict) else {}
 
+            definition_images = []
             for var_name in variable_names:
                 var_data = get_variable_data(var_name)
                 unit = var_data.get('unit', '') or self.UNIT_PLACEHOLDER
                 definition = self._format_markdown_inline_or_placeholder(var_data.get('definition', ''))
+                images = re.findall(r'<img\b[^>]*src="asset:[0-9a-f]{64}"[^>]*>', definition)
+                if images:
+                    definition_images.append((var_name, images))
+                    for image in images:
+                        definition = definition.replace(image, '（添付図は表の下）')
                 uncertainty_type = self.get_uncertainty_type_display(var_data.get('type', ''), var_name)
                 safe_unit = html_lib.escape(str(unit))
                 variable_table_rows.append([
@@ -537,6 +542,9 @@ class ReportTab(BaseTab):
                 ])
             html += f'<div class="title">{self.tr(REPORT_VARIABLE_LIST)}</div>'
             html += self._render_three_line_table(variable_table_rows, header_row_indexes={0})
+            for name, images in definition_images:
+                html += '<div><strong>' + self._format_variable_name_html(name) + '</strong></div>'
+                html += '<div class="description-body">' + '<br/>'.join(images) + '</div>'
 
             # 蝗槫ｸｰ繝｢繝・Ν荳隕ｧ繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ
             point_names = getattr(self.parent, 'value_names', [])
@@ -578,6 +586,15 @@ class ReportTab(BaseTab):
                         value_item = values_list[idx] if idx < len(values_list) else None
                         if not isinstance(value_item, dict):
                             value_item = {}
+                        if value_item.get('input_source'):
+                            try:
+                                from src.utils.input_sources import source_packet
+                                packet = source_packet(self.parent,var_name,idx)
+                                value_item.update(central_value=str(packet['mean']),standard_uncertainty=str(packet['u']),degrees_of_freedom=str(packet['df']))
+                                html += self._format_description_block(tr_ui('入力元：')+packet['label']+'\n'+packet['note'])
+                            except Exception as error:
+                                html += self._format_description_block('入力元を評価できません：'+str(error))
+                                continue
 
                         unit = self._to_display_text(var_data.get('unit', ''), self.UNIT_PLACEHOLDER)
                         central_value = self._to_display_text(value_item.get('central_value', '-'))
@@ -590,8 +607,17 @@ class ReportTab(BaseTab):
                                 [self.tr(REPORT_CENTRAL_VALUE), self.tr(REPORT_UNIT), self.tr(REPORT_STANDARD_UNCERTAINTY), self.tr(REPORT_DOF)],
                                 [central_value, unit, standard_uncertainty, degrees_of_freedom],
                             )
-                            html += self._format_measurements_table(value_item.get('measurements', ''))
+                            if not value_item.get('input_source'):
+                                html += self._format_measurements_table(value_item.get('measurements', ''))
                             html += self._format_description_block(value_item.get('description', ''))
+                            if 'evaluation_mode' in value_item and not value_item.get('input_source'):
+                                from src.utils.variable_utils import TYPE_A_MODES
+                                method = tr_ui(TYPE_A_MODES[value_item['evaluation_mode']])
+                                if value_item['evaluation_mode'] == 'pooled':
+                                    method += (' / s=' + str(value_item.get('pooled_standard_deviation', '')) +
+                                               ' / ν=' + str(value_item.get('pooled_degrees_of_freedom', '')))
+                                html += self._format_description_block(tr_ui('Type A評価：') + method + '\n' +
+                                                                       value_item.get('evaluation_note', ''))
                         elif uncertainty_type == 'B':
                             half_width = self._to_display_text(value_item.get('half_width', '-'))
                             distribution = var_data.get('distribution', '')
@@ -686,7 +712,26 @@ class ReportTab(BaseTab):
                         [self._build_cell_html(self.tr(REPORT_COVERAGE_FACTOR)), self._build_cell_html(calc_tab.coverage_factor_label.text())],
                         [self._build_cell_html(self.tr(REPORT_EXPANDED_UNCERTAINTY)), self._build_cell_html(calc_tab.expanded_uncertainty_label.text())],
                     ]
+                    if hasattr(calc_tab, 'coverage_method_label'):
+                        result_rows.append([self._build_cell_html(tr_ui('包含方法・採用根拠')),
+                                            self._build_cell_html(calc_tab.coverage_method_label.text())])
                     html += self._render_three_line_table(result_rows, header_row_indexes={0})
+                    if hasattr(calc_tab,'evaluation_note_label') and calc_tab.evaluation_note_label.text():
+                        html += self._format_description_block(calc_tab.evaluation_note_label.text())
+                    point_value = self.parent.variable_values.get(result_var,{}).get('values',[])
+                    if idx < len(point_value) and point_value[idx].get('include_output_covariance',False):
+                        try:
+                            from src.utils.output_covariance import evaluate_outputs
+                            import math
+                            names,covariance,correlation = evaluate_outputs(self.parent,idx)
+                            for title,matrix in (('出力間の共分散（行の単位 × 列の単位）',covariance),('出力間の相関係数',correlation)):
+                                html += '<h4>'+title+'</h4>'
+                                rows = [[self._build_cell_html('','th')]+[self._build_cell_html(name+' ['+self.parent.variable_values[name].get('unit','')+']','th') for name in names]]
+                                for i,name in enumerate(names):
+                                    rows.append([self._build_cell_html(name)]+[self._build_cell_html(f'{float(matrix[i,j]):.8g}' if math.isfinite(float(matrix[i,j])) else tr_ui('未定義（u=0）')) for j in range(len(names))])
+                                html += self._render_three_line_table(rows,header_row_indexes={0})
+                        except Exception as error:
+                            html += self._format_description_block('出力間の共分散を評価できません：'+str(error))
 
             self.value_handler.current_value_index = original_point_index
             if calc_tab and hasattr(calc_tab, 'value_handler') and original_calc_point_index is not None:
@@ -734,7 +779,7 @@ class ReportTab(BaseTab):
             </body>
             </html>
             """
-            return html
+            return embed_report_images(html, getattr(self.parent, 'image_assets', {}))
 
         except Exception as e:
             log_error(f"HTML逕滓・繧ｨ繝ｩ繝ｼ: {str(e)}", details=traceback.format_exc())

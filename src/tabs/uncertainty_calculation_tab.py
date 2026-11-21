@@ -6,6 +6,7 @@ from PySide6.QtCore import Qt, Signal, Slot
 import traceback
 
 from src.utils.equation_handler import EquationHandler
+from src.utils.ui_translation import tr_ui
 from src.utils.value_handler import ValueHandler
 from src.utils.uncertainty_calculator import UncertaintyCalculator
 from src.utils.number_formatter import (
@@ -95,6 +96,13 @@ class UncertaintyCalculationTab(BaseTab):
 
     def _clear_calculation_display(self):
         """Clear table/result labels to avoid showing stale values."""
+        if hasattr(self, 'result_combo') and hasattr(self.parent, 'calculation_results'):
+            index = self.value_handler.current_value_index
+            if 0 <= index < len(self.parent.value_names):
+                self.parent.calculation_results.get(self.result_combo.currentText(), {}).pop(
+                    self.parent.value_names[index], None)
+        if hasattr(self, 'evaluation_note_label'):
+            self.evaluation_note_label.clear(); self.evaluation_note_label.hide()
         self.calibration_table.setRowCount(0)
         self.central_value_label.setText('--')
         self.standard_uncertainty_label.setText('--')
@@ -103,6 +111,10 @@ class UncertaintyCalculationTab(BaseTab):
         self.expanded_uncertainty_label.setText('--')
         self.warning_label.clear()
         self.warning_label.hide()
+        if hasattr(self, 'approximation_label'):
+            self.approximation_label.setText(tr_ui('一次近似：未点検'))
+        if hasattr(self, 'coverage_method_label'):
+            self.coverage_method_label.clear()
 
     def _show_budget_error_message(self, issues):
         message = summarize_budget_issues(issues)
@@ -118,6 +130,13 @@ class UncertaintyCalculationTab(BaseTab):
         self.warning_label.show()
 
     def retranslate_ui(self):
+        self.overview_button.setText(tr_ui('全校正点の結果一覧'))
+        self.coverage_settings_button.setText(tr_ui('包含係数の評価方法…'))
+        self.coverage_method_caption.setText(tr_ui('包含方法'))
+        self.output_covariance_button.setText(tr_ui('結果どうしの相関…'))
+        self.approximation_button.setText(tr_ui('一次近似を点検'))
+        if self.approximation_label.text() in ('一次近似：未点検','First-order approximation: not checked'):
+            self.approximation_label.setText(tr_ui('一次近似：未点検'))
         """UIのテキストを現在の言語で更新"""
         self.result_group.setTitle(self.tr(RESULT_SELECTION))
         self.result_variable_label.setText(self.tr(RESULT_VARIABLE) + ":")
@@ -222,7 +241,7 @@ class UncertaintyCalculationTab(BaseTab):
         self.result_group.setLayout(result_layout)
         left_layout.addWidget(self.result_group)
         
-        self.overview_button = QPushButton("全校正点の結果一覧")
+        self.overview_button = QPushButton(tr_ui('全校正点の結果一覧'))
         self.overview_button.clicked.connect(self.show_point_overview)
         left_layout.addWidget(self.overview_button)
         left_layout.addStretch(1)
@@ -310,6 +329,13 @@ class UncertaintyCalculationTab(BaseTab):
         self.coverage_factor_label = QLabel("")
         self.coverage_factor_text = QLabel(self.tr(COVERAGE_FACTOR) + ":")
         result_display_layout.addRow(self.coverage_factor_text, self.coverage_factor_label)
+        self.coverage_method_label = QLabel('')
+        self.coverage_method_label.setWordWrap(True)
+        self.coverage_settings_button = QPushButton(tr_ui('包含係数の評価方法…'))
+        self.coverage_settings_button.clicked.connect(self.edit_coverage_settings)
+        self.coverage_method_caption = QLabel(tr_ui('包含方法'))
+        result_display_layout.addRow(self.coverage_method_caption, self.coverage_method_label)
+        result_display_layout.addRow(self.coverage_settings_button)
         
         # 拡張不確かさ
         self.expanded_uncertainty_label = QLabel("")
@@ -323,6 +349,20 @@ class UncertaintyCalculationTab(BaseTab):
         self.warning_label.hide()
         right_layout.addWidget(self.warning_label)
         right_layout.addWidget(self.result_display_group)
+        self.evaluation_note_label = QLabel('')
+        self.evaluation_note_label.setWordWrap(True)
+        self.evaluation_note_label.hide()
+        right_layout.addWidget(self.evaluation_note_label)
+        self.output_covariance_button = QPushButton(tr_ui('結果どうしの相関…'))
+        self.output_covariance_button.clicked.connect(self.show_output_covariance)
+        self.output_covariance_button.hide()
+        right_layout.addWidget(self.output_covariance_button)
+        self.approximation_button = QPushButton(tr_ui('一次近似を点検'))
+        self.approximation_button.clicked.connect(self.check_first_order_approximation)
+        self.approximation_label = QLabel(tr_ui('一次近似：未点検'))
+        self.approximation_label.setWordWrap(True)
+        right_layout.addWidget(self.approximation_button)
+        right_layout.addWidget(self.approximation_label)
         
         # メインレイアウトに左右のレイアウトを追加
         main_layout.addLayout(left_layout, 1)  # 左側のレイアウト（幅の比率1）
@@ -411,6 +451,9 @@ class UncertaintyCalculationTab(BaseTab):
             
         except Exception as e:
             log_error(f"計算結果変更エラー: {str(e)}", details=traceback.format_exc())
+            self._clear_calculation_display()
+            self.warning_label.setText(str(e))
+            self.warning_label.show()
             
     def on_value_changed(self, index):
         """校正点が変更されたときの処理"""
@@ -438,9 +481,62 @@ class UncertaintyCalculationTab(BaseTab):
             
         except Exception as e:
             log_error(f"校正点変更エラー: {str(e)}", details=traceback.format_exc())
+            self._clear_calculation_display()
+            self.warning_label.setText(str(e))
+            self.warning_label.show()
             
 
     
+    def current_coverage_settings(self, result=None):
+        result = result or self.result_combo.currentText()
+        values = self.parent.variable_values.get(result, {}).get('values', [])
+        index = self.value_handler.current_value_index
+        if 0 <= index < len(values):
+            return values[index].get('coverage', {'method': 'legacy'})
+        return {'method': 'legacy'}
+
+    def show_output_covariance(self):
+        from src.dialogs.output_covariance_dialog import OutputCovarianceDialog
+        try:
+            dialog = OutputCovarianceDialog(self.parent, self.value_handler.current_value_index, self)
+            dialog.exec()
+        except Exception as error:
+            self.evaluation_note_label.setText('出力間の相関を評価できません：' + str(error))
+            self.evaluation_note_label.show()
+
+    def check_first_order_approximation(self):
+        from src.utils.approximation_check import find_zero_sensitivity_products
+        try:
+            equation = self.equation_handler.get_target_equation(self.result_combo.currentText())
+            if not equation:
+                raise ValueError(tr_ui('モデル式を入力してください'))
+            expression = equation.split('=', 1)[1]
+            names = [name for name in self.equation_handler.get_variables_from_equation(expression)
+                     if name in self.parent.variable_values]
+            values = {name: self.value_handler.get_central_value(name) for name in names}
+            uncertainties = {name: self.value_handler.get_standard_uncertainty(name) or 0 for name in names}
+            pairs = find_zero_sensitivity_products(expression, values, uncertainties)
+            if pairs:
+                terms = '、'.join(' × '.join(pair) for pair in pairs)
+                self.approximation_label.setText(tr_ui('一次感度が0でも二次の寄与があり得る項：') + terms +
+                    tr_ui('。必要に応じてMC等で確認してください。この点検ではuを補正していません。'))
+            else:
+                self.approximation_label.setText(tr_ui('該当する二次の項は検出されませんでした。一次近似全体の妥当性を保証する点検ではありません。'))
+        except Exception as error:
+            self.approximation_label.setText(tr_ui('一次近似を点検できません：') + str(error))
+
+    def edit_coverage_settings(self):
+        from src.dialogs.coverage_dialog import CoverageDialog
+        result = self.result_combo.currentText()
+        if not result:
+            return
+        dialog = CoverageDialog(self.current_coverage_settings(), self)
+        if dialog.exec():
+            self.parent.ensure_variable_initialized(result, is_result=True)
+            index = self.value_handler.current_value_index
+            self.parent.variable_values[result]['values'][index]['coverage'] = dialog.settings
+            self.on_result_changed(result)
+
     def calculate_sensitivity_coefficients(self, equation):
         """感度係数を計算して表示"""
         # If we're already updating, skip to prevent recursion
@@ -457,6 +553,7 @@ class UncertaintyCalculationTab(BaseTab):
             left_side = left_side.strip()
             right_side = right_side.strip()
             result_var = left_side
+            self.output_covariance_button.setVisible(len(self.parent.result_variables)>1)
             result_unit = self._get_unit(result_var)
             
             # 変数を抽出
@@ -574,18 +671,18 @@ class UncertaintyCalculationTab(BaseTab):
                     self._set_display_only_item(i, 6, "--", result_unit)
                     contributions.append(0)
             
-            # 合成標準不確かさの計算
-            result_standard_uncertainty = self.uncertainty_calculator.calculate_combined_uncertainty_with_correlation(
-                contributions,
-                ordered_variables,
-                getattr(self.parent, "correlation_coefficients", {}),
-            )
-            
-            # 寄与率の計算と表示
-            contribution_rates = self.uncertainty_calculator.calculate_contribution_rates(contributions)
+            from src.utils.input_sources import statistical_state, effective_df as source_effective_df
+            import numpy as np
+            covariance, source_groups, source_dfs = statistical_state(
+                self.parent, ordered_variables, self.value_handler.current_value_index, self.value_handler)
+            uncertainties = np.sqrt(np.maximum(0, np.diag(covariance)))
+            gradient = np.divide(contributions, uncertainties, out=np.zeros(len(contributions)), where=uncertainties!=0)
+            variance = max(0.,float(gradient @ covariance @ gradient))
+            result_standard_uncertainty = variance**.5
+            contribution_rates = list(100*gradient*(covariance@gradient)/variance) if variance>0 else [0.]*len(gradient)
             for i, rate in enumerate(contribution_rates):
                 self.calibration_table.setItem(i, 7, QTableWidgetItem(format_contribution_rate(rate)))
-            
+
             # 計算結果を表示
             try:
                 # 中央値の計算
@@ -616,24 +713,35 @@ class UncertaintyCalculationTab(BaseTab):
                 standard_uncertainty_display = format_standard_uncertainty(result_standard_uncertainty)
                 self.standard_uncertainty_label.setText(self._format_with_unit(standard_uncertainty_display, result_unit))
                 
-                # 有効自由度の計算
-                effective_df = self.uncertainty_calculator.calculate_effective_degrees_of_freedom(
-                    result_standard_uncertainty, contributions, degrees_of_freedom_list
-                )
-                self.effective_degrees_of_freedom_label.setText(format_number_str(float(effective_df)))
-                
-                # 包含係数の計算
-                coverage_factor = self.uncertainty_calculator.get_coverage_factor(effective_df)
-                self.coverage_factor_label.setText(format_coverage_factor(float(coverage_factor)))
-                
-                # 拡張不確かさの計算
-                expanded_uncertainty = coverage_factor * result_standard_uncertainty
-                expanded_uncertainty_display = format_expanded_uncertainty(expanded_uncertainty)
-                self.expanded_uncertainty_label.setText(self._format_with_unit(expanded_uncertainty_display, result_unit))
-
-                # 拡張不確かさの桁に合わせて中央値を更新
-                central_value_display = format_central_value_with_uncertainty(result_central_value, expanded_uncertainty)
+                effective_df = source_effective_df(covariance, gradient, source_groups, source_dfs)
+                self.effective_degrees_of_freedom_label.setText(
+                    tr_ui('未評価') if effective_df is None else '∞' if effective_df >= 1e100 else format_number_str(float(effective_df)))
+                from src.utils.coverage import coverage_description
+                coverage_settings = self.current_coverage_settings(result_var)
+                coverage_error = ''
+                try:
+                    coverage_factor = self.uncertainty_calculator.get_coverage_factor(effective_df, coverage_settings)
+                except ValueError as error:
+                    coverage_factor = None
+                    coverage_error = str(error)
+                self.coverage_method_label.setText(coverage_description(coverage_settings))
+                expanded_uncertainty = coverage_factor*result_standard_uncertainty if coverage_factor is not None else None
+                self.coverage_factor_label.setText('--' if coverage_factor is None else format_coverage_factor(coverage_factor))
+                self.expanded_uncertainty_label.setText('--' if expanded_uncertainty is None else self._format_with_unit(
+                    format_expanded_uncertainty(expanded_uncertainty), result_unit))
+                central_value_display = (format_number_str(result_central_value) if expanded_uncertainty is None else
+                                         format_central_value_with_uncertainty(result_central_value, expanded_uncertainty))
                 self.central_value_label.setText(self._format_with_unit(central_value_display, result_unit))
+                notes = []
+                if coverage_error:
+                    notes.append(tr_ui('包含条件を評価できません：')+coverage_error)
+                if effective_df is None:
+                    notes.append(tr_ui('相関付き推定量の自由度を評価できません。')+
+                        (tr_ui('指定したkを使用しています。') if coverage_settings.get('method')=='manual' else tr_ui('uは計算済みですが、自動方式のk・Uは未評価です。')))
+                if np.any(np.abs(covariance-np.diag(np.diag(covariance)))>0):
+                    notes.append(tr_ui('寄与率は相関項を両方の量へ半分ずつ割り当てています。負になる場合があります。'))
+                self.evaluation_note_label.setText('\n'.join(notes))
+                self.evaluation_note_label.setVisible(bool(notes))
 
                 # --- ここで計算結果をMainWindowに保存 ---
                 result_var = self.result_combo.currentText()
@@ -652,7 +760,7 @@ class UncertaintyCalculationTab(BaseTab):
                         ),
                         'sensitivity': self.calibration_table.item(i, 5).text() if self.calibration_table.item(i, 5) else '',
                         'contribution': self.calibration_table.item(i, 6).text() if self.calibration_table.item(i, 6) else '',
-                        'contribution_rate': float(self.calibration_table.item(i, 7).text().replace('%','')) if self.calibration_table.item(i, 7) and self.calibration_table.item(i, 7).text().replace('%','').replace('.','',1).isdigit() else 0.0
+                        'contribution_rate': contribution_rates[i],
                     })
                 # MainWindowに保存
                 if not hasattr(self.parent, 'calculation_results'):
@@ -666,12 +774,16 @@ class UncertaintyCalculationTab(BaseTab):
                     'effective_df': effective_df,
                     'coverage_factor': coverage_factor,
                     'expanded_uncertainty': expanded_uncertainty,
+                    'coverage_settings': dict(coverage_settings),
                 }
                 # --- ここまで ---
 
                 self._show_budget_error_message(budget_issues)
             except Exception as e:
                 log_error(f"計算結果表示エラー: {str(e)}", details=traceback.format_exc())
+                self._clear_calculation_display()
+                self.warning_label.setText(str(e))
+                self.warning_label.show()
                 
         except Exception as e:
             log_error(f"感度係数計算エラー: {str(e)}", details=traceback.format_exc())
@@ -686,7 +798,7 @@ class UncertaintyCalculationTab(BaseTab):
         result = self.result_combo.currentText()
         equation = self.equation_handler.get_target_equation(result)
         if not equation or "=" not in equation:
-            return [[name, "--", "--", "--", "--", "モデル式を確認してください"]
+            return [[name, "--", "--", "--", "--", tr_ui('モデル式を確認してください')]
                     for name in self.parent.value_names]
         original_index = self.value_handler.current_value_index
         rows = []
@@ -700,8 +812,8 @@ class UncertaintyCalculationTab(BaseTab):
                 inputs = self.equation_handler.get_variables_from_equation(equation.split("=", 1)[1])
                 missing = [var for var in inputs if self.value_handler.get_central_value(var) in (None, "")]
                 if missing:
-                    issues = "未入力: " + ", ".join(missing)
-                rows.append([name] + fields + [issues or ("計算できません" if fields[0] in ("", "--") else "OK")])
+                    issues = tr_ui('未入力: ') + ", ".join(missing)
+                rows.append([name] + fields + [issues or (tr_ui('計算できません') if fields[0] in ("", "--") else "OK")])
         finally:
             self.value_handler.current_value_index = original_index
             if equation:
@@ -712,11 +824,11 @@ class UncertaintyCalculationTab(BaseTab):
         if not self.result_combo.currentText():
             return
         dialog = QDialog(self)
-        dialog.setWindowTitle("校正点の結果一覧 — " + self.result_combo.currentText())
+        dialog.setWindowTitle(tr_ui('校正点の結果一覧')+' — ' + self.result_combo.currentText())
         dialog.resize(1050, 450)
         layout = QVBoxLayout(dialog)
         table = QTableWidget(0, 6, dialog)
-        table.setHorizontalHeaderLabels(["校正点", "結果値", "合成標準不確かさ", "包含係数", "拡張不確かさ", "状態"])
+        table.setHorizontalHeaderLabels([tr_ui(label) for label in ('校正点','結果値','合成標準不確かさ','包含係数','拡張不確かさ','状態')])
         table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         rows = self.collect_point_overview()
         table.setRowCount(len(rows))
@@ -725,7 +837,7 @@ class UncertaintyCalculationTab(BaseTab):
                 table.setItem(i, j, QTableWidgetItem(text))
         table.resizeColumnsToContents()
         table.horizontalHeader().setStretchLastSection(True)
-        layout.addWidget(QLabel("行をダブルクリックすると、その校正点の詳細を表示します。"))
+        layout.addWidget(QLabel(tr_ui('行をダブルクリックすると、その校正点の詳細を表示します。')))
         layout.addWidget(table)
         def select_point(row, column):
             self.value_combo.setCurrentIndex(row)

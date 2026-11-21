@@ -1,4 +1,4 @@
-﻿from PySide6.QtWidgets import (
+from PySide6.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
     QComboBox, QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox,
     QGroupBox, QFormLayout, QSpinBox, QDoubleSpinBox, QCheckBox, QRadioButton,
@@ -21,6 +21,8 @@ from ..utils.calculation_utils import evaluate_formula
 from .variables_tab_handlers import VariablesTabHandlers
 from .base_tab import BaseTab
 from ..utils.translation_keys import *
+from ..widgets.image_description_edit import ImageDescriptionEdit
+from ..utils.ui_translation import tr_ui
 
 class VariablesTab(BaseTab):
     """量管理/量の値管理タブ"""
@@ -40,8 +42,7 @@ class VariablesTab(BaseTab):
         
         # ラベル
         self.var_label.setText(self.tr(VARIABLE_MODE) + ":")
-        if self.mode_display.text() == self.tr(NOT_SELECTED, "未選択"):
-            self.mode_display.setText(self.tr(NOT_SELECTED))
+        self.update_mode_display()
             
         self.unit_label.setText(self.tr(LABEL_UNIT) + ":")
         self.definition_label.setText(self.tr(LABEL_DEFINITION) + ":")
@@ -70,6 +71,7 @@ class VariablesTab(BaseTab):
         
         # TypeB用ウィジェット
         # 分布コンボボックスの項目を更新
+        distribution_signals_blocked = self.type_b_widgets['distribution'].blockSignals(True)
         current_distribution = self.type_b_widgets['distribution'].currentData()
         self.type_b_widgets['distribution'].clear()
         for code, label in self.get_distribution_options():
@@ -80,23 +82,47 @@ class VariablesTab(BaseTab):
                 self.type_b_widgets['distribution'].setCurrentIndex(index)
         if self.type_b_widgets['distribution'].currentIndex() < 0:
             self.type_b_widgets['distribution'].setCurrentIndex(0)
+        self.type_b_widgets['distribution'].blockSignals(distribution_signals_blocked)
         
         self.distribution_label.setText(self.tr(DISTRIBUTION) + ":")
         self.divisor_label.setText(self.tr(DIVISOR) + ":")
         self.degrees_of_freedom_label_b.setText(self.tr(DEGREES_OF_FREEDOM) + ":")
         self.central_value_label_b.setText(self.tr(CENTRAL_VALUE) + ":")
         self.half_width_label.setText(self.tr(HALF_WIDTH) + ":")
-        self.type_b_widgets['calculation_formula'].setPlaceholderText(self.tr(CALCULATION_FORMULA))
-        self.type_b_widgets['calculate_button'].setText(self.tr(CALCULATE))
+        self.type_b_widgets['reference_button'].setText(tr_ui('参照式を設定'))
         self.standard_uncertainty_label_b.setText(self.tr(STANDARD_UNCERTAINTY) + ":")
         self.detail_description_label_b.setText(self.tr(DETAIL_DESCRIPTION) + ":")
         
         # 固定値用ウィジェット
         self.central_value_label_fixed.setText(self.tr(CENTRAL_VALUE) + ":")
         self.detail_description_label_fixed.setText(self.tr(DETAIL_DESCRIPTION) + ":")
+        self.input_source_caption.setText(tr_ui('評価値の入力元'))
+        self.type_a_caption.setText(tr_ui('Type A評価'))
+        self._retranslate_evaluation_controls()
         
         # 変数リストを更新
         self.update_variable_list(self.parent.variables, self.parent.result_variables)
+
+    def update_mode_display(self):
+        name = self.handlers.current_variable
+        if name is None or name not in self.parent.variable_values:
+            self.mode_display.setText(self.tr(NOT_SELECTED))
+        else:
+            self.mode_display.setText(tr_ui('計算結果') if name in self.parent.result_variables else tr_ui('入力量'))
+
+    def _retranslate_evaluation_controls(self):
+        from ..utils.variable_utils import TYPE_A_MODES
+        name = getattr(self.handlers,'current_variable',None)
+        info = self.parent.variable_values.get(name,{})
+        index = self.value_combo.currentIndex()
+        values = info.get('values',[])
+        value = values[index] if 0 <= index < len(values) else {}
+        source = value.get('input_source',{})
+        caption = (tr_ui('入力元：')+(tr_ui('回帰…') if source.get('kind')=='regression' else tr_ui('測定表…'))
+                   if source else tr_ui('入力元：直接入力…'))
+        self.input_source_button.setText(caption)
+        mode = value.get('evaluation_mode','sample')
+        self.type_a_evaluation_button.setText(tr_ui('評価方法：')+tr_ui(TYPE_A_MODES.get(mode,mode))+'…')
 
     @staticmethod
     def _set_signals_blocked(widgets, blocked):
@@ -151,7 +177,7 @@ class VariablesTab(BaseTab):
         settings_layout.addRow(self.unit_label, self.unit_input)
         
         # 定義フィールドを追加
-        self.definition_input = QTextEdit()
+        self.definition_input = ImageDescriptionEdit(self.parent)
         self.definition_input.setAcceptRichText(False)
         self.definition_input.setMaximumHeight(100)
         self.definition_input.textChanged.connect(self.handlers.on_definition_changed)
@@ -182,6 +208,21 @@ class VariablesTab(BaseTab):
         
         # TypeA用のウィジェット
         self.type_a_widgets = {}
+        self.input_source_button = QPushButton(tr_ui('入力元：直接入力…'))
+        self.input_source_button.clicked.connect(self.edit_input_source)
+        self.type_a_widgets['input_source_button'] = self.input_source_button
+        self.input_source_caption = QLabel(tr_ui('評価値の入力元'))
+        settings_layout.addRow(self.input_source_caption,self.input_source_button)
+        self.input_source_label = QLabel('')
+        self.input_source_label.setWordWrap(True)
+        self.input_source_label.setSizePolicy(QSizePolicy.Expanding,QSizePolicy.Maximum)
+        self.type_a_widgets['input_source_label'] = self.input_source_label
+        settings_layout.addRow('',self.input_source_label)
+        self.type_a_evaluation_button = QPushButton(tr_ui('評価方法：')+tr_ui('観測列から評価')+'…')
+        self.type_a_evaluation_button.clicked.connect(self.edit_type_a_evaluation)
+        self.type_a_widgets['evaluation_button'] = self.type_a_evaluation_button
+        self.type_a_caption = QLabel(tr_ui('Type A評価'))
+        settings_layout.addRow(self.type_a_caption, self.type_a_evaluation_button)
 
         self.type_a_measurements_container = QWidget()
         type_a_measurements_container_layout = QVBoxLayout(self.type_a_measurements_container)
@@ -252,7 +293,7 @@ class VariablesTab(BaseTab):
         settings_layout.addRow(self.standard_uncertainty_label_a, self.type_a_widgets['standard_uncertainty'])
         
         # 詳細説明フィールドを追加
-        self.type_a_widgets['description'] = QTextEdit()
+        self.type_a_widgets['description'] = ImageDescriptionEdit(self.parent)
         self.type_a_widgets['description'].setAcceptRichText(False)
         self.type_a_widgets['description'].setMaximumHeight(100)
         self.type_a_widgets['description'].textChanged.connect(self.handlers.on_type_a_description_changed)
@@ -291,17 +332,10 @@ class VariablesTab(BaseTab):
         self.type_b_widgets['half_width'].textChanged.connect(self.handlers.on_type_b_half_width_changed)
         half_width_layout.addWidget(self.type_b_widgets['half_width'])
         
-        # 計算式の入力欄
-        self.type_b_widgets['calculation_formula'] = QLineEdit()
-        self.type_b_widgets['calculation_formula'].setPlaceholderText(self.tr(CALCULATION_FORMULA))
-        self.type_b_widgets['calculation_formula'].textChanged.connect(self.handlers.on_calculation_formula_changed)
-        half_width_layout.addWidget(self.type_b_widgets['calculation_formula'])
-        
-        # 計算ボタン
-        self.type_b_widgets['calculate_button'] = QPushButton(self.tr(CALCULATE))
-        self.type_b_widgets['calculate_button'].clicked.connect(self.handlers.on_calculate_button_clicked)
-        half_width_layout.addWidget(self.type_b_widgets['calculate_button'])
-        
+        self.type_b_widgets['reference_button'] = QPushButton(tr_ui('参照式を設定'))
+        self.type_b_widgets['reference_button'].clicked.connect(
+            lambda: self.parent.open_value_references(self.handlers.current_variable))
+        half_width_layout.addWidget(self.type_b_widgets['reference_button'])
         half_width_layout.addStretch()
         self.half_width_label = QLabel(self.tr(HALF_WIDTH) + ":")
         settings_layout.addRow(self.half_width_label, half_width_layout)
@@ -313,7 +347,7 @@ class VariablesTab(BaseTab):
         settings_layout.addRow(self.standard_uncertainty_label_b, self.type_b_widgets['standard_uncertainty'])
         
         # 詳細説明フィールドを追加
-        self.type_b_widgets['description'] = QTextEdit()
+        self.type_b_widgets['description'] = ImageDescriptionEdit(self.parent)
         self.type_b_widgets['description'].setAcceptRichText(False)
         self.type_b_widgets['description'].setMaximumHeight(100)
         self.type_b_widgets['description'].textChanged.connect(self.handlers.on_type_b_description_changed)
@@ -329,7 +363,7 @@ class VariablesTab(BaseTab):
         settings_layout.addRow(self.central_value_label_fixed, self.fixed_value_widgets['central_value'])
         
         # 詳細説明フィールドを追加
-        self.fixed_value_widgets['description'] = QTextEdit()
+        self.fixed_value_widgets['description'] = ImageDescriptionEdit(self.parent)
         self.fixed_value_widgets['description'].setAcceptRichText(False)
         self.fixed_value_widgets['description'].setMaximumHeight(100)
         self.fixed_value_widgets['description'].textChanged.connect(self.handlers.on_fixed_value_description_changed)
@@ -448,15 +482,18 @@ class VariablesTab(BaseTab):
             
             # 計算結果量を先に、入力量を後に表示
             for var in result_vars:
-                item = QListWidgetItem(f"{var} [計算結果]")
+                item = QListWidgetItem(f"{var} ["+tr_ui('計算結果')+']')
                 item.setData(Qt.UserRole, var)
                 self.variable_list.addItem(item)
             
             for var in input_vars:
-                item = QListWidgetItem(f"{var} [入力]")
+                item = QListWidgetItem(f"{var} ["+tr_ui('入力')+']')
                 item.setData(Qt.UserRole, var)
                 self.variable_list.addItem(item)
             self.handlers.last_selected_variable = current_variable
+            selected = find_variable_item(self.variable_list, current_variable)
+            if selected:
+                self.variable_list.setCurrentItem(selected)
 
             self.variable_list.blockSignals(False)
             
@@ -595,6 +632,20 @@ class VariablesTab(BaseTab):
             
             # 現在の値を取得
             value_info = values[index]
+            self.input_source_label.clear()
+            if value_info.get('input_source'):
+                from ..utils.value_handler import ValueHandler
+                from ..utils.input_sources import source_packet
+                try:
+                    ValueHandler(self.parent,index).get_central_value(current_var)
+                    packet=source_packet(self.parent,current_var,index)
+                    self.input_source_button.setText(tr_ui('入力元：')+(tr_ui('回帰…') if value_info['input_source']['kind']=='regression' else tr_ui('測定表…')))
+                    self.input_source_label.setText(packet['label']+'\n'+packet['note'])
+                except Exception as error:
+                    value_info.update(central_value='',standard_uncertainty='',degrees_of_freedom='')
+                    self.input_source_label.setText(tr_ui('入力元を確認してください：')+str(error))
+            else:
+                self.input_source_button.setText(tr_ui('入力元：直接入力…'))
             log_debug(f"[DEBUG] display_current_value: 辞書から取得した値={value_info}")
             log_debug(f"[DEBUG] display_current_value: 使用する値のインデックス={index}, 値の総数={len(values)}")
             
@@ -608,6 +659,12 @@ class VariablesTab(BaseTab):
             
             # 不確かさ種類に応じてウィジェットの表示を更新
             self.handlers.update_widget_visibility(uncertainty_type)
+            linked=bool(value_info.get('input_source'))
+            self.input_source_label.setVisible(uncertainty_type=='A' and linked)
+            if linked:
+                self.type_a_evaluation_button.hide()
+                self.type_a_measurements_container.hide()
+                for widget in (self.type_a_radio,self.type_b_radio,self.type_fixed_radio):widget.setEnabled(False)
             
             log_debug(
                 f"[DEBUG] display_current_value: 復元開始 - 変数={current_var}, type={uncertainty_type}, value_index={index}"
@@ -620,10 +677,11 @@ class VariablesTab(BaseTab):
                 degrees_of_freedom = value_info.get('degrees_of_freedom', 0)
                 if degrees_of_freedom == '':
                     degrees_of_freedom = 0
-                try:
-                    degrees_of_freedom = int(float(degrees_of_freedom))
-                except (ValueError, TypeError):
-                    degrees_of_freedom = 0
+                from ..utils.variable_utils import TYPE_A_MODES
+                mode = value_info.get('evaluation_mode', 'sample')
+                self.type_a_evaluation_button.setText(tr_ui('評価方法：') + tr_ui(TYPE_A_MODES.get(mode, mode)) + '…')
+                self.type_a_widgets['measurements'].setReadOnly(mode == 'summary')
+                self.type_a_measurements_container.setEnabled(mode != 'summary')
                 central_value = value_info.get('central_value', '')
                 standard_uncertainty = value_info.get('standard_uncertainty', '')
                 description = value_info.get('description', '')
@@ -654,7 +712,6 @@ class VariablesTab(BaseTab):
                 standard_uncertainty = value_info.get('standard_uncertainty', '')
                 degrees_of_freedom = value_info.get('degrees_of_freedom', 0)
                 description = value_info.get('description', '')
-                calculation_formula = value_info.get('calculation_formula', '')
                 distribution = get_distribution_translation_key(
                     var_info.get('distribution', NORMAL_DISTRIBUTION)
                 ) or NORMAL_DISTRIBUTION
@@ -682,7 +739,6 @@ class VariablesTab(BaseTab):
                     self.type_b_widgets['standard_uncertainty'],
                     self.type_b_widgets['degrees_of_freedom'],
                     self.type_b_widgets['description'],
-                    self.type_b_widgets['calculation_formula'],
                     self.type_b_widgets['divisor'],
                 ]
                 self._set_signals_blocked(type_b_signal_widgets, True)
@@ -702,7 +758,6 @@ class VariablesTab(BaseTab):
 
                     self.type_b_widgets['degrees_of_freedom'].setText(str(degrees_of_freedom))
                     self.type_b_widgets['description'].setText(str(description))
-                    self.type_b_widgets['calculation_formula'].setText(str(calculation_formula))
                     self.type_b_widgets['divisor'].setText(str(divisor))
                 finally:
                     self._set_signals_blocked(type_b_signal_widgets, False)
@@ -732,6 +787,83 @@ class VariablesTab(BaseTab):
 
         except Exception as e:
             log_error(f"現在値の表示エラー: {str(e)}", details=traceback.format_exc())
+
+    def edit_type_a_evaluation(self):
+        from ..dialogs.type_a_evaluation_dialog import TypeAEvaluationDialog
+        name = self.handlers.current_variable
+        index = self.value_combo.currentIndex()
+        if not name or index < 0:
+            return
+        info = self.parent.variable_values.get(name, {})
+        if info.get('type') != 'A':
+            return
+        value = info['values'][index]
+        dialog = TypeAEvaluationDialog(value, self)
+        if dialog.exec():
+            value.update(dialog.result_value)
+            self.display_current_value()
+
+    def edit_input_source(self):
+        from ..dialogs.input_source_dialog import InputSourceDialog
+        name=self.handlers.current_variable;index=self.value_combo.currentIndex()
+        if not name or index<0 or self.parent.variable_values[name].get('type')!='A':return
+        dialog=InputSourceDialog(self.parent,name,index,self)
+        draft=getattr(self,'_source_dialog_draft',None)
+        if draft and draft['name']==name and draft['point']==self.parent.value_names[index]:
+            dialog.kind.setCurrentIndex(dialog.kind.findData(draft['kind']))
+            dialog.regression.setCurrentIndex(dialog.regression.findData(draft['model_id']))
+            dialog.x_expression.setText(draft['x_expression'])
+            dialog.x_mode.setCurrentIndex(draft['x_mode'])
+            dialog.x_variable.setCurrentIndex(dialog.x_variable.findData(draft['x_variable']))
+            dialog.proxy.measurement_tables=draft['tables']
+            dialog.proxy.value_references=draft['refs']
+            dialog.reload_tables(draft['table'])
+            dialog.column.setCurrentIndex(dialog.column.findData(draft['column']))
+            self._source_dialog_draft=None
+        if dialog.exec():
+            self.parent.variable_values[name]['values'][index]=dialog.result_value
+            if dialog.result_value.get('input_source') and not self.parent.variable_values[name].get('unit','').strip():
+                from ..utils.input_sources import source_packet
+                self.parent.variable_values[name]['unit']=source_packet(dialog.proxy,name,index)['unit']
+            self.parent.regressions=dialog.proxy.regressions
+            self.parent.measurement_tables=dialog.proxy.measurement_tables
+            self.parent.value_references=dialog.proxy.value_references
+            self.parent._reference_signature=None
+            self.display_current_value()
+        elif dialog.navigate_model_id:
+            self.parent.regressions=dialog.proxy.regressions
+            point_name=self.parent.value_names[index]
+            self._source_dialog_draft=dict(name=name,point=point_name,kind=dialog.kind.currentData(),
+                model_id=dialog.regression.currentData(),x_expression=dialog.x_expression.text(),
+                x_mode=dialog.x_mode.currentIndex(),x_variable=dialog.x_variable.currentData(),
+                tables=dialog.proxy.measurement_tables,refs=dialog.proxy.value_references,
+                table=dialog.table.currentData(),column=dialog.column.currentData())
+            regression_tab=self.parent.regression_tab
+            if not hasattr(regression_tab,'return_to_input_button'):
+                regression_tab.return_to_input_button=QPushButton()
+                regression_tab.details_group.layout().insertWidget(0,regression_tab.return_to_input_button)
+            button=regression_tab.return_to_input_button
+            button.setText(f'変数管理：{name} / {point_name}へ戻る')
+            if getattr(button,'_return_slot',None):button.clicked.disconnect(button._return_slot)
+            def return_to_input():
+                button.hide()
+                if name not in self.parent.variable_values or point_name not in self.parent.value_names:
+                    self.parent.statusBar().showMessage('元の量または校正点が削除されたため戻れません',10000)
+                    return
+                self.parent.tab_widget.setCurrentWidget(self)
+                self.value_combo.setCurrentIndex(self.parent.value_names.index(point_name))
+                for i in range(self.variable_list.count()):
+                    item=self.variable_list.item(i)
+                    if item.data(Qt.UserRole)==name:self.variable_list.setCurrentItem(item);break
+                self.edit_input_source()
+            button._return_slot=return_to_input
+            button.clicked.connect(return_to_input);button.show()
+            regression_tab.refresh_model_list()
+            for i in range(regression_tab.model_list.count()):
+                item=regression_tab.model_list.item(i)
+                if self.parent.regressions[item.text()].get('id')==dialog.navigate_model_id:
+                    regression_tab.model_list.setCurrentItem(item);break
+            self.parent.tab_widget.setCurrentWidget(regression_tab)
 
     def update_value_combo(self):
         """値の選択コンボボックスを更新（校正点設定タブの情報を参照）"""

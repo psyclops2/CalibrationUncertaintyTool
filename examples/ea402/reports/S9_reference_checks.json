@@ -1,0 +1,31 @@
+{
+    "expression": "abs(@{variable:Vs:central_value:current})*@{value:spec-ppm}*1e-6+@{value:spec-offset}",
+    "input_method": "Vs central-value widget and reusable-values editor; no half-width entry or manual Calculate button",
+    "cases": [
+        {
+            "setting_V": "100",
+            "setting_ppm": "100",
+            "offset_V": "0.001",
+            "computed_half_width_V": "0.011000"
+        },
+        {
+            "setting_V": "200",
+            "setting_ppm": "100",
+            "offset_V": "0.001",
+            "computed_half_width_V": "0.021000"
+        },
+        {
+            "setting_V": "100",
+            "setting_ppm": "200",
+            "offset_V": "0.001",
+            "computed_half_width_V": "0.021000"
+        },
+        {
+            "setting_V": "100",
+            "setting_ppm": "100",
+            "offset_V": "0.002",
+            "computed_half_width_V": "0.012000"
+        }
+    ],
+    "original_project_unchanged": true
+}

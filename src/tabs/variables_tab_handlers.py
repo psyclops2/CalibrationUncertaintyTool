@@ -1,4 +1,4 @@
-﻿from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox
 from PySide6.QtCore import Qt
 import traceback
 from ..utils.app_logger import log_error
@@ -10,7 +10,6 @@ from ..utils.variable_utils import (
     find_variable_item
 )
 from ..utils.translation_keys import NORMAL_DISTRIBUTION, MESSAGE_CONFIRM, TYPE_CHANGE_DATA_RESET_WARNING
-from ..utils.calculation_utils import evaluate_formula
 
 class VariablesTabHandlers:
     """量管理/量の値管理タブのイベントハンドラ"""
@@ -92,6 +91,10 @@ class VariablesTabHandlers:
             self.parent.half_width_label.setVisible(show_half_width)
             self.parent.half_width_label.setEnabled(show_half_width)
 
+        refs = getattr(self.parent.parent, 'value_references', None)
+        managed = refs is not None and refs['variables'].get(self.current_variable) in refs['rules']
+        for key in ('half_width',):
+            self.parent.type_b_widgets[key].setEnabled(show_half_width and not managed)
         self.parent.update_form_layout()
 
     def on_value_selected(self, index):
@@ -117,8 +120,11 @@ class VariablesTabHandlers:
         """量が選択された時の処理"""
         try:
             if current is None:
+                self.current_variable = None
+                self.last_selected_variable = None
+                self.current_variable_is_result = False
                 self.parent.settings_group.setEnabled(False)
-                self.parent.mode_display.setText("未選択")
+                self.parent.update_mode_display()
                 return
                 
             var_name = current.data(Qt.UserRole)
@@ -126,8 +132,7 @@ class VariablesTabHandlers:
             self.last_selected_variable = var_name  # 選択状態を保存
             is_result = var_name in self.parent.parent.result_variables
             self.current_variable_is_result = is_result
-            var_mode = "計算結果" if is_result else "入力量"
-            self.parent.mode_display.setText(var_mode)
+            self.parent.update_mode_display()
 
             self.parent.settings_group.setEnabled(True)
 
@@ -289,6 +294,12 @@ class VariablesTabHandlers:
                 # 量の不確かさ種類を更新
                 var_info['type'] = uncertainty_type
                 self.parent.parent.variable_values[self.current_variable] = var_info
+                refs = getattr(self.parent.parent, 'value_references', None)
+                if uncertainty_type != 'B' and refs is not None:
+                    refs['rules'].pop(refs['variables'].get(self.current_variable), None)
+                    from ..utils.parameter_formula import prune_parameter_values
+                    prune_parameter_values(refs, [self.parent.parent.variable_values,
+                        getattr(self.parent.parent, 'regressions', {}), getattr(self.parent.parent, 'measurement_tables', {})])
 
             self.update_widget_visibility(uncertainty_type)
 
@@ -337,6 +348,22 @@ class VariablesTabHandlers:
                 return
                 
             measurements_str = self.parent.type_a_widgets['measurements'].text().strip()
+            index = self.parent.value_combo.currentIndex()
+            value = self.parent.parent.variable_values[self.current_variable]['values'][index]
+            if value.get('input_source'):
+                return
+            if 'evaluation_mode' in value:
+                from ..utils.variable_utils import evaluate_type_a_value
+                if value['evaluation_mode'] == 'summary':
+                    return
+                value['measurements'] = measurements_str
+                try:
+                    value.update(evaluate_type_a_value(value))
+                except Exception as error:
+                    QMessageBox.warning(self.parent, 'Type A評価を確認してください', str(error))
+                    return
+                self.parent.display_current_value()
+                return
             if not measurements_str:
                 return
                 
@@ -578,85 +605,6 @@ class VariablesTabHandlers:
             
         except Exception as e:
             log_error(f"詳細説明変更エラー: {str(e)}", details=traceback.format_exc())
-
-    def on_calculation_formula_changed(self):
-        """計算式が変更されたときの処理"""
-        try:
-            if not self.current_variable or self.parent.value_combo.currentIndex() < 0:
-                return
-                
-            # 現在の不確かさ種類を取得
-            uncertainty_type = 'A'
-            if self.parent.type_b_radio.isChecked():
-                uncertainty_type = 'B'
-            
-            # 計算式を取得
-            calculation_formula = self.parent.type_b_widgets['calculation_formula'].text().strip()
-            
-            # データを保存
-            value_index = self.parent.value_combo.currentIndex()
-            if 'values' in self.parent.parent.variable_values[self.current_variable]:
-                self.parent.parent.variable_values[self.current_variable]['values'][value_index]['calculation_formula'] = calculation_formula
-                
-        except Exception as e:
-            log_error(f"計算式変更エラー: {str(e)}", details=traceback.format_exc())
-
-    def on_calculate_button_clicked(self):
-        """計算ボタンがクリックされたときの処理"""
-        try:
-            if not self.current_variable or self.parent.value_combo.currentIndex() < 0:
-                return
-                
-            # 現在の不確かさ種類を取得
-            uncertainty_type = 'A'
-            if self.parent.type_b_radio.isChecked():
-                uncertainty_type = 'B'
-            elif self.parent.type_fixed_radio.isChecked():
-                uncertainty_type = 'fixed'
-                
-            # Type Bの場合のみ処理を行う
-            if uncertainty_type != 'B':
-                return
-                
-            # 計算式を取得
-            calculation_formula = self.parent.type_b_widgets['calculation_formula'].text().strip()
-            if not calculation_formula:
-                return
-                
-            # 現在の校正点で利用可能な変数値を計算式へ渡す
-            value_index = self.parent.value_combo.currentIndex()
-            variables = {}
-            for var_name, var_data in self.parent.parent.variable_values.items():
-                if not isinstance(var_data, dict):
-                    continue
-                values = var_data.get('values', [])
-                if not isinstance(values, list) or not (0 <= value_index < len(values)):
-                    continue
-                value_info = values[value_index]
-                if not isinstance(value_info, dict):
-                    continue
-                central_value = value_info.get('central_value', '')
-                if central_value in ('', None):
-                    continue
-                variables[var_name] = central_value
-
-            # 計算式を評価
-            result = evaluate_formula(calculation_formula, variables=variables)
-            
-            if result is not None:
-                # 半値幅の入力欄に結果を設定
-                self.parent.type_b_widgets['half_width'].setText(str(result))
-                
-                # 半値幅のフォーカスが外れたときの処理を呼び出す
-                self.on_half_width_focus_lost(None)
-                
-                # 計算式を保存
-                value_index = self.parent.value_combo.currentIndex()
-                if 'values' in self.parent.parent.variable_values[self.current_variable]:
-                    self.parent.parent.variable_values[self.current_variable]['values'][value_index]['calculation_formula'] = calculation_formula
-                
-        except Exception as e:
-            log_error(f"計算ボタンクリックエラー: {str(e)}", details=traceback.format_exc())
 
     def on_measurements_changed(self):
         """測定値が変更されたときの処理"""

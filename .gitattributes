@@ -2,3 +2,12 @@
 .gitattributes text eol=lf
 *.py text eol=lf
 *.md text eol=lf
+
+# Reference PDFs are not part of source release archives.
+/docs/*.pdf export-ignore
+/examples/**/sources/*.pdf export-ignore
+
+# Preserve collected license bytes and their inventory hashes across checkouts.
+/licenses/third-party/** -text
+/licenses/python/** -text
+/licenses/upstream/** -text

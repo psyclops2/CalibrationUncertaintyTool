@@ -63,6 +63,8 @@ def evaluate_formula(formula, variables=None):
                     return Decimal(str(getattr(math, node.attr)))
             if isinstance(node, ast.Call) and not node.keywords:
                 func = node.func
+                if isinstance(func, ast.Name) and func.id == 'abs' and len(node.args) == 1:
+                    return abs(evaluate(node.args[0]))
                 if (isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name)
                         and func.value.id == "math" and func.attr in functions):
                     args = [evaluate(arg) for arg in node.args]

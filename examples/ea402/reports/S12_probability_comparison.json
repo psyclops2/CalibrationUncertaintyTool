@@ -1,0 +1,35 @@
+{
+    "budget": [
+        {
+            "variable": "repeat",
+            "central_value": "0.0000 1",
+            "standard_uncertainty": "602.8 E-6 1",
+            "dof": "2",
+            "distribution": "",
+            "sensitivity": "1.0",
+            "contribution": "602.8 E-6 1",
+            "contribution_rate": 44.001291781043115
+        },
+        {
+            "variable": "single",
+            "central_value": ".001",
+            "standard_uncertainty": "680.0 E-6 1",
+            "dof": "inf",
+            "distribution": "NORMAL_DISTRIBUTION",
+            "sensitivity": "1.0",
+            "contribution": "680.0 E-6 1",
+            "contribution_rate": 55.998708218956885
+        }
+    ],
+    "result_central_value": 0.001,
+    "result_standard_uncertainty": 0.0009086987032748167,
+    "effective_df": 10.329971955222623,
+    "coverage_factor": 2.283681613299642,
+    "expanded_uncertainty": 0.002075178520697926,
+    "coverage_settings": {
+        "method": "student",
+        "probability": 0.9545,
+        "floor_df": true,
+        "note": "Numerical t quantile; separate from rounded Table E.1"
+    }
+}

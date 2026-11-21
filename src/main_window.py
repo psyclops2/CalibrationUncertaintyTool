@@ -1,4 +1,4 @@
-﻿import traceback
+import traceback
 import copy
 import os
 import uuid
@@ -9,7 +9,8 @@ from PySide6.QtCore import Qt, QEvent, Slot, QLocale, QTimer, QLockFile
 import json
 import decimal
 
-from src.utils.project_io import atomic_write_json, validate_project
+from src.utils.project_io import read_project, write_project, validate_project
+from src.utils.ui_translation import tr_ui
 
 from src.utils.app_logger import log_error as write_error_log
 
@@ -40,7 +41,9 @@ class MainWindow(QMainWindow):
         'fixed': ('unit', 'definition', 'type', 'values'),
     }
     _SAVE_ALLOWED_VALUE_KEYS = {
-        'A': ('measurements', 'degrees_of_freedom', 'central_value', 'standard_uncertainty', 'description'),
+        'A': ('measurements', 'degrees_of_freedom', 'central_value', 'standard_uncertainty', 'description',
+              'evaluation_mode', 'pooled_standard_deviation', 'pooled_degrees_of_freedom', 'evaluation_note',
+              'input_source', 'direct_input'),
         'B': (
             'central_value',
             'half_width',
@@ -61,6 +64,11 @@ class MainWindow(QMainWindow):
 
         
         # ファイル状態
+        self.value_references = None
+        self.image_assets = {}
+        self.model_notation = 'workbench'
+        self.reference_errors = {}
+        self._reference_signature = None
         self.current_file_path = None
 
         # ウィンドウの設定
@@ -92,7 +100,7 @@ class MainWindow(QMainWindow):
         self.create_menu_bar()
         self._saved_snapshot = self._project_snapshot()
         self._dirty = False
-        self._recovery_path = Path(__file__).resolve().parent.parent / "logs" / ("recovery-" + uuid.uuid4().hex + ".json")
+        self._recovery_path = Path(__file__).resolve().parent.parent / "logs" / ("recovery-" + uuid.uuid4().hex + ".cutp")
         self._change_timer = QTimer(self)
         self._change_timer.timeout.connect(self._check_modified)
         self._change_timer.start(1000)
@@ -186,6 +194,7 @@ class MainWindow(QMainWindow):
         self.save_as_action.setText(self.tr(FILE_SAVE_AS))
         self.open_action.setText(self.tr(FILE_OPEN))
         self.bulk_input_action.setText(self._bulk_input_action_text())
+        self.references_action.setText(tr_ui('参照値'))
         self.settings_action.setText(self._settings_action_text())
         self.exit_action.setText(self.tr(FILE_EXIT))
         self.help_menu.setTitle(self.tr(MENU_HELP))
@@ -224,6 +233,9 @@ class MainWindow(QMainWindow):
         self.bulk_input_action.triggered.connect(self.open_bulk_input_dialog)
         self.tools_menu.addAction(self.bulk_input_action)
 
+        self.references_action = QAction(tr_ui('参照値'), self)
+        self.references_action.triggered.connect(self.open_value_references)
+        self.tools_menu.addAction(self.references_action)
         self.file_menu.addSeparator()
         self.settings_action = QAction(self._settings_action_text(), self)
         self.settings_action.triggered.connect(self.open_settings_dialog)
@@ -317,6 +329,7 @@ class MainWindow(QMainWindow):
 
             # ModelEquationTab
             'last_equation': self.last_equation,
+            'model_notation': self.model_notation,
 
             # PointSettingsTab / calibration points
             'value_count': self.value_count,
@@ -331,6 +344,15 @@ class MainWindow(QMainWindow):
         }
         if hasattr(self, 'regression_tab') and hasattr(self.regression_tab, 'add_to_save_data'):
             self.regression_tab.add_to_save_data(save_data)
+        if self.value_references is not None:
+            save_data['value_references'] = copy.deepcopy(self.value_references)
+            from src.utils.parameter_formula import prune_parameter_values
+            prune_parameter_values(save_data['value_references'],
+                [save_variable_values, self.regressions, self.measurement_tables])
+        if getattr(self, 'measurement_tables', {}):
+            save_data['measurement_tables'] = copy.deepcopy(self.measurement_tables)
+        if self.image_assets:
+            save_data['image_assets'] = copy.deepcopy(self.image_assets)
         return save_data
 
     def _normalize_value_entry_for_save(self, value_info, allowed_keys):
@@ -338,10 +360,19 @@ class MainWindow(QMainWindow):
         normalized_value = create_empty_value_dict()
         if isinstance(value_info, dict):
             for key in allowed_keys:
+                if key in ('evaluation_mode', 'pooled_standard_deviation', 'pooled_degrees_of_freedom', 'evaluation_note', 'input_source', 'direct_input') and key not in value_info:
+                    continue
                 normalized_value[key] = value_info.get(key, normalized_value.get(key, ""))
         for key in list(normalized_value.keys()):
             if key not in allowed_keys:
                 normalized_value.pop(key, None)
+        if not normalized_value.get('calculation_formula'):
+            normalized_value.pop('calculation_formula', None)
+        if normalized_value.get('input_source'):
+            # Persist the source and original direct input, not display caches.
+            for key in ('central_value','standard_uncertainty','degrees_of_freedom','measurements',
+                        'evaluation_mode','pooled_standard_deviation','pooled_degrees_of_freedom','evaluation_note'):
+                normalized_value.pop(key,None)
         return normalized_value
 
     def _normalize_variable_for_save(self, var_info):
@@ -408,6 +439,12 @@ class MainWindow(QMainWindow):
     def _apply_data(self, data, show_message=False):
         """読み込んだデータでアプリケーションの状態を更新"""
         try:
+            self.value_references = copy.deepcopy(data.get('value_references'))
+            self.image_assets = copy.deepcopy(data.get('image_assets', {}))
+            self.model_notation = 'workbench'
+            self.measurement_tables = copy.deepcopy(data.get('measurement_tables', {}))
+            self.reference_errors = {}
+            self._reference_signature = None
             self.calculation_results = {}
             self.variables = data.get('variables', [])
             self.result_variables = data.get('result_variables', [])
@@ -498,6 +535,7 @@ class MainWindow(QMainWindow):
                 'revision_history': '',
             },
             'last_equation': '',
+            'model_notation': 'workbench',
             'value_count': 1,
             'current_value_index': 0,
             'value_names': [f"{self.tr(CALIBRATION_POINT_NAME)} 1"],
@@ -511,7 +549,8 @@ class MainWindow(QMainWindow):
         self.set_current_file_path(None)
 
     def _write_save_data_to_path(self, file_path):
-        atomic_write_json(file_path, self.get_save_data())
+        self.refresh_references()
+        write_project(file_path, self.get_save_data())
         self._saved_snapshot = self._project_snapshot()
         self._dirty = False
         self._remove_recovery()
@@ -534,16 +573,20 @@ class MainWindow(QMainWindow):
         """名前を付けて保存"""
         try:
             options = QFileDialog.Options()
-            file_path, _ = QFileDialog.getSaveFileName(
+            file_path, selected_filter = QFileDialog.getSaveFileName(
                 self,
                 self.tr(SAVE_DIALOG_TITLE),
                 "",
-                "JSON Files (*.json);;All Files (*)",
+                "Calibration Project (*.cutp);;ZIP Files (*.zip);;JSON Files (*.json)",
                 options=options
             )
 
             if not file_path:
                 return False
+
+            if not Path(file_path).suffix:
+                extension = '.json' if '*.json' in selected_filter else '.zip' if '*.zip' in selected_filter else '.cutp'
+                file_path += extension
 
             self._write_save_data_to_path(file_path)
             self.set_current_file_path(file_path)
@@ -562,15 +605,14 @@ class MainWindow(QMainWindow):
                 self,
                 self.tr(OPEN_DIALOG_TITLE),
                 "",
-                "JSON Files (*.json);;All Files (*)",
+                "Calibration Projects (*.cutp *.zip *.json);;All Files (*)",
                 options=options
             )
             
             if file_path:
                 if not self._confirm_unsaved():
                     return
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    loaded_data = json.load(f)
+                loaded_data = read_project(file_path)
                 if self.load_data(loaded_data):
                     self._remove_recovery()
                     self.set_current_file_path(file_path)
@@ -679,7 +721,13 @@ class MainWindow(QMainWindow):
         active_variables = set(self.variables) | set(self.result_variables)
         stale_keys = [key for key in self.variable_values.keys() if key not in active_variables]
         for key in stale_keys:
+            if self.value_references is not None:
+                ident = self.value_references["variables"].pop(key, None)
+                self.value_references['rules'].pop(ident, None)
             del self.variable_values[key]
+        if self.value_references is not None:
+            from src.utils.parameter_formula import prune_parameter_values
+            prune_parameter_values(self.value_references, [self.variable_values, self.regressions, self.measurement_tables])
             
     def detect_variables(self):
         """変数の検出と変数タブの更新"""
@@ -860,7 +908,23 @@ class MainWindow(QMainWindow):
         data.pop("current_value_index", None)
         return json.dumps(data, sort_keys=True, ensure_ascii=False, default=str)
 
+    def calculation_input_signature(self):
+        return json.dumps([self.last_equation,self.get_save_data()['variable_values'],self.correlation_coefficients,
+            self.regressions,getattr(self,'measurement_tables',{}),self.value_references],sort_keys=True,default=str)
+
     def _check_modified(self):
+        previous_reference_signature = self._reference_signature
+        self.refresh_references()
+        if previous_reference_signature != self._reference_signature:
+            tab = self.uncertainty_calculation_tab
+            tab.on_result_changed(tab.result_combo.currentText())
+        inputs = self.calculation_input_signature
+        if inputs() != getattr(self,'_calculation_input_signature',None):
+            self.calculation_results = {}
+            self.monte_carlo_tab._invalidate_results(clear_display=True)
+            tab = self.uncertainty_calculation_tab
+            tab.on_result_changed(tab.result_combo.currentText())
+            self._calculation_input_signature = inputs()
         self._dirty = self._project_snapshot() != self._saved_snapshot
         self.update_window_title()
         return self._dirty
@@ -900,7 +964,7 @@ class MainWindow(QMainWindow):
                     if not lock.tryLock(0):
                         return
                     self._recovery_lock = lock
-                atomic_write_json(self._recovery_path, self.get_save_data())
+                write_project(self._recovery_path, self.get_save_data())
                 self._recovery_snapshot = snapshot
             except Exception:
                 write_error_log("Recovery save failed", details=traceback.format_exc())
@@ -908,7 +972,8 @@ class MainWindow(QMainWindow):
     def _offer_recovery(self):
         if not self.isVisible():
             return
-        candidates = sorted(self._recovery_path.parent.glob("recovery-*.json"),
+        candidates = sorted(list(self._recovery_path.parent.glob("recovery-*.json")) +
+                            list(self._recovery_path.parent.glob("recovery-*.cutp")),
                             key=lambda path: path.stat().st_mtime, reverse=True)
         if not candidates:
             return
@@ -925,7 +990,7 @@ class MainWindow(QMainWindow):
                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
         if reply == QMessageBox.Yes:
             try:
-                data = json.loads(path.read_text(encoding="utf-8"))
+                data = read_project(path)
                 baseline = self._saved_snapshot
                 if self.load_data(data, show_message=False):
                     self.set_current_file_path(None)
@@ -944,4 +1009,55 @@ class MainWindow(QMainWindow):
             event.ignore()
             return
         self._remove_recovery()
+        self._change_timer.stop()
+        self._recovery_timer.stop()
         event.accept()
+
+    def open_value_references(self, variable=None):
+        if isinstance(variable, str):
+            from src.dialogs.parameter_formula_dialog import ParameterFormulaDialog
+            ParameterFormulaDialog(self, variable).exec()
+            return
+        from src.dialogs.value_references_dialog import ValueReferencesDialog
+        ValueReferencesDialog(self).exec()
+
+    def refresh_references(self):
+        if self.value_references is None or getattr(self, '_refreshing_references', False):
+            return
+        from src.utils.value_references import evaluate_half_widths
+        signature = json.dumps([self.value_references, self.get_save_data()['variable_values'], getattr(self,'regressions',{}), getattr(self,'measurement_tables',{}), ConfigLoader().get_precision()], sort_keys=True, default=str)
+        if signature == self._reference_signature:
+            return
+        self._refreshing_references = True
+        try:
+            results = evaluate_half_widths(self.value_references, self.variable_values, self)
+            self.reference_errors = {}
+            for (name, index), result in results.items():
+                if result['error']:
+                    self.reference_errors[(name,index)] = result['error']
+                info = self.variable_values.get(name, {})
+                values = info.get('values', [])
+                if info.get('type') == 'B' and index < len(values):
+                    values[index]['half_width'] = str(result['value']) if not result['error'] else ''
+                    values[index]['standard_uncertainty'] = str(result['uncertainty']) if not result['error'] else ''
+            self.calculation_results = {}
+            calc = getattr(self, 'uncertainty_calculation_tab', None)
+            if calc and not calc._updating_table:
+                calc._clear_calculation_display()
+            if hasattr(self, 'monte_carlo_tab'):
+                self.monte_carlo_tab._invalidate_results(clear_display=True)
+            self._reference_signature = json.dumps([self.value_references, self.get_save_data()['variable_values'], getattr(self,'regressions',{}), getattr(self,'measurement_tables',{}), ConfigLoader().get_precision()], sort_keys=True, default=str)
+            tab = self.variables_tab
+            name = tab.handlers.current_variable
+            index = tab.value_combo.currentIndex()
+            ident = self.value_references['variables'].get(name)
+            if ident in self.value_references['rules'] and self.variable_values.get(name,{}).get('type') == 'B' and index >= 0:
+                values = self.variable_values[name]['values'][index]
+                for field in ('half_width','standard_uncertainty'):
+                    widget = tab.type_b_widgets[field]
+                    widget.blockSignals(True)
+                    widget.setText(str(values.get(field,'')))
+                    widget.setToolTip(self.reference_errors.get((name,index),''))
+                    widget.blockSignals(False)
+        finally:
+            self._refreshing_references = False

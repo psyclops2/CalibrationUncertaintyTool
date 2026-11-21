@@ -1,4 +1,5 @@
 import traceback
+import math
 import numpy as np
 from .correlation_utils import build_correlation_matrix
 from .config_loader import ConfigLoader
@@ -84,15 +85,23 @@ class UncertaintyCalculator:
             log_error(f"有効自由度計算エラー: {str(e)}", details=traceback.format_exc())
             return self._inf_replacement
 
-    def get_coverage_factor(self, effective_df):
-        """自由度10以上ではk=2、それ未満では設定のt値を使用する。"""
-        try:
-            if effective_df >= 10:
-                return 2.0
-            return self.get_t_value(effective_df)
-        except Exception as e:
-            log_error(f"包含係数取得エラー: {str(e)}", details=traceback.format_exc())
+    def get_coverage_factor(self, effective_df, settings=None):
+        """Select explicitly; existing projects retain their legacy policy."""
+        from .coverage import validate_coverage, ea_coverage_factor, student_factor
+        settings = settings or {'method': 'legacy'}
+        validate_coverage(settings)
+        method = settings['method']
+        if method == 'manual':
+            return float(settings['k'])
+        if effective_df is None:
+            return None
+        if method == 'student':
+            return student_factor(float(effective_df),float(settings['probability']),settings.get('floor_df',False))
+        if method == 'ea':
+            return ea_coverage_factor(float(effective_df))
+        if method == 'legacy' and effective_df >= 10:
             return 2.0
+        return self.get_t_value(effective_df)
 
     def get_t_value(self, degrees_of_freedom):
         """t分布表から95%信頼区間のt値を取得"""
@@ -102,6 +111,10 @@ class UncertaintyCalculator:
         
         try:
             df = float(degrees_of_freedom)
+            if math.isnan(df) or df <= 0:
+                raise ValueError('自由度は正の数にしてください')
+            if df < min(t_table):
+                raise ValueError('自由度が設定のt表の下限を下回っています')
             # 完全一致する自由度がある場合
             if df in t_table:
                 return t_table[df]
@@ -113,6 +126,9 @@ class UncertaintyCalculator:
                     # 線形補間
                     x1, x2 = keys[i], keys[i + 1]
                     y1, y2 = t_table[x1], t_table[x2]
+                    if math.isinf(x2):
+                        # Interpolate towards the asymptote in reciprocal df.
+                        return y2 + (y1-y2)*x1/df
                     return y1 + (y2 - y1) * (df - x1) / (x2 - x1)
             
             # 範囲外の場合は無限大の値を使用
@@ -120,7 +136,7 @@ class UncertaintyCalculator:
             
         except Exception as e:
             log_error(f"t値取得エラー: {str(e)}", details=traceback.format_exc())
-            return 2.0  # エラー時はデフォルト値として2.0を返す
+            raise ValueError(f't表から包含係数を取得できません: {e}') from e
 
     def calculate_contribution_rates(self, contributions):
         """寄与率を計算"""

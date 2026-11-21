@@ -1,6 +1,7 @@
 """English translation file (used keys only)."""
 
 from ..utils.translation_keys import *
+from .workflow_translations import WORKFLOW_EN
 
 translations = {'CorrelationTab': {'MESSAGE_WARNING': 'Warning',
                     'CORRELATION_MATRIX_INPUT': 'Correlation Coefficient Matrix',
@@ -12,11 +13,11 @@ translations = {'CorrelationTab': {'MESSAGE_WARNING': 'Warning',
                      'DOCUMENT_NUMBER': 'Document Number',
                      'DOCUMENT_NAME': 'Document Name',
                      'VERSION_INFO': 'Version Info',
-                     'DESCRIPTION_LABEL': 'Description (Markdown only)',
+                     'DESCRIPTION_LABEL': 'Description',
                      'REVISION_HISTORY': 'Revision History',
-                     'REVISION_HISTORY_PLACEHOLDER': 'v1,Description,Author,Reviewer,Approver,2024-01-01',
-                     'REVISION_HISTORY_INSTRUCTION': 'Enter each line as '
-                                                     "'ver,description,author,reviewer,approver,date'."},
+                     'REVISION_VERSION': 'Version', 'REVISION_DESCRIPTION': 'Changes',
+                     'REVISION_AUTHOR': 'Author', 'REVISION_CHECKER': 'Reviewer',
+                     'REVISION_APPROVER': 'Approver', 'REVISION_DATE': 'Revision date'},
  'MainWindow': {'APP_TITLE': 'Calibration Uncertainty Calculation Tool',
                 'MENU_FILE': 'File',
                 'MENU_TOOLS': 'Tools',
@@ -66,7 +67,7 @@ translations = {'CorrelationTab': {'MESSAGE_WARNING': 'Warning',
  'ModelEquationTab': {'MESSAGE_ERROR': 'Error',
                       'MODEL_EQUATION_INPUT': 'Model Equation Input',
                       'EQUATION_PLACEHOLDER': 'e.g., y = a * x + b',
-                      'VARIABLE_LIST_DRAG_DROP': 'Variable List (Drag &amp; Drop to reorder)',
+                      'VARIABLE_LIST_DRAG_DROP': 'Variable List (Drag & Drop to reorder)',
                       'HTML_DISPLAY': 'HTML Display',
                       'VARIABLE_ORDER_UPDATE_FAILED': 'Failed to update variable order.',
                       'VARIABLE_ORDER_SAVE_FAILED': 'Failed to save variable order.',
@@ -260,3 +261,5 @@ translations = {'CorrelationTab': {'MESSAGE_WARNING': 'Warning',
                   'VALUE_SOURCE': 'Value source',
                   'SOURCE_MANUAL': 'Manual input',
                   'TYPE_CHANGE_DATA_RESET_WARNING': 'Changing type will clear current inputs for all calibration points. Continue?'}}
+
+translations["WorkflowUI"] = dict(WORKFLOW_EN)

@@ -168,3 +168,7 @@ venv.backup-*/
 # Unsaved project recovery data
 logs/recovery-*.json
 logs/recovery-*.json.lock
+
+# External reference documents (kept locally; redistribution permission not established)
+/docs/*.pdf
+/examples/**/sources/*.pdf

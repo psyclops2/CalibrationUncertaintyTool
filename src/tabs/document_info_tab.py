@@ -1,18 +1,20 @@
 import csv
 import io
 from PySide6.QtCore import QTimer, Signal
-from PySide6.QtWidgets import QFormLayout, QLabel, QLineEdit, QPlainTextEdit, QVBoxLayout
+from PySide6.QtWidgets import (QFormLayout, QLabel, QLineEdit, QPlainTextEdit, QVBoxLayout,
+    QHBoxLayout, QTableWidget, QTableWidgetItem, QHeaderView, QPushButton)
 
 from src.tabs.base_tab import BaseTab
 from src.utils.markdown_renderer import render_markdown_to_html
+from src.utils.ui_translation import tr_ui
 from src.utils.translation_keys import (
     DESCRIPTION_LABEL,
     DOCUMENT_NAME,
     DOCUMENT_NUMBER,
     DOCUMENT_INFO_TAB,
     REVISION_HISTORY,
-    REVISION_HISTORY_INSTRUCTION,
-    REVISION_HISTORY_PLACEHOLDER,
+    REVISION_VERSION, REVISION_DESCRIPTION, REVISION_AUTHOR,
+    REVISION_CHECKER, REVISION_APPROVER, REVISION_DATE,
     VERSION_INFO,
 )
 
@@ -57,13 +59,22 @@ class DocumentInfoTab(BaseTab):
         layout.addWidget(self.description_edit)
 
         self.revision_label = QLabel(self.tr(REVISION_HISTORY))
-        self.revision_description = QLabel(self.tr(REVISION_HISTORY_INSTRUCTION))
-        self.revision_edit = QPlainTextEdit()
-        self.revision_edit.setPlaceholderText(self.tr(REVISION_HISTORY_PLACEHOLDER))
+        self.revision_table = QTableWidget(3, 6)
+        self._set_revision_headers()
+        self.revision_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.revision_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        self.add_revision_button = QPushButton(tr_ui('行を追加'))
+        self.remove_revision_button = QPushButton(tr_ui('選択行を削除'))
+        self.add_revision_button.clicked.connect(self._add_revision_row)
+        self.remove_revision_button.clicked.connect(self._remove_revision_rows)
+        revision_buttons = QHBoxLayout()
+        revision_buttons.addWidget(self.add_revision_button)
+        revision_buttons.addWidget(self.remove_revision_button)
+        revision_buttons.addStretch()
 
         layout.addWidget(self.revision_label)
-        layout.addWidget(self.revision_description)
-        layout.addWidget(self.revision_edit)
+        layout.addWidget(self.revision_table)
+        layout.addLayout(revision_buttons)
 
         layout.addStretch()
         self.setLayout(layout)
@@ -74,7 +85,7 @@ class DocumentInfoTab(BaseTab):
         for line_edit in (self.document_number_edit, self.document_name_edit, self.version_edit):
             line_edit.editingFinished.connect(self._on_info_changed)
         self.description_edit.textChanged.connect(self._on_description_text_changed)
-        self.revision_edit.textChanged.connect(self._schedule_info_update)
+        self.revision_table.itemChanged.connect(self._schedule_info_update)
 
     def retranslate_ui(self):
         self.parent.tab_widget.setTabText(
@@ -82,8 +93,9 @@ class DocumentInfoTab(BaseTab):
         )
         self.description_label.setText(self.tr(DESCRIPTION_LABEL))
         self.revision_label.setText(self.tr(REVISION_HISTORY))
-        self.revision_description.setText(self.tr(REVISION_HISTORY_INSTRUCTION))
-        self.revision_edit.setPlaceholderText(self.tr(REVISION_HISTORY_PLACEHOLDER))
+        self._set_revision_headers()
+        self.add_revision_button.setText(tr_ui('行を追加'))
+        self.remove_revision_button.setText(tr_ui('選択行を削除'))
         self.document_number_label.setText(self.tr(DOCUMENT_NUMBER))
         self.document_name_label.setText(self.tr(DOCUMENT_NAME))
         self.version_label.setText(self.tr(VERSION_INFO))
@@ -95,7 +107,7 @@ class DocumentInfoTab(BaseTab):
             "version_info": self.version_edit.text(),
             "description_markdown": self.description_edit.toPlainText(),
             "description_html": self._get_description_html(),
-            "revision_history": self.revision_edit.toPlainText(),
+            "revision_history": self._revision_text(),
         }
 
     def set_document_info(self, info):
@@ -103,7 +115,7 @@ class DocumentInfoTab(BaseTab):
         self.document_name_edit.blockSignals(True)
         self.version_edit.blockSignals(True)
         self.description_edit.blockSignals(True)
-        self.revision_edit.blockSignals(True)
+        self.revision_table.blockSignals(True)
 
         self.document_number_edit.setText(info.get("document_number", ""))
         self.document_name_edit.setText(info.get("document_name", ""))
@@ -113,7 +125,12 @@ class DocumentInfoTab(BaseTab):
             self.description_edit.setPlainText(description_markdown)
         else:
             self.description_edit.setPlainText(info.get("description_html", ""))
-        self.revision_edit.setPlainText(info.get("revision_history", ""))
+        rows = self._parse_revision_text(info.get('revision_history', ''))
+        self.revision_table.clearContents()
+        self.revision_table.setRowCount(max(3,len(rows)))
+        for i,row in enumerate(rows):
+            for j,key in enumerate(self.REVISION_FIELDS):
+                self.revision_table.setItem(i,j,QTableWidgetItem(row[key]))
         self._description_markdown_cache = None
         self._description_html_cache = ""
 
@@ -121,12 +138,44 @@ class DocumentInfoTab(BaseTab):
         self.document_name_edit.blockSignals(False)
         self.version_edit.blockSignals(False)
         self.description_edit.blockSignals(False)
-        self.revision_edit.blockSignals(False)
+        self.revision_table.blockSignals(False)
 
         self._on_info_changed()
 
     def parse_revision_history(self):
-        return self._parse_revision_text(self.revision_edit.toPlainText())
+        rows = []
+        for i in range(self.revision_table.rowCount()):
+            cells = [self.revision_table.item(i,j).text().strip() if self.revision_table.item(i,j) else '' for j in range(6)]
+            if any(cells):
+                rows.append(dict(zip(self.REVISION_FIELDS,cells)))
+        return rows
+
+    REVISION_FIELDS = ('version','description','author','checker','approver','date')
+
+    def _set_revision_headers(self):
+        self.revision_table.setHorizontalHeaderLabels([self.tr(key) for key in (
+            REVISION_VERSION,REVISION_DESCRIPTION,REVISION_AUTHOR,REVISION_CHECKER,REVISION_APPROVER,REVISION_DATE)])
+
+    def _revision_text(self):
+        # Preserve compatibility with existing projects; CSV is only an internal representation.
+        stream = io.StringIO()
+        writer = csv.writer(stream,lineterminator='\n')
+        for row in self.parse_revision_history():
+            writer.writerow([row[key] for key in self.REVISION_FIELDS])
+        return stream.getvalue().rstrip('\n')
+
+    def _add_revision_row(self):
+        row = self.revision_table.rowCount()
+        self.revision_table.insertRow(row)
+        self.revision_table.setCurrentCell(row,0)
+        self.revision_table.setFocus()
+
+    def _remove_revision_rows(self):
+        for row in sorted({index.row() for index in self.revision_table.selectedIndexes()},reverse=True):
+            self.revision_table.removeRow(row)
+        if not self.revision_table.rowCount():
+            self.revision_table.setRowCount(1)
+        self._schedule_info_update()
 
     @staticmethod
     def _parse_revision_text(text):

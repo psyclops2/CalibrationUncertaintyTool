@@ -1,0 +1,146 @@
+[
+  {
+    "project": "ea402/projects/S10.cutp",
+    "explained_inputs": 7,
+    "images": 1,
+    "reports": 1
+  },
+  {
+    "project": "ea402/projects/S11.cutp",
+    "explained_inputs": 8,
+    "images": 1,
+    "reports": 1
+  },
+  {
+    "project": "ea402/projects/S12_average.cutp",
+    "explained_inputs": 2,
+    "images": 1,
+    "reports": 1
+  },
+  {
+    "project": "ea402/projects/S12_probability.cutp",
+    "explained_inputs": 2,
+    "images": 1,
+    "reports": 1
+  },
+  {
+    "project": "ea402/projects/S12_staged.cutp",
+    "explained_inputs": 13,
+    "images": 1,
+    "reports": 1
+  },
+  {
+    "project": "ea402/projects/S13_raw_temperature.cutp",
+    "explained_inputs": 16,
+    "images": 1,
+    "reports": 1
+  },
+  {
+    "project": "ea402/projects/S2.cutp",
+    "explained_inputs": 5,
+    "images": 1,
+    "reports": 1
+  },
+  {
+    "project": "ea402/projects/S3.cutp",
+    "explained_inputs": 6,
+    "images": 1,
+    "reports": 1
+  },
+  {
+    "project": "ea402/projects/S4_raw.cutp",
+    "explained_inputs": 10,
+    "images": 1,
+    "reports": 1
+  },
+  {
+    "project": "ea402/projects/S5_emf.cutp",
+    "explained_inputs": 9,
+    "images": 1,
+    "reports": 1
+  },
+  {
+    "project": "ea402/projects/S5_temperature.cutp",
+    "explained_inputs": 10,
+    "images": 1,
+    "reports": 1
+  },
+  {
+    "project": "ea402/projects/S6.cutp",
+    "explained_inputs": 9,
+    "images": 1,
+    "reports": 1
+  },
+  {
+    "project": "ea402/projects/S7.cutp",
+    "explained_inputs": 9,
+    "images": 1,
+    "reports": 1
+  },
+  {
+    "project": "ea402/projects/S9.cutp",
+    "explained_inputs": 4,
+    "images": 1,
+    "reports": 1
+  },
+  {
+    "project": "gum/projects/H1.cutp",
+    "explained_inputs": 9,
+    "images": 1,
+    "reports": 1
+  },
+  {
+    "project": "gum/projects/H2_approach1.cutp",
+    "explained_inputs": 3,
+    "images": 1,
+    "reports": 3
+  },
+  {
+    "project": "gum/projects/H2_approach2.cutp",
+    "explained_inputs": 3,
+    "images": 1,
+    "reports": 3
+  },
+  {
+    "project": "gum/projects/H3.cutp",
+    "explained_inputs": 1,
+    "images": 1,
+    "reports": 1
+  },
+  {
+    "project": "gum/projects/H4_approach1.cutp",
+    "explained_inputs": 5,
+    "images": 1,
+    "reports": 1
+  },
+  {
+    "project": "gum/projects/H4_approach2.cutp",
+    "explained_inputs": 4,
+    "images": 1,
+    "reports": 1
+  },
+  {
+    "project": "gum/projects/H5.cutp",
+    "explained_inputs": 1,
+    "images": 1,
+    "reports": 1
+  },
+  {
+    "project": "gum/projects/H6.cutp",
+    "explained_inputs": 7,
+    "images": 1,
+    "reports": 2
+  },
+  {
+    "project": "euramet19/projects/flask.cutp",
+    "explained_inputs": 9,
+    "images": 2,
+    "reports": 1
+  },
+  {
+    "project": "euramet19/projects/pycnometer.cutp",
+    "explained_inputs": 9,
+    "images": 2,
+    "reports": 1
+  }
+]

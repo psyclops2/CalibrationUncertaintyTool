@@ -1,6 +1,7 @@
 """?????????????????"""
 
 from ..utils.translation_keys import *
+from .workflow_translations import WORKFLOW_EN
 
 translations = {'CorrelationTab': {'MESSAGE_WARNING': '警告',
                     'CORRELATION_MATRIX_INPUT': '相関係数行列',
@@ -11,10 +12,11 @@ translations = {'CorrelationTab': {'MESSAGE_WARNING': '警告',
                      'DOCUMENT_NUMBER': '文書番号',
                      'DOCUMENT_NAME': '文書名',
                      'VERSION_INFO': 'バージョン情報',
-                     'DESCRIPTION_LABEL': '説明文 (Markdownのみ)',
+                     'DESCRIPTION_LABEL': '説明文',
                      'REVISION_HISTORY': '改訂履歴',
-                     'REVISION_HISTORY_PLACEHOLDER': 'v1,説明文,作成者,照査者,承認者,2024-01-01',
-                     'REVISION_HISTORY_INSTRUCTION': '各行を「ver,説明文,作成者,照査者,承認者,改定日」の形式で入力してください。'},
+                     'REVISION_VERSION': '版', 'REVISION_DESCRIPTION': '改訂内容',
+                     'REVISION_AUTHOR': '作成者', 'REVISION_CHECKER': '照査者',
+                     'REVISION_APPROVER': '承認者', 'REVISION_DATE': '改訂日'},
  'MainWindow': {'APP_TITLE': '校正の不確かさ計算ツール',
                 'MENU_FILE': 'ファイル',
                 'MENU_TOOLS': 'ツール',
@@ -258,3 +260,5 @@ translations = {'CorrelationTab': {'MESSAGE_WARNING': '警告',
                   'VALUE_SOURCE': '値のソース',
                   'SOURCE_MANUAL': '手入力',
                   'TYPE_CHANGE_DATA_RESET_WARNING': 'Type変更をすると現在の入力はすべての校正点について失われます。続行しますか？'}}
+
+translations["WorkflowUI"] = {source: source for source in WORKFLOW_EN}

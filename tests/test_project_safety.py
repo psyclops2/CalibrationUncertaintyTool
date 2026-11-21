@@ -174,11 +174,11 @@ def test_invalid_correlation_clears_old_calculation(window):
 
 def test_recovery_only_writes_changed_content(window, monkeypatch):
     writes = []
-    from src.utils.project_io import atomic_write_json as write
+    from src.utils.project_io import write_project as write
     def record(path, data):
         writes.append(copy.deepcopy(data))
         write(path, data)
-    monkeypatch.setattr("src.main_window.atomic_write_json", record)
+    monkeypatch.setattr("src.main_window.write_project", record)
     window._autosave_recovery()
     assert not writes
     window.last_equation = "Y = x"
@@ -199,14 +199,14 @@ def test_recovery_only_writes_changed_content(window, monkeypatch):
 
 
 def test_failed_recovery_write_is_retried(window, monkeypatch):
-    from src.utils.project_io import atomic_write_json as write
+    from src.utils.project_io import write_project as write
     calls = []
     def fail_once(path, data):
         calls.append(1)
         if len(calls) == 1:
             raise OSError("temporary error")
         write(path, data)
-    monkeypatch.setattr("src.main_window.atomic_write_json", fail_once)
+    monkeypatch.setattr("src.main_window.write_project", fail_once)
     window.last_equation = "Y = x"
     window._autosave_recovery()
     window._autosave_recovery()

@@ -1,0 +1,35 @@
+[
+  {
+    "model": "S5_temperature",
+    "result_central_value": 1000.5,
+    "result_standard_uncertainty": 0.6408705168118607,
+    "effective_df": 10207.89001283053,
+    "coverage_factor": 2.0,
+    "expanded_uncertainty": 1.2817410336237214,
+    "coverage_settings": {
+      "method": "legacy"
+    }
+  },
+  {
+    "model": "S5_emf",
+    "result_central_value": 0.03626723076923077,
+    "result_standard_uncertainty": 2.496625063622077e-05,
+    "effective_df": 105.14480246031381,
+    "coverage_factor": 2.0,
+    "expanded_uncertainty": 4.993250127244154e-05,
+    "coverage_settings": {
+      "method": "legacy"
+    }
+  },
+  {
+    "model": "S7",
+    "result_central_value": 30.04325,
+    "result_standard_uncertainty": 0.02241853771621453,
+    "effective_df": 108.92525165336082,
+    "coverage_factor": 2.0,
+    "expanded_uncertainty": 0.04483707543242906,
+    "coverage_settings": {
+      "method": "legacy"
+    }
+  }
+]

@@ -1,3 +1,5 @@
+from src.utils.equation_handler import EquationHandler
+from src.utils.model_expression import parse_expression, variable_names, split_equations
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QGroupBox,
                              QTableWidget, QTableWidgetItem, QHeaderView,
                              QTextEdit)
@@ -9,6 +11,8 @@ from src.tabs.base_tab import BaseTab
 from src.utils.translation_keys import *
 from src.utils.equation_normalizer import normalize_equation_text
 from src.utils.app_logger import log_error
+from src.utils.equation_formatter import EquationFormatter
+from src.utils.quantity_notation import format_quantity_name, format_names_in_text
 
 class PartialDerivativeTab(BaseTab):
     """偏微分タブ"""
@@ -97,7 +101,7 @@ class PartialDerivativeTab(BaseTab):
             equation_for_calc = normalize_equation_text(equation)
                 
             # 方程式を分割
-            equations = [eq.strip() for eq in equation_for_calc.split(',')]
+            equations = split_equations(equation_for_calc)
             derivative_parts = []
             
             # 計算結果変数を取得
@@ -123,31 +127,17 @@ class PartialDerivativeTab(BaseTab):
                 if not target_eq:
                     continue
                 
-                # 結果変数の式を解析
+                target_eq = EquationHandler(self.parent).resolve_equation(result_var,equations)
+                # 展開した元の入力に対する偏微分を表示する。
                 left_side, right_side = target_eq.split('=', 1)
                 left_side = left_side.strip()
                 right_side = normalize_equation_text(right_side.strip())
                 
-                # 変数をSymbolとして定義
-                symbols = {}
-                for eq in equations:
-                    if '=' not in eq:
-                        continue
-                    left, right = eq.split('=', 1)
-                    left = left.strip()
-                    right = right.strip()
-                    symbols[left] = sp.Symbol(left)
-                    
-                    # 右辺の変数も追加（ギリシャ文字対応）
-                    import re
-                    right_vars = re.findall(r'[a-zA-Zα-ωΑ-Ω][a-zA-Z0-9_α-ωΑ-Ω]*', right)
-                    for var in right_vars:
-                        if var not in symbols:
-                            symbols[var] = sp.Symbol(var)
-                
+                symbols = {name:sp.Symbol(name,real=True) for name in variable_names(right_side)}
+
                 # 結果変数の式を解析
                 expr_str = right_side.replace('^', '**')
-                expr = sp.sympify(expr_str, locals=symbols)
+                expr = parse_expression(expr_str, symbols)
                 
                 # 各変数について偏微分を計算
                 for var in symbols:
@@ -159,16 +149,10 @@ class PartialDerivativeTab(BaseTab):
                         derivative = sp.diff(expr, symbols[var])
                         
                         # 表示用の文字列に変換
-                        derivative_str = str(derivative)
-                        derivative_str = derivative_str.replace('**', '^')
-                        derivative_str = derivative_str.replace('*', '·')
-                        
-                        # 下付き文字と上付き文字の処理
-                        derivative_str = self._format_subscripts(derivative_str)
-                        derivative_str = re.sub(r'\^([0-9]+)', r'<sup>\1</sup>', derivative_str)
-                        
-                        formatted_left = self._format_subscripts(left_side)
-                        formatted_var = self._format_subscripts(var)
+                        derivative_str = EquationFormatter(self.parent)._format_side(str(derivative),set())
+                        notation = getattr(self.parent,'model_notation','legacy')
+                        formatted_left = format_quantity_name(left_side,notation)
+                        formatted_var = format_quantity_name(var,notation)
                         
                         derivative_parts.append(f"∂{formatted_left}/∂{formatted_var} = {derivative_str}")
                     except Exception as e:
@@ -195,13 +179,4 @@ class PartialDerivativeTab(BaseTab):
     @staticmethod
     def _format_subscripts(text):
         """Convert V_ref_stability to V<sub>ref_stability</sub>."""
-        token_pattern = re.compile(r"[a-zA-Zα-ωΑ-Ω][a-zA-Z0-9_α-ωΑ-Ω]*")
-
-        def replacer(match):
-            token = match.group(0)
-            base, sep, suffix = token.partition('_')
-            if not sep or not suffix:
-                return token
-            return f"{base}<sub>{suffix}</sub>"
-
-        return token_pattern.sub(replacer, text)
+        return format_names_in_text(text)

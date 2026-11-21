@@ -101,6 +101,9 @@ class PointSettingsTab(BaseTab):
             new_point_name = f"{self.tr(CALIBRATION_POINT_NAME)} {current_count + 1}"
 
             self.parent.value_names.append(new_point_name)
+            if getattr(self.parent, 'value_references', None) is not None:
+                from src.utils.value_references import new_id
+                self.parent.value_references['points'].append(new_id())
             self.update_display()
             self.points_changed.emit()
             self.table.selectRow(current_count)
@@ -132,6 +135,11 @@ class PointSettingsTab(BaseTab):
             if reply == QMessageBox.Yes:
                 self._remove_point_values(current_row)
                 del self.parent.value_names[current_row]
+                if getattr(self.parent, 'value_references', None) is not None:
+                    del self.parent.value_references['points'][current_row]
+                    from src.utils.parameter_formula import prune_parameter_values
+                    prune_parameter_values(self.parent.value_references,
+                        [self.parent.variable_values, self.parent.regressions, self.parent.measurement_tables])
                 self.update_display()
                 self.points_changed.emit()
 
@@ -165,6 +173,9 @@ class PointSettingsTab(BaseTab):
                 self.parent.value_names[current_row],
             )
             self._swap_point_values(current_row, target_row)
+            if getattr(self.parent, 'value_references', None) is not None:
+                points = self.parent.value_references['points']
+                points[current_row], points[target_row] = points[target_row], points[current_row]
 
             self.update_display()
             self.table.selectRow(target_row)

@@ -1,6 +1,9 @@
 import os
 import sys
 import subprocess
+import shutil
+from pathlib import Path
+from xml.sax.saxutils import escape
 from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.dom.minidom import parseString
 
@@ -31,7 +34,7 @@ def generate_ts_file(language_code, translations, output_path):
     for context_name, trans_dict in translations.items():
         messages = []
         for key, value in trans_dict.items():
-            messages.append(MESSAGE_TEMPLATE.format(source=key, translation=value))
+            messages.append(MESSAGE_TEMPLATE.format(source=escape(key), translation=escape(value)))
         
         context_content = CONTEXT_TEMPLATE.format(context_name=context_name, messages='\n'.join(messages))
         contexts.append(context_content)
@@ -43,18 +46,20 @@ def generate_ts_file(language_code, translations, output_path):
     print(f"Generated TS file: {output_path}")
 
 def compile_ts_to_qm(ts_file, qm_file):
-    command = ['pyside6-lrelease', ts_file, '-qm', qm_file]
+    local_tool = Path(sys.executable).parent / ('pyside6-lrelease.exe' if os.name=='nt' else 'pyside6-lrelease')
+    executable = str(local_tool) if local_tool.is_file() else shutil.which('pyside6-lrelease')
+    if not executable:
+        raise RuntimeError('pyside6-lrelease is not installed in the active Python environment')
+    command = [executable, ts_file, '-qm', qm_file]
     try:
-        result = subprocess.run(command, check=True, capture_output=True, text=True, encoding='utf-8')
+        result = subprocess.run(command, check=True, capture_output=True, text=True, encoding='utf-8', timeout=30)
         print(f"Updating '{qm_file}'...")
         # lrelease prints its output to stdout, so we print it
         print(result.stdout.strip())
     except FileNotFoundError:
-        print("Error: 'pyside6-lrelease' command not found.")
-        print("Please ensure PySide6 is installed and its tools are in your system's PATH.")
+        raise RuntimeError('Could not start pyside6-lrelease')
     except subprocess.CalledProcessError as e:
-        print(f"Error compiling {ts_file}: {e}")
-        print(f"lrelease stderr:\n{e.stderr}")
+        raise RuntimeError(f'Failed to compile {ts_file}: {e.stderr}') from e
 
 def main():
     i18n_dir = os.path.dirname(os.path.abspath(__file__))

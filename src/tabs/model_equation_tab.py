@@ -1,7 +1,8 @@
 ﻿from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                            QTextEdit, QGroupBox, QMessageBox, QLineEdit,
-                           QListWidget, QListWidgetItem)
+                           QListWidget, QListWidgetItem, QPushButton, QMenu)
 from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtGui import QFont, QTextCursor
 import sympy as sp
 import re
 import traceback
@@ -12,8 +13,20 @@ from src.utils.equation_formatter import EquationFormatter
 from src.tabs.base_tab import BaseTab
 from src.utils.translation_keys import *
 from src.utils.equation_handler import EquationHandler
+from src.utils.model_expression import variable_names, split_equations, FUNCTIONS, CONSTANTS
 from src.utils.equation_normalizer import normalize_equation_text, normalize_variable_name
 from src.utils.app_logger import log_debug, log_error
+from src.utils.quantity_notation import GREEK, IDENTIFIER, format_names_in_text
+from src.utils.ui_translation import tr_ui
+
+FUNCTION_INSERTIONS = {
+    'sin': ('sin(x)','正弦'), 'cos': ('cos(x)','余弦'), 'tan': ('tan(x)','正接'),
+    'asin': ('asin(x)','逆正弦'), 'acos': ('acos(x)','逆余弦'), 'atan': ('atan(x)','逆正接'),
+    'atan2': ('atan2(y, x)','2引数の逆正接'),
+    'sinh': ('sinh(x)','双曲線正弦'), 'cosh': ('cosh(x)','双曲線余弦'), 'tanh': ('tanh(x)','双曲線正接'),
+    'exp': ('exp(x)','指数関数'), 'log': ('log(x)','自然対数'), 'ln': ('ln(x)','自然対数'),
+    'sqrt': ('sqrt(x)','平方根'), 'abs': ('abs(x)','絶対値'), 'Abs': ('Abs(x)','絶対値'),
+}
 
 class DraggableListWidget(QListWidget):
     order_changed = Signal(list)  # 並び順変更時に新しい順序を通知するシグナル
@@ -45,9 +58,15 @@ class ModelEquationTab(BaseTab):
         """UIテキストを現在の言語設定で更新する"""
         log_debug(f"[DEBUG] Retranslating UI for context: {self.metaObject().className()}")
         self.equation_group.setTitle(self.tr(MODEL_EQUATION_INPUT))
-        self.equation_input.setPlaceholderText(self.tr(EQUATION_PLACEHOLDER))
         self.variable_group.setTitle(self.tr(VARIABLE_LIST_DRAG_DROP))
         self.display_group.setTitle(self.tr(HTML_DISPLAY))
+        self.insert_greek_button.setText(tr_ui('文字を挿入'))
+        self.insert_function_button.setText(tr_ui('数式を挿入'))
+        for key,source in (('lower','小文字'),('upper','大文字'),('variant','異体字')):
+            self.letter_menus[key].setTitle(tr_ui(source))
+        for name,(template,description) in FUNCTION_INSERTIONS.items():
+            self.function_actions[name].setText(template+' — '+tr_ui(description))
+        self.pi_action.setText('pi — '+tr_ui('円周率'))
         
     def setup_ui(self):
         """メインウィンドウのUIを構築する"""
@@ -60,10 +79,39 @@ class ModelEquationTab(BaseTab):
         
         self.equation_input = QTextEdit()
         self.equation_input.setAcceptRichText(False)
-        self.equation_input.setPlaceholderText(self.tr(EQUATION_PLACEHOLDER))
+        self.equation_input.setFont(QFont('Consolas',11))
         self.equation_input.setMaximumHeight(300)
         self.equation_input.focusOutEvent = self._on_equation_focus_lost
         equation_layout.addWidget(self.equation_input)
+
+        notation_row = QHBoxLayout()
+        self.insert_greek_button = QPushButton(tr_ui('文字を挿入'))
+        greek_menu = QMenu(self.insert_greek_button)
+        greek_menu.setFont(QFont('Consolas',11))
+        self.letter_menus = {key:greek_menu.addMenu(tr_ui(label)) for key,label in (
+            ('lower','小文字'),('upper','大文字'),('variant','異体字'))}
+        self.greek_actions = {}
+        for name,char in GREEK.items():
+            group = 'variant' if name.endswith('1') else 'upper' if name[0].isupper() else 'lower'
+            action = self.letter_menus[group].addAction(f'{char}  \\{name}\\')
+            action.triggered.connect(lambda checked=False,code=name:self._insert_greek(code))
+            self.greek_actions[name] = action
+        self.insert_greek_button.setMenu(greek_menu)
+        notation_row.addWidget(self.insert_greek_button)
+        self.insert_function_button = QPushButton(tr_ui('数式を挿入'))
+        function_menu = QMenu(self.insert_function_button)
+        self.function_actions = {}
+        for name,(template,description) in FUNCTION_INSERTIONS.items():
+            action = function_menu.addAction(template+' — '+tr_ui(description))
+            action.triggered.connect(lambda checked=False,text=template:self._insert_function(text))
+            self.function_actions[name] = action
+        function_menu.addSeparator()
+        self.pi_action = function_menu.addAction('pi — '+tr_ui('円周率'))
+        self.pi_action.triggered.connect(lambda:self._insert_function('pi'))
+        self.insert_function_button.setMenu(function_menu)
+        notation_row.addWidget(self.insert_function_button)
+        notation_row.addStretch()
+        equation_layout.addLayout(notation_row)
         
         self.equation_status = QLabel("")
         equation_layout.addWidget(self.equation_status)
@@ -234,7 +282,7 @@ class ModelEquationTab(BaseTab):
             
             # 方程式を正規化
             normalized_equation = normalize_equation_text(equation)
-            equations = [eq.strip() for eq in normalized_equation.split(',')]
+            equations = split_equations(normalized_equation)
             new_vars = set()  # 入力変数
             result_vars = set()  # 計算結果変数
             
@@ -244,6 +292,8 @@ class ModelEquationTab(BaseTab):
                 if '=' not in eq:
                     continue
                 left_side = self._normalize_variable_name(eq.split('=', 1)[0])
+                if not re.fullmatch(IDENTIFIER,left_side) or left_side in FUNCTIONS or left_side in CONSTANTS:
+                    raise ValueError('左辺には量名を1つ入力してください。^は量名ではなく、右辺のべき乗に使います。')
                 result_vars.add(left_side)
                 log_debug(f"  - 左辺から検出: {left_side}")
             
@@ -260,30 +310,10 @@ class ModelEquationTab(BaseTab):
                 right_side = right_side.strip()
                 log_debug(f"  方程式解析: {left_side} = {right_side}")
                 
-                # 演算子を区切ってトークン化する
-                for op in ['+', '-', '*', '/', '^', '(', ')', ',']:
-                    right_side = right_side.replace(op, f' {op} ')
-                terms = right_side.split()
-                
-                # 各項から変数候補を取り出す
-                for term in terms:
-                    # 演算子以外だけを対象にする
-                    if term not in ['+', '-', '*', '/', '^', '(', ')', ',']:
-                        # 数値でない場合だけ変数として扱う
-                        try:
-                            float(term)  # 数値ならスキップ
-                        except ValueError:
-                            normalized_term = self._normalize_variable_name(term)
-                            if not normalized_term:
-                                continue
-                            if normalized_term not in result_vars:
-                                new_vars.add(normalized_term)
-                                log_debug(f"    入力変数として追加: {normalized_term}")
-            
+                for term in variable_names(right_side):
+                    if term not in result_vars:
+                        new_vars.add(term)
 
-
-
-            
             # 変数の追加・削除を計算
             all_vars = new_vars | result_vars
             current_vars = {self._normalize_variable_name(var) for var in self.parent.variables}
@@ -357,6 +387,9 @@ class ModelEquationTab(BaseTab):
                     # 削除された変数のデータを破棄
                     for var in list(self.parent.variable_values):
                         if self._normalize_variable_name(var) in removed_vars:
+                            refs = getattr(self.parent, 'value_references', None)
+                            if refs:
+                                refs['variables'].pop(var, None)
                             del self.parent.variable_values[var]
 
                     
@@ -436,6 +469,7 @@ class ModelEquationTab(BaseTab):
                 "方程式チェックエラー",
                 details=traceback.format_exc(),
             )
+            self.equation_status.setText(str(e))
             return False
             
     def resolve_equation(self, target_var, equations):
@@ -510,49 +544,34 @@ class ModelEquationTab(BaseTab):
                 self.html_display.clear()
                 return
 
-            # 方程式を正規化
-            normalized_equation = normalize_equation_text(equation)
-            equations = [eq.strip() for eq in normalized_equation.split(',')]
-            html_parts = []
-
-            for eq in equations:
-                if '=' not in eq:
-                    continue
-
-                # 乗算記号を中点で表示
-                processed_eq = eq.replace('*', '・･')
-
-                # 下付き表記に変換
-                processed_eq = self._format_subscripts(processed_eq)
-                
-                # べき乗を上付き表記に変換
-                processed_eq = re.sub(r'\^(\d+|\([^)]+\))', r'<sup>\1</sup>', processed_eq)
-                # 括弧内のべき乗も処理
-                processed_eq = re.sub(r'\(([^)]+)\^(\d+|\([^)]+\))\)', r'(\1<sup>\2</sup>)', processed_eq)
-
-                html_parts.append(processed_eq)
-
-            # 表示サイズを整えてHTML化
-            html = f'<div style="font-size: 16px;">{"<br>".join(html_parts)}</div>'
+            formatted = EquationFormatter(self.parent).format_equation(equation)
+            html = f'<div style="font-size: 16px;">{formatted}</div>'
             
             self.html_display.setHtml(html)
 
         except Exception as e:
             log_error(f"HTML表示更新エラー: {str(e)}", details=traceback.format_exc())
 
+    def _insert_greek(self, code):
+        self.equation_input.insertPlainText('\\'+code+'\\')
+        self.equation_input.setFocus()
+
+    def _insert_function(self, text):
+        cursor = self.equation_input.textCursor()
+        start = cursor.selectionStart()
+        cursor.insertText(text)
+        if '(' in text:
+            start += text.index('(')+1
+            end = start + len(text[text.index('(')+1:].split(')')[0])
+            cursor.setPosition(start)
+            cursor.setPosition(end,QTextCursor.KeepAnchor)
+        self.equation_input.setTextCursor(cursor)
+        self.equation_input.setFocus()
+
     @staticmethod
     def _format_subscripts(text):
         """Convert V_ref_stability to V<sub>ref_stability</sub>."""
-        token_pattern = re.compile(r"[A-Za-z\u03B1-\u03C9\u0391-\u03A9][A-Za-z0-9_\u03B1-\u03C9\u0391-\u03A9]*")
-
-        def replacer(match):
-            token = match.group(0)
-            base, sep, suffix = token.partition('_')
-            if not sep or not suffix:
-                return token
-            return f"{base}<sub>{suffix}</sub>"
-
-        return token_pattern.sub(replacer, text)
+        return format_names_in_text(text)
 
     def detect_variables(self, equation):
         """モデル式から変数を抽出する"""
@@ -562,7 +581,7 @@ class ModelEquationTab(BaseTab):
             
             # 方程式を正規化
             normalized_equation = normalize_equation_text(equation)
-            equations = [eq.strip() for eq in normalized_equation.split(',')]
+            equations = split_equations(normalized_equation)
             
             # 左辺の変数を計算結果変数として集める
             result_variables = set()
@@ -587,10 +606,7 @@ class ModelEquationTab(BaseTab):
 
                 
                 # 正規表現で変数名候補を検出
-                detected_vars = re.findall(
-                    r"[A-Za-z\u03B1-\u03C9\u0391-\u03A9][A-Za-z0-9_\u03B1-\u03C9\u0391-\u03A9]*",
-                    right_side,
-                )
+                detected_vars = variable_names(right_side)
 
                 
                 # 結果変数以外だけを入力変数として追加
@@ -645,7 +661,7 @@ class ModelEquationTab(BaseTab):
     def parse_equation(self, equation):
         import re
         normalized_equation = normalize_equation_text(equation)
-        equations = [eq.strip() for eq in normalized_equation.split(',')]
+        equations = split_equations(normalized_equation)
         result_vars = []
         input_vars = set()
         for eq in equations:
@@ -655,10 +671,7 @@ class ModelEquationTab(BaseTab):
             left = self._normalize_variable_name(left)
             right = right.strip()
             result_vars.append(left)
-            for var in re.findall(
-                r"[A-Za-z_\u03B1-\u03C9\u0391-\u03A9][A-Za-z0-9_\u03B1-\u03C9\u0391-\u03A9]*",
-                right,
-            ):
+            for var in variable_names(right):
                 normalized_var = self._normalize_variable_name(var)
                 if normalized_var and normalized_var != left:
                     input_vars.add(normalized_var)

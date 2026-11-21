@@ -5,6 +5,7 @@ from fractions import Fraction
 from typing import Dict, List, Optional, Tuple
 
 import sympy as sp
+from .model_expression import parse_expression, split_equations
 
 from src.utils.equation_normalizer import normalize_equation_text, normalize_variable_name
 from src.utils.unit_parser import Dimension, UnitParseError, format_dimension, parse_unit_expression
@@ -143,7 +144,7 @@ def validate_unit_consistency(equation_text: str, variable_units: Dict[str, str]
 
 def _validate_equations(equation_text: str, dimensions: Dict[str, Optional[Dimension]]) -> List[EquationValidationItem]:
     normalized_text = normalize_equation_text(equation_text or "")
-    equations = [part.strip() for part in normalized_text.split(",") if part.strip()]
+    equations = split_equations(normalized_text)
     if not equations:
         return [
             EquationValidationItem(
@@ -155,7 +156,7 @@ def _validate_equations(equation_text: str, dimensions: Dict[str, Optional[Dimen
             )
         ]
 
-    symbols = {name: sp.Symbol(name) for name in dimensions.keys()}
+    symbols = {name: sp.Symbol(name, real=True) for name in dimensions.keys()}
     items: List[EquationValidationItem] = []
 
     for equation in equations:
@@ -200,7 +201,7 @@ def _validate_equations(equation_text: str, dimensions: Dict[str, Optional[Dimen
             continue
 
         try:
-            sympy_expr = sp.sympify(rhs_expr.replace("^", "**"), locals=symbols)
+            sympy_expr = parse_expression(rhs_expr, symbols)
             rhs_dimension = _evaluate_dimension(sympy_expr, dimensions)
         except Exception as error:
             items.append(
